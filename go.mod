@@ -21,7 +21,7 @@ require (
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/go-git/go-billy/v6 v6.0.0-20251204095141-7469ffe06db2
+	github.com/go-git/go-billy/v6 v6.0.0-20251206100608-d4862421331a
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
