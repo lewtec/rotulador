@@ -10,6 +10,7 @@ github.com/go-git/go-billy/v6 v6.0.0-20251126203821-7f9c95185ee0/go.mod h1:0NjwV
 github.com/go-git/go-billy/v6 v6.0.0-20251204095141-7469ffe06db2/go.mod h1:0NjwVNrwtVFZBReAp5OoGklGJIgJFEbVyHneAr4lc8k=
 github.com/go-git/go-billy/v6 v6.0.0-20251206100608-d4862421331a/go.mod h1:0NjwVNrwtVFZBReAp5OoGklGJIgJFEbVyHneAr4lc8k=
 github.com/go-git/go-billy/v6 v6.0.0-20251209065551-8afc3eb64e4d/go.mod h1:d3XQcsHu1idnquxt48kAv+h+1MUiYKLH/e7LAzjP+pI=
+github.com/go-git/go-billy/v6 v6.0.0-20251217170237-e9738f50a3cd/go.mod h1:d3XQcsHu1idnquxt48kAv+h+1MUiYKLH/e7LAzjP+pI=
 github.com/golang-migrate/migrate/v4 v4.19.0 h1:RcjOnCGz3Or6HQYEJ/EEVLfWnmw9KnoigPSjzhCuaSE=
 github.com/golang-migrate/migrate/v4 v4.19.0/go.mod h1:9dyEcu+hO+G9hPSw8AIg50yg622pXJsoHItQnDGZkI0=
 github.com/golang-migrate/migrate/v4 v4.19.1 h1:OCyb44lFuQfYXYLx1SCxPZQGU7mcaZ7gH9yH4jSFbBA=
