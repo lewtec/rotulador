@@ -48,6 +48,12 @@ jobs:
       run: |
         git config user.name actions-bot
         git config user.email actions-bot@users.noreply.github.com
+        
+    - name: Install frontend dependencies
+      run: npm install
+
+    - name: Generate CSS assets
+      run: npm run build:css
 
     - name: Create Pull Request if there is new stuff from updaters
       uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8
@@ -71,11 +77,8 @@ jobs:
           exit 1
         fi
 
-    - name: Install frontend dependencies
-      run: npm install
-
-    - name: Generate CSS assets
-      run: npm run build:css
+    - name: CI and tests
+      run: mise ci
 
     - name: Build binaries
       env:
