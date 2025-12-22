@@ -1,6 +1,8 @@
 [tools]
 "github:sqlc-dev/sqlc" = "1.30.0"
 go = "1.25.5"
+"go:github.com/nicksnyder/go-i18n/v2/goi18n" = "2.6.0"
+golangci-lint = "2.7.2"
 node = "24"
 
 [tasks.gen]
@@ -26,13 +28,18 @@ rm -f active.en.json
 echo "✓ i18n files updated. Check annotation/locales/translate.*.json for new strings to translate."
 """
 
+[tasks.lint]
+description = "Run linters"
+run = "golangci-lint run"
+
 [tasks.ci]
-description = "Run CI checks (gen + build)"
-depends = ["gen"]
+description = "Run CI checks (gen + lint + test + build)"
+depends = ["gen", "lint", "test"]
 run = "go build -v ./cmd/rotulador"
 
 [tasks.test]
 description = "Run all tests with coverage"
+depends = ["gen"]
 run = """
 go test -v -race -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out -o coverage.html
@@ -41,6 +48,7 @@ echo "✓ Coverage report generated: coverage.html"
 
 [tasks."test-short"]
 description = "Run short tests (no integration tests)"
+depends = ["gen"]
 run = "go test -short -v ./..."
 
 [tasks.build]

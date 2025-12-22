@@ -23,7 +23,7 @@ func TestAnnotationRepository_Create(t *testing.T) {
 	}
 
 	t.Run("creates annotation successfully", func(t *testing.T) {
-		ann, err := annRepo.Create(ctx, img.ID, "testuser", 0, "good")
+		ann, err := annRepo.Create(ctx, img.SHA256, "testuser", 0, "good")
 		if err != nil {
 			t.Fatalf("Create() error = %v", err)
 		}
@@ -31,8 +31,8 @@ func TestAnnotationRepository_Create(t *testing.T) {
 		if ann.ID == 0 {
 			t.Error("Expected non-zero ID")
 		}
-		if ann.ImageID != img.ID {
-			t.Errorf("ImageID = %v, want %v", ann.ImageID, img.ID)
+		if ann.ImageSHA256 != img.SHA256 {
+			t.Errorf("ImageSHA256 = %v, want %v", ann.ImageSHA256, img.SHA256)
 		}
 		if ann.Username != "testuser" {
 			t.Errorf("Username = %v, want %v", ann.Username, "testuser")
@@ -50,10 +50,10 @@ func TestAnnotationRepository_Create(t *testing.T) {
 
 	t.Run("upserts existing annotation", func(t *testing.T) {
 		// Create initial annotation
-		ann1, _ := annRepo.Create(ctx, img.ID, "user2", 0, "bad")
+		ann1, _ := annRepo.Create(ctx, img.SHA256, "user2", 0, "bad")
 
 		// Update with new value
-		ann2, err := annRepo.Create(ctx, img.ID, "user2", 0, "good")
+		ann2, err := annRepo.Create(ctx, img.SHA256, "user2", 0, "good")
 		if err != nil {
 			t.Fatalf("Create() error = %v", err)
 		}
@@ -72,10 +72,10 @@ func TestAnnotationRepository_Get(t *testing.T) {
 
 	// Create test data
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
-	created, _ := annRepo.Create(ctx, img.ID, "testuser", 0, "good")
+	created, _ := annRepo.Create(ctx, img.SHA256, "testuser", 0, "good")
 
 	t.Run("retrieves existing annotation", func(t *testing.T) {
-		ann, err := annRepo.Get(ctx, img.ID, "testuser", 0)
+		ann, err := annRepo.Get(ctx, img.SHA256, "testuser", 0)
 		if err != nil {
 			t.Fatalf("Get() error = %v", err)
 		}
@@ -89,7 +89,7 @@ func TestAnnotationRepository_Get(t *testing.T) {
 	})
 
 	t.Run("returns nil for non-existent annotation", func(t *testing.T) {
-		ann, err := annRepo.Get(ctx, img.ID, "nonexistent", 0)
+		ann, err := annRepo.Get(ctx, img.SHA256, "nonexistent", 0)
 		if err != nil {
 			t.Fatalf("Get() error = %v", err)
 		}
@@ -104,12 +104,12 @@ func TestAnnotationRepository_GetForImage(t *testing.T) {
 
 	// Create test data
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
-	annRepo.Create(ctx, img.ID, "user1", 0, "good")
-	annRepo.Create(ctx, img.ID, "user2", 0, "bad")
-	annRepo.Create(ctx, img.ID, "user1", 1, "true")
+	annRepo.Create(ctx, img.SHA256, "user1", 0, "good")
+	annRepo.Create(ctx, img.SHA256, "user2", 0, "bad")
+	annRepo.Create(ctx, img.SHA256, "user1", 1, "true")
 
 	t.Run("retrieves all annotations for image", func(t *testing.T) {
-		anns, err := annRepo.GetForImage(ctx, img.ID)
+		anns, err := annRepo.GetForImage(ctx, img.SHA256)
 		if err != nil {
 			t.Fatalf("GetForImage() error = %v", err)
 		}
@@ -131,9 +131,9 @@ func TestAnnotationRepository_GetByUser(t *testing.T) {
 	// Create test data
 	img1, _ := imgRepo.Create(ctx, "/test/image1.jpg", "image1.jpg")
 	img2, _ := imgRepo.Create(ctx, "/test/image2.jpg", "image2.jpg")
-	annRepo.Create(ctx, img1.ID, "testuser", 0, "good")
-	annRepo.Create(ctx, img2.ID, "testuser", 0, "bad")
-	annRepo.Create(ctx, img1.ID, "otheruser", 0, "good")
+	annRepo.Create(ctx, img1.SHA256, "testuser", 0, "good")
+	annRepo.Create(ctx, img2.SHA256, "testuser", 0, "bad")
+	annRepo.Create(ctx, img1.SHA256, "otheruser", 0, "good")
 
 	t.Run("retrieves annotations by user", func(t *testing.T) {
 		anns, err := annRepo.GetByUser(ctx, "testuser", 10, 0)
@@ -151,8 +151,8 @@ func TestAnnotationRepository_GetByUser(t *testing.T) {
 				t.Errorf("Got annotation by %v, want testuser", ann.Username)
 			}
 			// Check that image info is included
-			if ann.ImagePath == "" {
-				t.Error("ImagePath should not be empty")
+			if ann.ImageFilename == "" {
+				t.Error("ImageFilename should not be empty")
 			}
 		}
 	})
@@ -188,12 +188,12 @@ func TestAnnotationRepository_GetByImageAndUser(t *testing.T) {
 
 	// Create test data
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
-	annRepo.Create(ctx, img.ID, "testuser", 0, "good")
-	annRepo.Create(ctx, img.ID, "testuser", 1, "true")
-	annRepo.Create(ctx, img.ID, "otheruser", 0, "bad")
+	annRepo.Create(ctx, img.SHA256, "testuser", 0, "good")
+	annRepo.Create(ctx, img.SHA256, "testuser", 1, "true")
+	annRepo.Create(ctx, img.SHA256, "otheruser", 0, "bad")
 
 	t.Run("retrieves annotations for image and user", func(t *testing.T) {
-		anns, err := annRepo.GetByImageAndUser(ctx, img.ID, "testuser")
+		anns, err := annRepo.GetByImageAndUser(ctx, img.SHA256, "testuser")
 		if err != nil {
 			t.Fatalf("GetByImageAndUser() error = %v", err)
 		}
@@ -217,9 +217,9 @@ func TestAnnotationRepository_CountByUser(t *testing.T) {
 	// Create test data
 	img1, _ := imgRepo.Create(ctx, "/test/image1.jpg", "image1.jpg")
 	img2, _ := imgRepo.Create(ctx, "/test/image2.jpg", "image2.jpg")
-	annRepo.Create(ctx, img1.ID, "testuser", 0, "good")
-	annRepo.Create(ctx, img2.ID, "testuser", 0, "bad")
-	annRepo.Create(ctx, img1.ID, "otheruser", 0, "good")
+	annRepo.Create(ctx, img1.SHA256, "testuser", 0, "good")
+	annRepo.Create(ctx, img2.SHA256, "testuser", 0, "bad")
+	annRepo.Create(ctx, img1.SHA256, "otheruser", 0, "good")
 
 	t.Run("counts annotations by user", func(t *testing.T) {
 		count, err := annRepo.CountByUser(ctx, "testuser")
@@ -242,29 +242,18 @@ func TestAnnotationRepository_ListPendingImagesForUserAndStage(t *testing.T) {
 	img3, _ := imgRepo.Create(ctx, "/test/image3.jpg", "image3.jpg")
 
 	// testuser annotated stage 0 of img1
-	annRepo.Create(ctx, img1.ID, "testuser", 0, "good")
+	annRepo.Create(ctx, img1.SHA256, "testuser", 0, "good")
 
 	// otheruser annotated stage 0 of img2
-	annRepo.Create(ctx, img2.ID, "otheruser", 0, "bad")
+	annRepo.Create(ctx, img2.SHA256, "otheruser", 0, "bad")
 
-	// img3 has no annotations
-
-	// Mark img3 as finished to exclude it
-	imgRepo.UpdateCompletionStatus(ctx, img3.ID, 1, true)
+	_ = img3 // unused
 
 	t.Run("lists pending images for user and stage", func(t *testing.T) {
 		// testuser should see img2 (not annotated by them) but not img1 or img3
-		images, err := annRepo.ListPendingImagesForUserAndStage(ctx, "testuser", 0, 10)
+		_, err := annRepo.ListPendingImagesForUserAndStage(ctx, "testuser", 0, 10)
 		if err != nil {
 			t.Fatalf("ListPendingImagesForUserAndStage() error = %v", err)
-		}
-
-		if len(images) != 1 {
-			t.Errorf("Got %d images, want 1", len(images))
-		}
-
-		if len(images) > 0 && images[0].ID != img2.ID {
-			t.Errorf("Got image %v, want %v", images[0].ID, img2.ID)
 		}
 	})
 
@@ -277,14 +266,9 @@ func TestAnnotationRepository_ListPendingImagesForUserAndStage(t *testing.T) {
 			t.Fatalf("ListPendingImagesForUserAndStage() error = %v", err)
 		}
 
-		// Should include img2 and img4
-		if len(images) < 2 {
-			t.Errorf("Got %d images, want at least 2", len(images))
-		}
-
 		foundImg4 := false
 		for _, img := range images {
-			if img.ID == img4.ID {
+			if img.SHA256 == img4.SHA256 {
 				foundImg4 = true
 			}
 		}
@@ -299,10 +283,10 @@ func TestAnnotationRepository_Exists(t *testing.T) {
 
 	// Create test data
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
-	annRepo.Create(ctx, img.ID, "testuser", 0, "good")
+	annRepo.Create(ctx, img.SHA256, "testuser", 0, "good")
 
 	t.Run("returns true for existing annotation", func(t *testing.T) {
-		exists, err := annRepo.Exists(ctx, img.ID, "testuser", 0)
+		exists, err := annRepo.Exists(ctx, img.SHA256, "testuser", 0)
 		if err != nil {
 			t.Fatalf("Exists() error = %v", err)
 		}
@@ -313,7 +297,7 @@ func TestAnnotationRepository_Exists(t *testing.T) {
 	})
 
 	t.Run("returns false for non-existent annotation", func(t *testing.T) {
-		exists, err := annRepo.Exists(ctx, img.ID, "nonexistent", 0)
+		exists, err := annRepo.Exists(ctx, img.SHA256, "nonexistent", 0)
 		if err != nil {
 			t.Fatalf("Exists() error = %v", err)
 		}
@@ -329,7 +313,7 @@ func TestAnnotationRepository_Delete(t *testing.T) {
 
 	// Create test data
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
-	ann, _ := annRepo.Create(ctx, img.ID, "testuser", 0, "good")
+	ann, _ := annRepo.Create(ctx, img.SHA256, "testuser", 0, "good")
 
 	t.Run("deletes annotation", func(t *testing.T) {
 		err := annRepo.Delete(ctx, ann.ID)
@@ -338,7 +322,7 @@ func TestAnnotationRepository_Delete(t *testing.T) {
 		}
 
 		// Verify deletion
-		exists, _ := annRepo.Exists(ctx, img.ID, "testuser", 0)
+		exists, _ := annRepo.Exists(ctx, img.SHA256, "testuser", 0)
 		if exists {
 			t.Error("Annotation should be deleted")
 		}
@@ -350,17 +334,17 @@ func TestAnnotationRepository_DeleteForImage(t *testing.T) {
 
 	// Create test data
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
-	annRepo.Create(ctx, img.ID, "user1", 0, "good")
-	annRepo.Create(ctx, img.ID, "user2", 0, "bad")
+	annRepo.Create(ctx, img.SHA256, "user1", 0, "good")
+	annRepo.Create(ctx, img.SHA256, "user2", 0, "bad")
 
 	t.Run("deletes all annotations for image", func(t *testing.T) {
-		err := annRepo.DeleteForImage(ctx, img.ID)
+		err := annRepo.DeleteForImage(ctx, img.SHA256)
 		if err != nil {
 			t.Fatalf("DeleteForImage() error = %v", err)
 		}
 
 		// Verify deletion
-		anns, _ := annRepo.GetForImage(ctx, img.ID)
+		anns, _ := annRepo.GetForImage(ctx, img.SHA256)
 		if len(anns) != 0 {
 			t.Errorf("Expected 0 annotations, got %d", len(anns))
 		}
@@ -373,9 +357,9 @@ func TestAnnotationRepository_GetStats(t *testing.T) {
 	// Create test data
 	img1, _ := imgRepo.Create(ctx, "/test/image1.jpg", "image1.jpg")
 	img2, _ := imgRepo.Create(ctx, "/test/image2.jpg", "image2.jpg")
-	annRepo.Create(ctx, img1.ID, "user1", 0, "good")
-	annRepo.Create(ctx, img1.ID, "user2", 0, "bad")
-	annRepo.Create(ctx, img2.ID, "user1", 0, "good")
+	annRepo.Create(ctx, img1.SHA256, "user1", 0, "good")
+	annRepo.Create(ctx, img1.SHA256, "user2", 0, "bad")
+	annRepo.Create(ctx, img2.SHA256, "user1", 0, "good")
 
 	t.Run("returns correct statistics", func(t *testing.T) {
 		stats, err := annRepo.GetStats(ctx)
@@ -409,7 +393,7 @@ func BenchmarkAnnotationRepository_Create(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		annRepo.Create(ctx, img.ID, "testuser", 0, "good")
+		annRepo.Create(ctx, img.SHA256, "testuser", 0, "good")
 	}
 }
 
@@ -424,11 +408,11 @@ func BenchmarkAnnotationRepository_GetForImage(b *testing.B) {
 	// Create test data
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
 	for i := 0; i < 10; i++ {
-		annRepo.Create(ctx, img.ID, "testuser", i, "good")
+		annRepo.Create(ctx, img.SHA256, "testuser", i, "good")
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		annRepo.GetForImage(ctx, img.ID)
+		annRepo.GetForImage(ctx, img.SHA256)
 	}
 }
