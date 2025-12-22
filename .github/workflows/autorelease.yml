@@ -78,13 +78,7 @@ jobs:
         fi
 
     - name: Run codegen if exists
-      run: |
-        if mise tasks | awk '{print $1}' | grep -q "^codegen$"; then
-           echo "Task 'codegen' found. Running..."
-           mise run codegen || echo "::warning::Codegen task failed"
-        else
-           echo "Task 'codegen' not found."
-        fi
+      run: ./scripts/ci-codegen.sh
       shell: bash
 
     - name: Create Pull Request if codegen changed something

@@ -5,6 +5,10 @@ go = "1.25.5"
 golangci-lint = "2.7.2"
 node = "24"
 
+[tasks.codegen]
+description = "Alias for gen, used by CI to check for code generation"
+depends = ["gen"]
+
 [tasks.gen]
 description = "Generate all assets"
 depends = ["gen:*"]
