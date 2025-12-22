@@ -1,0 +1,198 @@
+{
+  "(No description provided)": {
+    "hash": "sha1-b052e89fb146db47829f0b27411af3d6a9d70b49",
+    "other": "(Nenhuma descrição fornecida)"
+  },
+  "(No name)": {
+    "hash": "sha1-7adc81689b3a0c225414ec3add38c7faa61c30d5",
+    "other": "(Sem nome)"
+  },
+  "+90deg": {
+    "hash": "sha1-92f218d9b347b20d79a550a79a1d6c21bc04cabf",
+    "other": "+90°"
+  },
+  "-90deg": {
+    "hash": "sha1-6ca6dcd48d8ec0564f9f9a9361bb3887689a75fa",
+    "other": "-90°"
+  },
+  "180deg": {
+    "hash": "sha1-7d9c57d89de2e3789d210cf8f8ea3770168c3e48",
+    "other": "180°"
+  },
+  "All annotations are complete!": {
+    "hash": "sha1-80426cb9fa83ad3b7ce67635189bd7bd6a083d28",
+    "other": "Todas as anotações foram concluídas!"
+  },
+  "All annotations are done!": {
+    "hash": "sha1-16e2151a93051d7612ed262b301de72aeb0ba59a",
+    "other": "Todas as anotações foram concluídas!"
+  },
+  "All images annotated": {
+    "hash": "sha1-02aa2e97d692b2174dc64a28e261f105e54402bb",
+    "other": "Todas as imagens anotadas"
+  },
+  "Annotate": {
+    "hash": "sha1-4f5f32d8fd6737e69e2b6dd86c258cb0d90603ce",
+    "other": "Anotar"
+  },
+  "Annotation Instructions": {
+    "hash": "sha1-bfc1af577ff0c6670614d81840f4a12244077360",
+    "other": "Instruções de Anotação"
+  },
+  "Annotation Phases": {
+    "hash": "sha1-cccfe741c4786292b2d078754a45173cbd7342e5",
+    "other": "Fases de Anotação"
+  },
+  "Back to Overview": {
+    "hash": "sha1-3ac0d20f10024ead4a5769ef2340b475ce998f37",
+    "other": "Voltar à Visão Geral"
+  },
+  "Congratulations!": {
+    "hash": "sha1-36b2528eb5eba749498d236019d2276436d5415a",
+    "other": "Parabéns!"
+  },
+  "Continue Annotations": {
+    "hash": "sha1-21d3cb9a34b7d8b88a6e8fe654971c1d81f0f76e",
+    "other": "Continuar Anotações"
+  },
+  "Copied to clipboard!": {
+    "hash": "sha1-4603083f70d6d8ce2891ed9e6b2d1eca908ab18c",
+    "other": "Copiado para a área de transferência!"
+  },
+  "Dependencies:": {
+    "hash": "sha1-52851f96722cddb464564a1572603b50c69b5540",
+    "other": "Dependências:"
+  },
+  "Description": {
+    "hash": "sha1-55f8ebc805e65b5b71ddafdae390e3be2bcd69af",
+    "other": "Descrição"
+  },
+  "Examples": {
+    "hash": "sha1-eb01bf04c9a0e8a71c45816513df424f1c7ffedb",
+    "other": "Exemplos"
+  },
+  "Go to Home": {
+    "hash": "sha1-c05b3898cf5e9b4a1859cf381dbab466671659fb",
+    "other": "Ir para o Início"
+  },
+  "Help": {
+    "hash": "sha1-c47ae15370cfe1ed2781eedc1dc2547d12d9e972",
+    "other": "Ajuda"
+  },
+  "Home": {
+    "hash": "sha1-70f8bb9a8a5393ef080507a89e4b98d139000d65",
+    "other": "Início"
+  },
+  "Image Annotation Tool": {
+    "hash": "sha1-ec5d722f3780e5ec27b794cdb19503fab41dcfa0",
+    "other": "Ferramenta de Anotação de Imagens"
+  },
+  "Invert X": {
+    "hash": "sha1-9aad9d777f89a8cfaa1459524857cb47bb1f5d4c",
+    "other": "Inverter X"
+  },
+  "Invert Y": {
+    "hash": "sha1-02f176c4ecedffb6c78f1e0da0894452145b084c",
+    "other": "Inverter Y"
+  },
+  "Invert in horizontal axis": {
+    "hash": "sha1-64043e884a8910e127b57dbb2b79f679b09f3743",
+    "other": "Inverter no eixo horizontal"
+  },
+  "Invert in vertical axis": {
+    "hash": "sha1-966690682d25a428fdc8738de671024af1e8cfdf",
+    "other": "Inverter no eixo vertical"
+  },
+  "No": {
+    "hash": "sha1-816c52fd2bdd94a63cd0944823a6c0aa9384c103",
+    "other": "Não"
+  },
+  "Not Sure": {
+    "hash": "sha1-e7ac13efbe9224b9a2579f648a322e5f967561f0",
+    "other": "Não Tenho Certeza"
+  },
+  "Not rotated": {
+    "hash": "sha1-5f42b12105ef8a7a50fb5754455e77634b7e0140",
+    "other": "Não rotacionada"
+  },
+  "OK": {
+    "hash": "sha1-9ce3bd4224c8c1780db56b4125ecf3f24bf748b7",
+    "other": "OK"
+  },
+  "Phase": {
+    "hash": "sha1-f6371a4980dacd0f821ddeb75bac77ae4886ba72",
+    "other": "Fase"
+  },
+  "Possible choices": {
+    "hash": "sha1-c5bbf43657b7b602b1e158b77bca45791f592f5f",
+    "other": "Escolhas possíveis"
+  },
+  "Progress": {
+    "hash": "sha1-1b90271d66cf2d3ac755d49a550fe5f31b9eca5f",
+    "other": "Progresso"
+  },
+  "Project help": {
+    "hash": "sha1-aec5dc767105e008655e5d51f796c22d08e0072b",
+    "other": "Ajuda do projeto"
+  },
+  "Rotate 180 degrees": {
+    "hash": "sha1-aa676a7fd8ce10add26d0eedd71c7fdc1c379a96",
+    "other": "Girar 180 graus"
+  },
+  "Rotate 90 degrees antihorary": {
+    "hash": "sha1-8980ecb027cad4c92bb4de4fc12f986f86b055c2",
+    "other": "Girar 90 graus anti-horário"
+  },
+  "Rotate 90 degrees horary": {
+    "hash": "sha1-bf568691170130fc1fe8eaf69af9c3a1b16179a0",
+    "other": "Girar 90 graus horário"
+  },
+  "Start Annotation": {
+    "hash": "sha1-e828bef6f34946732b5cf7e0558a9e4dd73a2d9d",
+    "other": "Iniciar Anotação"
+  },
+  "Toggle theme": {
+    "hash": "sha1-9b0eaf14d3bb4c83203cf1e1cfe0c6cd124e1c5f",
+    "other": "Alternar tema"
+  },
+  "View Details": {
+    "hash": "sha1-907b3bee27789aea8e5741129a807a24712d027c",
+    "other": "Ver Detalhes"
+  },
+  "Welcome to Rotulador": {
+    "hash": "sha1-c61a254d9b6325dc0a40c9f07fa04067e5aa9150",
+    "other": "Bem-vindo ao Rotulador"
+  },
+  "Yes": {
+    "hash": "sha1-5397e0583f14f6c88de06b1ef28f460a1fb5b0ae",
+    "other": "Sim"
+  },
+  "annotated with wrong class in previous phase": {
+    "hash": "sha1-ce6843a52b7a49f6d410ebe666e566352df8eda7",
+    "other": "anotadas com classe errada na fase anterior"
+  },
+  "annotation": {
+    "hash": "sha1-2e76f544229901c5a942849ee61ac86bda6e5609",
+    "other": "anotação"
+  },
+  "completed": {
+    "hash": "sha1-231e564db4cdb44a6545583a8d460edc7f9f97ca",
+    "other": "concluídas"
+  },
+  "eligible": {
+    "hash": "sha1-5ec9cb327b277b216a1c360b3051e67a01722ab5",
+    "other": "elegíveis"
+  },
+  "not yet annotated in previous phase": {
+    "hash": "sha1-749f6202533daaf1c9b76738ae6d44e5282d4f3a",
+    "other": "ainda não anotadas na fase anterior"
+  },
+  "pending": {
+    "hash": "sha1-e22586930a5b2f196cd9070b9a4af5c47c1380fa",
+    "other": "pendentes"
+  },
+  "total": {
+    "hash": "sha1-5a537e209151ae5fcccd6326b34b5622bcfb0578",
+    "other": "total"
+  }
+}
