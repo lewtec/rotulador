@@ -77,6 +77,38 @@ jobs:
           exit 1
         fi
 
+    - name: Run codegen if exists
+      run: |
+        if mise tasks | awk '{print $1}' | grep -q "^codegen$"; then
+           echo "Task 'codegen' found. Running..."
+           mise run codegen || echo "::warning::Codegen task failed"
+        else
+           echo "Task 'codegen' not found."
+        fi
+      shell: bash
+
+    - name: Create Pull Request if codegen changed something
+      uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8
+      if: github.event_name != 'pull_request'
+      id: pr_codegen
+      with:
+        commit-message: "chore: codegen updates"
+        branch: miseci-codegen
+        delete-branch: true
+        title: "Codegen: files updated"
+        body: |
+          Files updated by running `mise run codegen`.
+
+    - name: Stop if a codegen pull request was created
+      if: github.event_name != 'pull_request'
+      env:
+        PR_NUMBER: ${{ steps.pr_codegen.outputs.pull-request-number }}
+      run: |
+        if [[ ! -z "$PR_NUMBER" ]]; then
+          echo "Codegen updated files and a PR was created. Stopping." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+
     - name: CI and tests
       run: mise ci
 
