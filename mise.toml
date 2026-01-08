@@ -2,7 +2,7 @@
 "github:sqlc-dev/sqlc" = "1.30.0"
 go = "1.25.5"
 "go:github.com/nicksnyder/go-i18n/v2/goi18n" = "2.6.1"
-golangci-lint = "2.7.2"
+golangci-lint = "2.8.0"
 node = "24"
 
 [tasks.gen]
