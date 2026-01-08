@@ -144,7 +144,22 @@ With a set of trivial choices scale the classification of a set of images to man
 		log.Printf("Server is ready and listening on: %s", addr)
 		log.Printf("Images are being loaded in the background...")
 
-		return http.ListenAndServe(addr, app.GetHTTPHandler())
+		server := &http.Server{
+			Addr:    addr,
+			Handler: app.GetHTTPHandler(),
+		}
+
+		go func() {
+			<-cmd.Context().Done()
+			if err := server.Shutdown(context.Background()); err != nil {
+				log.Printf("Server shutdown error: %v", err)
+			}
+		}()
+
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			return err
+		}
+		return nil
 	},
 }
 
