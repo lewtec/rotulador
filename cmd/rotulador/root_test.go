@@ -128,7 +128,8 @@ tasks:
 
 		// The error might be a bind error if another test is running, which is fine.
 		// The main thing is to check that it *tried* to start.
-		if !strings.Contains(errOut, "Starting server on: :8082") && !strings.Contains(errOut, "bind: address already in use") {
+		// Note: The log message is "Server is ready and listening on: :8082", not "Starting server on: :8082"
+		if !strings.Contains(errOut, "Server is ready and listening on: :8082") && !strings.Contains(errOut, "bind: address already in use") {
 			t.Errorf("expected log to show server starting, but it didn't. Got: %s", errOut)
 		}
 
