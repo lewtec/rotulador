@@ -10,6 +10,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // executeCommand is a helper to run a cobra command and capture its output
@@ -40,29 +43,15 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 		imagesPath := filepath.Join(tempDir, "images")
 
 		_, errOut, err := executeCommand(tempDir)
-		if err != nil {
-			t.Fatalf("command execution failed: %v, output: %s", err, errOut)
-		}
+		require.NoError(t, err, "command execution failed")
 
-		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			t.Errorf("expected config file to be created at %s, but it wasn't", configPath)
-		}
-		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-			t.Errorf("expected database file to be created at %s, but it wasn't", dbPath)
-		}
-		if stat, err := os.Stat(imagesPath); os.IsNotExist(err) || !stat.IsDir() {
-			t.Errorf("expected images directory to be created at %s, but it wasn't", imagesPath)
-		}
+		assert.FileExists(t, configPath, "expected config file to be created")
+		assert.FileExists(t, dbPath, "expected database file to be created")
+		assert.DirExists(t, imagesPath, "expected images directory to be created")
 
-		if !strings.Contains(errOut, "Creating default config") {
-			t.Errorf("expected log output to contain 'Creating default config', but got: %s", errOut)
-		}
-		if !strings.Contains(errOut, "Creating empty database") {
-			t.Errorf("expected log output to contain 'Creating empty database', but got: %s", errOut)
-		}
-		if !strings.Contains(errOut, "Creating images directory") {
-			t.Errorf("expected log output to contain 'Creating images directory', but got: %s", errOut)
-		}
+		assert.Contains(t, errOut, "Creating default config", "expected log output to contain 'Creating default config'")
+		assert.Contains(t, errOut, "Creating empty database", "expected log output to contain 'Creating empty database'")
+		assert.Contains(t, errOut, "Creating images directory", "expected log output to contain 'Creating images directory'")
 	})
 
 	t.Run("when argument is a directory and config exists, logs message and exits", func(t *testing.T) {
@@ -71,23 +60,17 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 		dbPath := filepath.Join(tempDir, "annotations.db")
 		imagesPath := filepath.Join(tempDir, "images")
 
-		os.WriteFile(configPath, []byte(""), 0644) // Create dummy config
+		err := os.WriteFile(configPath, []byte(""), 0644) // Create dummy config
+		require.NoError(t, err)
 
 		_, errOut, err := executeCommand(tempDir)
-		if err != nil {
-			t.Fatalf("command execution failed: %v, output: %s", err, errOut)
-		}
+		require.NoError(t, err, "command execution failed")
 
-		if !strings.Contains(errOut, "Config file already exists") {
-			t.Errorf("expected log output to contain 'Config file already exists', but got: %s", errOut)
-		}
+		assert.Contains(t, errOut, "Config file already exists", "expected log output to contain 'Config file already exists'")
+
 		// Check that db and images dir are still created if they don't exist
-		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-			t.Errorf("expected database file to be created at %s, but it wasn't", dbPath)
-		}
-		if stat, err := os.Stat(imagesPath); os.IsNotExist(err) || !stat.IsDir() {
-			t.Errorf("expected images directory to be created at %s, but it wasn't", imagesPath)
-		}
+		assert.FileExists(t, dbPath, "expected database file to be created")
+		assert.DirExists(t, imagesPath, "expected images directory to be created")
 	})
 
 	t.Run("when argument is a file, assumes it's a config and tries to run", func(t *testing.T) {
@@ -110,8 +93,10 @@ tasks:
       good: { name: "Good" }
       bad: { name: "Bad" }
 `
-		os.WriteFile(configPath, []byte(validConfig), 0644)
-		os.Mkdir(imagesPath, 0755)
+		err := os.WriteFile(configPath, []byte(validConfig), 0644)
+		require.NoError(t, err)
+		err = os.Mkdir(imagesPath, 0755)
+		require.NoError(t, err)
 
 		// Note: --database and --images flags are omitted to test the new default logic
 		_, errOut, err := executeCommand(configPath, "--addr", ":8082")
@@ -122,38 +107,28 @@ tasks:
 			t.Log("command did not return an error, which is unexpected but could be ok if it timed out")
 		}
 
-		if strings.Contains(errOut, "images flag is required") {
-			t.Errorf("should not have prompted for images flag, got: %s", errOut)
-		}
+		assert.NotContains(t, errOut, "images flag is required", "should not have prompted for images flag")
 
 		// The error might be a bind error if another test is running, which is fine.
 		// The main thing is to check that it *tried* to start.
-		if !strings.Contains(errOut, "Starting server on: :8082") && !strings.Contains(errOut, "bind: address already in use") {
-			t.Errorf("expected log to show server starting, but it didn't. Got: %s", errOut)
-		}
+		isStarting := strings.Contains(errOut, "Server is ready and listening on: :8082")
+		isBindError := strings.Contains(errOut, "bind: address already in use")
+		assert.True(t, isStarting || isBindError, "expected log to show server starting or bind error, but got: %s", errOut)
 
 		expectedDbLog := fmt.Sprintf("Database: %s", dbPath)
-		if !strings.Contains(errOut, expectedDbLog) {
-			t.Errorf("expected log to show default database path '%s', but it didn't. Got: %s", expectedDbLog, errOut)
-		}
+		assert.Contains(t, errOut, expectedDbLog, "expected log to show default database path")
 
 		expectedImagesLog := fmt.Sprintf("Images: %s", imagesPath)
-		if !strings.Contains(errOut, expectedImagesLog) {
-			t.Errorf("expected log to show default images path '%s', but it didn't. Got: %s", expectedImagesLog, errOut)
-		}
+		assert.Contains(t, errOut, expectedImagesLog, "expected log to show default images path")
 	})
 
 	t.Run("when argument is an invalid path, returns an error", func(t *testing.T) {
 		invalidPath := "/path/to/some/nonexistent/dir"
 		_, _, err := executeCommand(invalidPath) // No flags needed, it will fail on config load
 
-		if err == nil {
-			t.Fatal("expected an error for invalid path, but got none")
-		}
+		require.Error(t, err, "expected an error for invalid path")
 
 		// The error should be about the config file, since it assumes the arg is a config file
-		if !strings.Contains(err.Error(), "failed to load config") {
-			t.Errorf("expected error to be about loading config, but got: %v", err)
-		}
+		assert.Contains(t, err.Error(), "failed to load config", "expected error to be about loading config")
 	})
 }

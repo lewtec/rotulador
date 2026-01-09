@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/lewtec/rotulador/annotation"
 	"github.com/spf13/cobra"
@@ -144,7 +145,29 @@ With a set of trivial choices scale the classification of a set of images to man
 		log.Printf("Server is ready and listening on: %s", addr)
 		log.Printf("Images are being loaded in the background...")
 
-		return http.ListenAndServe(addr, app.GetHTTPHandler())
+		server := &http.Server{
+			Addr:    addr,
+			Handler: app.GetHTTPHandler(),
+		}
+
+		// Handle graceful shutdown
+		go func() {
+			<-cmd.Context().Done()
+			if cmd.Context().Err() != nil { // Context was cancelled/timed out
+				log.Println("Shutting down server...")
+				// Use a new context for shutdown to allow some time for requests to complete
+				shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				if err := server.Shutdown(shutdownCtx); err != nil {
+					log.Printf("Server shutdown error: %v", err)
+				}
+			}
+		}()
+
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			return err
+		}
+		return nil
 	},
 }
 
