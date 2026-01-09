@@ -3,6 +3,9 @@ package repository
 import (
 	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupTestRepositories(t *testing.T) (*ImageRepository, *AnnotationRepository, context.Context) {
@@ -18,34 +21,18 @@ func TestAnnotationRepository_Create(t *testing.T) {
 
 	// Create test image
 	img, err := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
-	if err != nil {
-		t.Fatalf("Failed to create test image: %v", err)
-	}
+	require.NoError(t, err, "Failed to create test image")
 
 	t.Run("creates annotation successfully", func(t *testing.T) {
 		ann, err := annRepo.Create(ctx, img.SHA256, "testuser", 0, "good")
-		if err != nil {
-			t.Fatalf("Create() error = %v", err)
-		}
+		require.NoError(t, err, "Create() error")
 
-		if ann.ID == 0 {
-			t.Error("Expected non-zero ID")
-		}
-		if ann.ImageSHA256 != img.SHA256 {
-			t.Errorf("ImageSHA256 = %v, want %v", ann.ImageSHA256, img.SHA256)
-		}
-		if ann.Username != "testuser" {
-			t.Errorf("Username = %v, want %v", ann.Username, "testuser")
-		}
-		if ann.StageIndex != 0 {
-			t.Errorf("StageIndex = %v, want 0", ann.StageIndex)
-		}
-		if ann.OptionValue != "good" {
-			t.Errorf("OptionValue = %v, want %v", ann.OptionValue, "good")
-		}
-		if ann.AnnotatedAt.IsZero() {
-			t.Error("AnnotatedAt should not be zero")
-		}
+		assert.NotZero(t, ann.ID, "Expected non-zero ID")
+		assert.Equal(t, img.SHA256, ann.ImageSHA256, "ImageSHA256")
+		assert.Equal(t, "testuser", ann.Username, "Username")
+		assert.Equal(t, 0, ann.StageIndex, "StageIndex")
+		assert.Equal(t, "good", ann.OptionValue, "OptionValue")
+		assert.False(t, ann.AnnotatedAt.IsZero(), "AnnotatedAt should not be zero")
 	})
 
 	t.Run("upserts existing annotation", func(t *testing.T) {
@@ -54,16 +41,10 @@ func TestAnnotationRepository_Create(t *testing.T) {
 
 		// Update with new value
 		ann2, err := annRepo.Create(ctx, img.SHA256, "user2", 0, "good")
-		if err != nil {
-			t.Fatalf("Create() error = %v", err)
-		}
+		require.NoError(t, err, "Create() error")
 
-		if ann2.ID != ann1.ID {
-			t.Error("Upsert should keep same ID")
-		}
-		if ann2.OptionValue != "good" {
-			t.Errorf("OptionValue = %v, want good", ann2.OptionValue)
-		}
+		assert.Equal(t, ann1.ID, ann2.ID, "Upsert should keep same ID")
+		assert.Equal(t, "good", ann2.OptionValue, "OptionValue")
 	})
 }
 
@@ -76,26 +57,16 @@ func TestAnnotationRepository_Get(t *testing.T) {
 
 	t.Run("retrieves existing annotation", func(t *testing.T) {
 		ann, err := annRepo.Get(ctx, img.SHA256, "testuser", 0)
-		if err != nil {
-			t.Fatalf("Get() error = %v", err)
-		}
+		require.NoError(t, err, "Get() error")
 
-		if ann == nil {
-			t.Fatal("Expected annotation, got nil")
-		}
-		if ann.ID != created.ID {
-			t.Errorf("ID = %v, want %v", ann.ID, created.ID)
-		}
+		require.NotNil(t, ann, "Expected annotation, got nil")
+		assert.Equal(t, created.ID, ann.ID, "ID")
 	})
 
 	t.Run("returns nil for non-existent annotation", func(t *testing.T) {
 		ann, err := annRepo.Get(ctx, img.SHA256, "nonexistent", 0)
-		if err != nil {
-			t.Fatalf("Get() error = %v", err)
-		}
-		if ann != nil {
-			t.Error("Expected nil for non-existent annotation")
-		}
+		require.NoError(t, err, "Get() error")
+		assert.Nil(t, ann, "Expected nil for non-existent annotation")
 	})
 }
 
@@ -110,18 +81,12 @@ func TestAnnotationRepository_GetForImage(t *testing.T) {
 
 	t.Run("retrieves all annotations for image", func(t *testing.T) {
 		anns, err := annRepo.GetForImage(ctx, img.SHA256)
-		if err != nil {
-			t.Fatalf("GetForImage() error = %v", err)
-		}
+		require.NoError(t, err, "GetForImage() error")
 
-		if len(anns) != 3 {
-			t.Errorf("Got %d annotations, want 3", len(anns))
-		}
+		require.Len(t, anns, 3, "Got %d annotations, want 3", len(anns))
 
 		// Check ordering by stage_index
-		if anns[0].StageIndex > anns[len(anns)-1].StageIndex {
-			t.Error("Annotations should be ordered by stage_index")
-		}
+		assert.LessOrEqual(t, anns[0].StageIndex, anns[len(anns)-1].StageIndex, "Annotations should be ordered by stage_index")
 	})
 }
 
@@ -137,49 +102,29 @@ func TestAnnotationRepository_GetByUser(t *testing.T) {
 
 	t.Run("retrieves annotations by user", func(t *testing.T) {
 		anns, err := annRepo.GetByUser(ctx, "testuser", 10, 0)
-		if err != nil {
-			t.Fatalf("GetByUser() error = %v", err)
-		}
+		require.NoError(t, err, "GetByUser() error")
 
-		if len(anns) != 2 {
-			t.Errorf("Got %d annotations, want 2", len(anns))
-		}
+		require.Len(t, anns, 2, "Got %d annotations, want 2", len(anns))
 
 		// Check that all annotations are by testuser
 		for _, ann := range anns {
-			if ann.Username != "testuser" {
-				t.Errorf("Got annotation by %v, want testuser", ann.Username)
-			}
+			assert.Equal(t, "testuser", ann.Username, "Got annotation by %v, want testuser", ann.Username)
 			// Check that image info is included
-			if ann.ImageFilename == "" {
-				t.Error("ImageFilename should not be empty")
-			}
+			assert.NotEmpty(t, ann.ImageFilename, "ImageFilename should not be empty")
 		}
 	})
 
 	t.Run("respects limit and offset", func(t *testing.T) {
 		anns, err := annRepo.GetByUser(ctx, "testuser", 1, 0)
-		if err != nil {
-			t.Fatalf("GetByUser() error = %v", err)
-		}
-
-		if len(anns) != 1 {
-			t.Errorf("Got %d annotations, want 1", len(anns))
-		}
+		require.NoError(t, err, "GetByUser() error")
+		require.Len(t, anns, 1, "Got %d annotations, want 1", len(anns))
 
 		anns2, err := annRepo.GetByUser(ctx, "testuser", 1, 1)
-		if err != nil {
-			t.Fatalf("GetByUser() error = %v", err)
-		}
-
-		if len(anns2) != 1 {
-			t.Errorf("Got %d annotations, want 1", len(anns2))
-		}
+		require.NoError(t, err, "GetByUser() error")
+		require.Len(t, anns2, 1, "Got %d annotations, want 1", len(anns2))
 
 		// Should be different annotations
-		if anns[0].ID == anns2[0].ID {
-			t.Error("Offset should return different annotations")
-		}
+		assert.NotEqual(t, anns[0].ID, anns2[0].ID, "Offset should return different annotations")
 	})
 }
 
@@ -194,19 +139,13 @@ func TestAnnotationRepository_GetByImageAndUser(t *testing.T) {
 
 	t.Run("retrieves annotations for image and user", func(t *testing.T) {
 		anns, err := annRepo.GetByImageAndUser(ctx, img.SHA256, "testuser")
-		if err != nil {
-			t.Fatalf("GetByImageAndUser() error = %v", err)
-		}
+		require.NoError(t, err, "GetByImageAndUser() error")
 
-		if len(anns) != 2 {
-			t.Errorf("Got %d annotations, want 2", len(anns))
-		}
+		require.Len(t, anns, 2, "Got %d annotations, want 2", len(anns))
 
 		// All should be by testuser
 		for _, ann := range anns {
-			if ann.Username != "testuser" {
-				t.Errorf("Got annotation by %v, want testuser", ann.Username)
-			}
+			assert.Equal(t, "testuser", ann.Username, "Got annotation by %v, want testuser", ann.Username)
 		}
 	})
 }
@@ -223,13 +162,8 @@ func TestAnnotationRepository_CountByUser(t *testing.T) {
 
 	t.Run("counts annotations by user", func(t *testing.T) {
 		count, err := annRepo.CountByUser(ctx, "testuser")
-		if err != nil {
-			t.Fatalf("CountByUser() error = %v", err)
-		}
-
-		if count != 2 {
-			t.Errorf("Count = %v, want 2", count)
-		}
+		require.NoError(t, err, "CountByUser() error")
+		assert.Equal(t, int64(2), count, "Count = %v, want 2", count)
 	})
 }
 
@@ -252,9 +186,7 @@ func TestAnnotationRepository_ListPendingImagesForUserAndStage(t *testing.T) {
 	t.Run("lists pending images for user and stage", func(t *testing.T) {
 		// testuser should see img2 (not annotated by them) but not img1 or img3
 		_, err := annRepo.ListPendingImagesForUserAndStage(ctx, "testuser", 0, 10)
-		if err != nil {
-			t.Fatalf("ListPendingImagesForUserAndStage() error = %v", err)
-		}
+		require.NoError(t, err, "ListPendingImagesForUserAndStage() error")
 	})
 
 	t.Run("includes images with no annotations", func(t *testing.T) {
@@ -262,9 +194,7 @@ func TestAnnotationRepository_ListPendingImagesForUserAndStage(t *testing.T) {
 		img4, _ := imgRepo.Create(ctx, "/test/image4.jpg", "image4.jpg")
 
 		images, err := annRepo.ListPendingImagesForUserAndStage(ctx, "testuser", 0, 10)
-		if err != nil {
-			t.Fatalf("ListPendingImagesForUserAndStage() error = %v", err)
-		}
+		require.NoError(t, err, "ListPendingImagesForUserAndStage() error")
 
 		foundImg4 := false
 		for _, img := range images {
@@ -272,9 +202,7 @@ func TestAnnotationRepository_ListPendingImagesForUserAndStage(t *testing.T) {
 				foundImg4 = true
 			}
 		}
-		if !foundImg4 {
-			t.Error("Should include image with no annotations")
-		}
+		assert.True(t, foundImg4, "Should include image with no annotations")
 	})
 }
 
@@ -287,24 +215,14 @@ func TestAnnotationRepository_Exists(t *testing.T) {
 
 	t.Run("returns true for existing annotation", func(t *testing.T) {
 		exists, err := annRepo.Exists(ctx, img.SHA256, "testuser", 0)
-		if err != nil {
-			t.Fatalf("Exists() error = %v", err)
-		}
-
-		if !exists {
-			t.Error("Exists should return true")
-		}
+		require.NoError(t, err, "Exists() error")
+		assert.True(t, exists, "Exists should return true")
 	})
 
 	t.Run("returns false for non-existent annotation", func(t *testing.T) {
 		exists, err := annRepo.Exists(ctx, img.SHA256, "nonexistent", 0)
-		if err != nil {
-			t.Fatalf("Exists() error = %v", err)
-		}
-
-		if exists {
-			t.Error("Exists should return false")
-		}
+		require.NoError(t, err, "Exists() error")
+		assert.False(t, exists, "Exists should return false")
 	})
 }
 
@@ -317,15 +235,11 @@ func TestAnnotationRepository_Delete(t *testing.T) {
 
 	t.Run("deletes annotation", func(t *testing.T) {
 		err := annRepo.Delete(ctx, ann.ID)
-		if err != nil {
-			t.Fatalf("Delete() error = %v", err)
-		}
+		require.NoError(t, err, "Delete() error")
 
 		// Verify deletion
 		exists, _ := annRepo.Exists(ctx, img.SHA256, "testuser", 0)
-		if exists {
-			t.Error("Annotation should be deleted")
-		}
+		assert.False(t, exists, "Annotation should be deleted")
 	})
 }
 
@@ -339,15 +253,11 @@ func TestAnnotationRepository_DeleteForImage(t *testing.T) {
 
 	t.Run("deletes all annotations for image", func(t *testing.T) {
 		err := annRepo.DeleteForImage(ctx, img.SHA256)
-		if err != nil {
-			t.Fatalf("DeleteForImage() error = %v", err)
-		}
+		require.NoError(t, err, "DeleteForImage() error")
 
 		// Verify deletion
 		anns, _ := annRepo.GetForImage(ctx, img.SHA256)
-		if len(anns) != 0 {
-			t.Errorf("Expected 0 annotations, got %d", len(anns))
-		}
+		assert.Empty(t, anns, "Expected 0 annotations")
 	})
 }
 
@@ -363,19 +273,11 @@ func TestAnnotationRepository_GetStats(t *testing.T) {
 
 	t.Run("returns correct statistics", func(t *testing.T) {
 		stats, err := annRepo.GetStats(ctx)
-		if err != nil {
-			t.Fatalf("GetStats() error = %v", err)
-		}
+		require.NoError(t, err, "GetStats() error")
 
-		if stats.AnnotatedImages != 2 {
-			t.Errorf("AnnotatedImages = %v, want 2", stats.AnnotatedImages)
-		}
-		if stats.TotalAnnotations != 3 {
-			t.Errorf("TotalAnnotations = %v, want 3", stats.TotalAnnotations)
-		}
-		if stats.TotalUsers != 2 {
-			t.Errorf("TotalUsers = %v, want 2", stats.TotalUsers)
-		}
+		assert.Equal(t, int64(2), stats.AnnotatedImages, "AnnotatedImages")
+		assert.Equal(t, int64(3), stats.TotalAnnotations, "TotalAnnotations")
+		assert.Equal(t, int64(2), stats.TotalUsers, "TotalUsers")
 	})
 }
 

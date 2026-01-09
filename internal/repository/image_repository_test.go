@@ -3,6 +3,9 @@ package repository
 import (
 	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestImageRepository_Create(t *testing.T) {
@@ -14,19 +17,11 @@ func TestImageRepository_Create(t *testing.T) {
 
 	t.Run("creates image successfully", func(t *testing.T) {
 		img, err := repo.Create(ctx, "abcdef1234567890", "image.jpg")
-		if err != nil {
-			t.Fatalf("Create() error = %v", err)
-		}
+		require.NoError(t, err, "Create() error")
 
-		if img.SHA256 != "abcdef1234567890" {
-			t.Errorf("SHA256 = %v, want %v", img.SHA256, "abcdef1234567890")
-		}
-		if img.Filename != "image.jpg" {
-			t.Errorf("Filename = %v, want %v", img.Filename, "image.jpg")
-		}
-		if img.IngestedAt.IsZero() {
-			t.Error("IngestedAt should not be zero")
-		}
+		assert.Equal(t, "abcdef1234567890", img.SHA256, "SHA256")
+		assert.Equal(t, "image.jpg", img.Filename, "Filename")
+		assert.False(t, img.IngestedAt.IsZero(), "IngestedAt should not be zero")
 	})
 }
 
@@ -39,35 +34,21 @@ func TestImageRepository_GetBySHA256(t *testing.T) {
 
 	// Create test image
 	created, err := repo.Create(ctx, "abcdef1234567890", "test.jpg")
-	if err != nil {
-		t.Fatalf("Failed to create test image: %v", err)
-	}
+	require.NoError(t, err, "Failed to create test image")
 
 	t.Run("retrieves existing image", func(t *testing.T) {
 		img, err := repo.GetBySHA256(ctx, created.SHA256)
-		if err != nil {
-			t.Fatalf("GetBySHA256() error = %v", err)
-		}
+		require.NoError(t, err, "GetBySHA256() error")
 
-		if img == nil {
-			t.Fatal("Expected image, got nil")
-		}
-		if img.SHA256 != created.SHA256 {
-			t.Errorf("SHA256 = %v, want %v", img.SHA256, created.SHA256)
-		}
-		if img.Filename != created.Filename {
-			t.Errorf("Filename = %v, want %v", img.Filename, created.Filename)
-		}
+		require.NotNil(t, img, "Expected image, got nil")
+		assert.Equal(t, created.SHA256, img.SHA256, "SHA256")
+		assert.Equal(t, created.Filename, img.Filename, "Filename")
 	})
 
 	t.Run("returns nil for non-existent image", func(t *testing.T) {
 		img, err := repo.GetBySHA256(ctx, "nonexistent")
-		if err != nil {
-			t.Fatalf("GetBySHA256() error = %v", err)
-		}
-		if img != nil {
-			t.Error("Expected nil for non-existent image")
-		}
+		require.NoError(t, err, "GetBySHA256() error")
+		assert.Nil(t, img, "Expected nil for non-existent image")
 	})
 }
 
@@ -80,32 +61,20 @@ func TestImageRepository_GetByFilename(t *testing.T) {
 
 	// Create test image
 	created, err := repo.Create(ctx, "abcdef1234567890", "test.jpg")
-	if err != nil {
-		t.Fatalf("Failed to create test image: %v", err)
-	}
+	require.NoError(t, err, "Failed to create test image")
 
 	t.Run("retrieves existing image by filename", func(t *testing.T) {
 		img, err := repo.GetByFilename(ctx, "test.jpg")
-		if err != nil {
-			t.Fatalf("GetByFilename() error = %v", err)
-		}
+		require.NoError(t, err, "GetByFilename() error")
 
-		if img == nil {
-			t.Fatal("Expected image, got nil")
-		}
-		if img.SHA256 != created.SHA256 {
-			t.Errorf("SHA256 = %v, want %v", img.SHA256, created.SHA256)
-		}
+		require.NotNil(t, img, "Expected image, got nil")
+		assert.Equal(t, created.SHA256, img.SHA256, "SHA256")
 	})
 
 	t.Run("returns nil for non-existent filename", func(t *testing.T) {
 		img, err := repo.GetByFilename(ctx, "nonexistent.jpg")
-		if err != nil {
-			t.Fatalf("GetByFilename() error = %v", err)
-		}
-		if img != nil {
-			t.Error("Expected nil for non-existent filename")
-		}
+		require.NoError(t, err, "GetByFilename() error")
+		assert.Nil(t, img, "Expected nil for non-existent filename")
 	})
 }
 
@@ -118,23 +87,14 @@ func TestImageRepository_List(t *testing.T) {
 
 	// Create test images
 	_, err := repo.Create(ctx, "hash1", "image1.jpg")
-	if err != nil {
-		t.Fatalf("Failed to create image1: %v", err)
-	}
+	require.NoError(t, err, "Failed to create image1")
 	_, err = repo.Create(ctx, "hash2", "image2.jpg")
-	if err != nil {
-		t.Fatalf("Failed to create image2: %v", err)
-	}
+	require.NoError(t, err, "Failed to create image2")
 
 	t.Run("lists all images", func(t *testing.T) {
 		images, err := repo.List(ctx)
-		if err != nil {
-			t.Fatalf("List() error = %v", err)
-		}
-
-		if len(images) != 2 {
-			t.Errorf("Got %d images, want 2", len(images))
-		}
+		require.NoError(t, err, "List() error")
+		assert.Len(t, images, 2, "Got %d images, want 2", len(images))
 	})
 }
 
@@ -152,13 +112,8 @@ func TestImageRepository_Count(t *testing.T) {
 		repo.Create(ctx, "hash3", "image3.jpg")
 
 		count, err := repo.Count(ctx)
-		if err != nil {
-			t.Fatalf("Count() error = %v", err)
-		}
-
-		if count != 3 {
-			t.Errorf("Count = %v, want 3", count)
-		}
+		require.NoError(t, err, "Count() error")
+		assert.Equal(t, int64(3), count, "Count = %v, want 3", count)
 	})
 }
 
@@ -174,18 +129,12 @@ func TestImageRepository_Delete(t *testing.T) {
 
 	t.Run("deletes image", func(t *testing.T) {
 		err := repo.Delete(ctx, img.SHA256)
-		if err != nil {
-			t.Fatalf("Delete() error = %v", err)
-		}
+		require.NoError(t, err, "Delete() error")
 
 		// Verify deletion
 		deleted, err := repo.GetBySHA256(ctx, img.SHA256)
-		if err != nil {
-			t.Fatalf("GetBySHA256() error = %v", err)
-		}
-		if deleted != nil {
-			t.Error("Image should be deleted")
-		}
+		require.NoError(t, err, "GetBySHA256() error")
+		assert.Nil(t, deleted, "Image should be deleted")
 	})
 }
 
