@@ -7,7 +7,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	// "github.com/davecgh/go-spew/spew"
@@ -16,11 +15,6 @@ import (
 )
 
 func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...interface{}) error {
-	logger, ok := ctx.Value(loggerKey).(*slog.Logger)
-	if !ok {
-		return fmt.Errorf("logger not found in context")
-	}
-
 	stmt, err := db.PrepareContext(ctx, query)
 	if err != nil {
 		return err
@@ -34,7 +28,7 @@ func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...interface
 		return err
 	}
 	if len(columns) > 1 {
-		logger.Info(strings.Join(columns, "\t"))
+		fmt.Println(strings.Join(columns, "\t"))
 	}
 	pointers := make([]interface{}, len(columns))
 	container := make([]string, len(columns))
@@ -43,7 +37,7 @@ func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...interface
 	}
 	for result.Next() {
 		result.Scan(pointers...)
-		logger.Info(strings.Join(container, "\t"))
+		fmt.Println(strings.Join(container, "\t"))
 	}
 	return nil
 }

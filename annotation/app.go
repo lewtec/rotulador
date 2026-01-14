@@ -920,8 +920,9 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 	a.Logger.Debug("images dir", "dir", a.ImagesDir)
 
 	var handler http.Handler = mux
+	loggerMiddleware := NewHTTPLogger(a.Logger)
 	handler = i18nMiddleware(handler)
-	handler = HTTPLogger(handler, a.Logger)
+	handler = loggerMiddleware.Middleware(handler)
 	handler = a.authenticationMiddleware(handler)
 	handler = requestCacheMiddleware(handler)
 	return handler
