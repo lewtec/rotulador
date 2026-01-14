@@ -104,7 +104,7 @@ func (r *AnnotationRepository) GetByUser(ctx context.Context, username string, l
 			ImageFilename: row.Filename,
 		}
 		if row.AnnotatedAt != nil {
-			ann.Annotation.AnnotatedAt = *row.AnnotatedAt
+			ann.AnnotatedAt = *row.AnnotatedAt
 		}
 		result[i] = &ann
 	}

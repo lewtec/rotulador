@@ -49,7 +49,11 @@ Example:
 		if err != nil {
 			return fmt.Errorf("failed to create database: %w", err)
 		}
-		defer db.Close()
+		defer func() {
+			if err := db.Close(); err != nil {
+				fmt.Printf("error closing database: %v\n", err)
+			}
+		}()
 
 		// Initialize database if images directory is provided
 		if imagesDir != "" {

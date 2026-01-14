@@ -36,7 +36,9 @@ func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...interface
 		pointers[i] = &container[i]
 	}
 	for result.Next() {
-		result.Scan(pointers...)
+		if err := result.Scan(pointers...); err != nil {
+			return err
+		}
 		fmt.Println(strings.Join(container, "\t"))
 	}
 	return nil
@@ -72,7 +74,11 @@ Examples:
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() {
+			if err := db.Close(); err != nil {
+				fmt.Printf("error closing database: %v", err)
+			}
+		}()
 
 		tx, err := db.BeginTx(cmd.Context(), &sql.TxOptions{
 			Isolation: sql.LevelReadUncommitted,
@@ -80,7 +86,11 @@ Examples:
 		if err != nil {
 			return err
 		}
-		defer tx.Rollback()
+		defer func() {
+			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+				fmt.Printf("error rolling back transaction: %v", err)
+			}
+		}()
 
 		queryArgs := []interface{}{}
 		query := ""

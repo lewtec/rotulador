@@ -15,10 +15,14 @@ import (
 
 func DecodeImage(filepath string) (image.Image, error) {
 	f, err := os.Open(filepath)
-	defer f.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Printf("error closing image file: %v", err)
+		}
+	}()
 	m, _, err := image.Decode(f)
 	if err != nil {
 		return nil, err
@@ -44,7 +48,9 @@ func IngestImage(img image.Image, outputDir string) error {
 	}
 	err = os.Rename(tempFile, path.Join(outputDir, fmt.Sprintf("%x.png", hasher.Sum(nil))))
 	if err != nil {
-		os.Remove(tempFile)
+		if err := os.Remove(tempFile); err != nil {
+			fmt.Printf("error removing temporary image file: %v", err)
+		}
 		return err
 	}
 	return err

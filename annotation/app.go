@@ -30,7 +30,6 @@ type AnnotatorApp struct {
 	Database       *sql.DB
 	Config         *Config
 	OffsetAdvance  int
-	i18n           map[string]string
 	imageRepo      *repository.ImageRepository
 	annotationRepo *repository.AnnotationRepository
 }
@@ -45,14 +44,6 @@ func (a *AnnotatorApp) init() {
 	// Initialize repositories
 	a.imageRepo = repository.NewImageRepository(a.Database)
 	a.annotationRepo = repository.NewAnnotationRepository(a.Database)
-}
-
-func stringOr(str, or string) string {
-	if str != "" {
-		return str
-	} else {
-		return or
-	}
 }
 
 func pathParts(path string) []string {
@@ -653,8 +644,8 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		itemPath := pathParts(r.URL.Path)
 		title := "Help"
 
-		var tasks []TaskWithCount = nil
-		var currentTask *ConfigTask = nil
+		var tasks []TaskWithCount
+		var currentTask *ConfigTask
 
 		if len(itemPath) == 1 {
 			// Only populate tasks for the timeline view (no markdown for tasks)
@@ -781,8 +772,12 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 
 		if r.Method == http.MethodPost {
 			log.Printf("POST")
-			r.ParseForm()
-			if !(r.Form.Has("selectedClass") && r.Form.Has("sure")) {
+			if err := r.ParseForm(); err != nil {
+				log.Printf("could not parse form: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			if !r.Form.Has("selectedClass") || !r.Form.Has("sure") {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -833,7 +828,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		for class := range task.Classes {
 			classNames = append(classNames, class)
 		}
-		sort.Sort(sort.StringSlice(classNames))
+		sort.Strings(classNames)
 
 		classes := []ClassButton{}
 		keyIndex := 1
@@ -912,8 +907,14 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			log.Printf("error: http: while serving image asset: %s", err)
 			return
 		}
-		defer f.Close()
-		io.Copy(w, f)
+		defer func() {
+			if err := f.Close(); err != nil {
+				log.Printf("error closing asset file: %v", err)
+			}
+		}()
+		if _, err := io.Copy(w, f); err != nil {
+			log.Printf("error copying asset to response: %v", err)
+		}
 	})
 
 	log.Printf("images dir: %s", a.ImagesDir)
@@ -930,8 +931,7 @@ func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handl
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if ok {
-			var item *ConfigAuth = nil
-			item, ok = a.Config.Authentication[username]
+			item, ok := a.Config.Authentication[username]
 			if ok {
 				if password == item.Password {
 					log.Printf("auth for user %s: success", username)
@@ -977,6 +977,9 @@ func (a *AnnotatorApp) PrepareDatabaseMigrations(ctx context.Context) error {
 		return err
 	}
 	m, err := migrate.NewWithInstance("iofs", migrationsFS, "sqlite", db)
+	if err != nil {
+		return err
+	}
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return err
 	}
@@ -997,7 +1000,7 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 			return nil
 		}
 		if info.IsDir() {
-			return fmt.Errorf("while checking if item '%s' is a file: datasets must be organized in a flat folder structure. Hint: use the 'ingest' subcommand.", fullPath)
+			return fmt.Errorf("while checking if item '%s' is a file: datasets must be organized in a flat folder structure. Hint: use the 'ingest' subcommand", fullPath)
 		}
 
 		log.Printf("IngestImages: processing image: %s", fullPath)

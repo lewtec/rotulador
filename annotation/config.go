@@ -45,10 +45,14 @@ type ConfigClass struct {
 func LoadConfig(filename string) (*Config, error) {
 	var ret Config
 	f, err := os.Open(filename)
-	defer f.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("error closing config file: %v", err)
+		}
+	}()
 	data, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
