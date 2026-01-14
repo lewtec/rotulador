@@ -643,7 +643,9 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 	mux.HandleFunc("/favicon.svg", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/svg+xml")
 		w.Header().Set("Cache-Control", "public, max-age=31536000")
-		w.Write([]byte(GetFavicon()))
+		if _, err := w.Write([]byte(GetFavicon())); err != nil {
+			log.Printf("error writing favicon response: %v", err)
+		}
 	})
 
 	// Help pages
