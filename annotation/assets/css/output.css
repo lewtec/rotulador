@@ -1363,9 +1363,6 @@
       }
     }
   }
-  .static {
-    position: static;
-  }
   .toast-center {
     @layer daisyui.l1.l2 {
       inset-inline-start: calc(1/2 * 100%);
