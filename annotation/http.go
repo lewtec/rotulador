@@ -1,7 +1,7 @@
 package annotation
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -15,7 +15,7 @@ func i18nMiddleware(handler http.Handler) http.Handler {
 	})
 }
 
-func HTTPLogger(handler http.Handler) http.Handler {
+func HTTPLogger(handler http.Handler, logger *slog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		initialTime := time.Now()
 		method := r.Method
@@ -24,7 +24,14 @@ func HTTPLogger(handler http.Handler) http.Handler {
 		handler.ServeHTTP(wr, r)
 		finalTime := time.Now()
 		statusCode := wr.Status
-		log.Printf("http: time:%dms %d %s %s", finalTime.Sub(initialTime)/time.Millisecond, statusCode, method, path)
+		duration := finalTime.Sub(initialTime)
+
+		logger.Info("http request",
+			"method", method,
+			"path", path,
+			"status", statusCode,
+			"duration", duration,
+		)
 	})
 }
 

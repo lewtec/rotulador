@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -29,6 +29,7 @@ type AnnotatorApp struct {
 	ImagesDir      string
 	Database       *sql.DB
 	Config         *Config
+	Logger         *slog.Logger
 	OffsetAdvance  int
 	i18n           map[string]string
 	imageRepo      *repository.ImageRepository
@@ -634,7 +635,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 
 		err := RenderPageWithRequest(r, w, "home.html", data)
 		if err != nil {
-			log.Printf("error rendering home template: %s", err)
+			a.Logger.Error("error rendering home template", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	})
@@ -644,7 +645,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		w.Header().Set("Content-Type", "image/svg+xml")
 		w.Header().Set("Cache-Control", "public, max-age=31536000")
 		if _, err := w.Write([]byte(GetFavicon())); err != nil {
-			log.Printf("error writing favicon response: %v", err)
+			a.Logger.Error("error writing favicon response", "err", err)
 		}
 	})
 
@@ -663,13 +664,13 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			for _, task := range a.Config.Tasks {
 				availableCount, err := a.CountAvailableImages(r.Context(), task.ID)
 				if err != nil {
-					log.Printf("error counting available images for task %s: %s", task.ID, err)
+					a.Logger.Error("error counting available images", "task", task.ID, "err", err)
 					availableCount = 0
 				}
 
 				totalEligible, err := a.CountEligibleImages(r.Context(), task.ID)
 				if err != nil {
-					log.Printf("error counting eligible images for task %s: %s", task.ID, err)
+					a.Logger.Error("error counting eligible images", "task", task.ID, "err", err)
 					totalEligible = availableCount // fallback to available
 				}
 
@@ -681,7 +682,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				// Get comprehensive phase progress stats
 				phaseProgress, err := a.GetPhaseProgressStats(r.Context(), task.ID)
 				if err != nil {
-					log.Printf("error getting phase progress for task %s: %s", task.ID, err)
+					a.Logger.Error("error getting phase progress", "task", task.ID, "err", err)
 					phaseProgress = &PhaseProgress{}
 				}
 
@@ -705,14 +706,14 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			// Get progress stats for this specific task
 			phaseProgress, err := a.GetPhaseProgressStats(r.Context(), helpTask)
 			if err != nil {
-				log.Printf("error getting phase progress for task %s: %s", helpTask, err)
+				a.Logger.Error("error getting phase progress", "task", helpTask, "err", err)
 				phaseProgress = &PhaseProgress{}
 			}
 
 			// Get available count to check if there are images to annotate
 			availableCount, err := a.CountAvailableImages(r.Context(), helpTask)
 			if err != nil {
-				log.Printf("error counting available images for task %s: %s", helpTask, err)
+				a.Logger.Error("error counting available images", "task", helpTask, "err", err)
 				availableCount = 0
 			}
 
@@ -739,7 +740,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 
 		err := RenderPageWithRequest(r, w, "help.html", data)
 		if err != nil {
-			log.Printf("error rendering help template: %s", err)
+			a.Logger.Error("error rendering help template", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	})
@@ -752,7 +753,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			taskID := r.URL.Query().Get("task")
 			step, err := a.NextAnnotationStep(r.Context(), taskID)
 			if err != nil {
-				log.Printf("error in annotate when getting next step from scratch: %s", err)
+				a.Logger.Error("error in annotate when getting next step from scratch", "err", err)
 				w.WriteHeader(500)
 				return
 			}
@@ -762,7 +763,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				}
 				err := RenderPageWithRequest(r, w, "complete.html", data)
 				if err != nil {
-					log.Printf("error rendering complete template: %s", err)
+					a.Logger.Error("error rendering complete template", "err", err)
 				}
 				return
 			}
@@ -780,7 +781,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		imageFilename, _ := a.GetImageFilename(r.Context(), imageID)
 
 		if r.Method == http.MethodPost {
-			log.Printf("POST")
+			a.Logger.Debug("POST")
 			r.ParseForm()
 			if !(r.Form.Has("selectedClass") && r.Form.Has("sure")) {
 				w.WriteHeader(http.StatusBadRequest)
@@ -788,9 +789,9 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			}
 			selectedClass := r.FormValue("selectedClass")
 			_, isClassValid := task.Classes[selectedClass]
-			log.Printf("Selected class: %s empty=%v valid=%v", selectedClass, selectedClass == "", isClassValid)
+			a.Logger.Debug("Selected class", "class", selectedClass, "empty", selectedClass == "", "valid", isClassValid)
 			sure := r.FormValue("sure") == "on"
-			log.Printf("Sure: %v", sure)
+			a.Logger.Debug("Sure", "sure", sure)
 			user, _, _ := r.BasicAuth()
 			err := a.SubmitAnnotation(r.Context(), AnnotationResponse{
 				ImageID: imageID,
@@ -800,20 +801,20 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				Sure:    sure,
 			})
 			if err != nil {
-				log.Printf("error while submitting annotation: %s", err)
+				a.Logger.Error("error while submitting annotation", "err", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			step, err := a.NextAnnotationStep(r.Context(), taskID)
 			if err != nil {
-				log.Printf("error while getting next step: %s", err)
+				a.Logger.Error("error while getting next step", "err", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			if step == nil {
 				step, err = a.NextAnnotationStep(r.Context(), "")
 				if err != nil {
-					log.Printf("error while getting next step at the end of task: %s", err)
+					a.Logger.Error("error while getting next step at the end of task", "err", err)
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
@@ -854,7 +855,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		// Get comprehensive progress information
 		phaseProgress, err := a.GetPhaseProgressStats(r.Context(), taskID)
 		if err != nil {
-			log.Printf("error getting phase progress: %s", err)
+			a.Logger.Error("error getting phase progress", "err", err)
 			// Fallback to empty progress
 			phaseProgress = &PhaseProgress{}
 		}
@@ -877,7 +878,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 
 		err = RenderPageWithRequest(r, w, "annotate.html", data)
 		if err != nil {
-			log.Printf("error rendering annotate template: %s", err)
+			a.Logger.Error("error rendering annotate template", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	})
@@ -890,17 +891,17 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			return
 		}
 		sha256 := itemPath[1]
-		log.Printf("http: fetching asset %s", sha256)
+		a.Logger.Debug("http: fetching asset", "sha256", sha256)
 
 		// Get image filename from repository
 		filename, err := a.GetImageFilename(r.Context(), sha256)
 		if err != nil {
-			log.Printf("http: asset %s was not found: %s", sha256, err)
+			a.Logger.Warn("http: asset was not found", "sha256", sha256, "err", err)
 			http.NotFoundHandler().ServeHTTP(w, r)
 			return
 		}
 
-		log.Printf("http: asset %s is %s!", sha256, filename)
+		a.Logger.Debug("http: asset is", "sha256", sha256, "filename", filename)
 		fullPath := path.Join(a.ImagesDir, filename)
 		f, err := os.Open(fullPath)
 		if errors.Is(err, os.ErrNotExist) {
@@ -909,18 +910,18 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		}
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Printf("error: http: while serving image asset: %s", err)
+			a.Logger.Error("error: http: while serving image asset", "err", err)
 			return
 		}
 		defer f.Close()
 		io.Copy(w, f)
 	})
 
-	log.Printf("images dir: %s", a.ImagesDir)
+	a.Logger.Debug("images dir", "dir", a.ImagesDir)
 
 	var handler http.Handler = mux
 	handler = i18nMiddleware(handler)
-	handler = HTTPLogger(handler)
+	handler = HTTPLogger(handler, a.Logger)
 	handler = a.authenticationMiddleware(handler)
 	handler = requestCacheMiddleware(handler)
 	return handler
@@ -934,17 +935,16 @@ func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handl
 			item, ok = a.Config.Authentication[username]
 			if ok {
 				if password == item.Password {
-					log.Printf("auth for user %s: success", username)
+					a.Logger.Info("auth for user: success", "username", username)
 					handler.ServeHTTP(w, r)
 					return
 				}
-				log.Printf("auth for user %s: bad password", username)
+				a.Logger.Warn("auth for user: bad password", "username", username)
 			} else {
-
-				log.Printf("auth for user %s: no such user", username)
+				a.Logger.Warn("auth for user: no such user", "username", username)
 			}
 		}
-		log.Printf("auth: not ok")
+		a.Logger.Warn("auth: not ok")
 		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
 		w.WriteHeader(http.StatusUnauthorized)
 	})
@@ -960,7 +960,7 @@ func (a *AnnotatorApp) PrepareDatabase(ctx context.Context) error {
 	if err := a.IngestImages(ctx); err != nil {
 		return err
 	}
-	log.Printf("PrepareDatabase: success! Database is ready")
+	a.Logger.Info("PrepareDatabase: success! Database is ready")
 	return nil
 }
 
@@ -980,14 +980,14 @@ func (a *AnnotatorApp) PrepareDatabaseMigrations(ctx context.Context) error {
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return err
 	}
-	log.Printf("PrepareDatabaseMigrations: migrations completed successfully")
+	a.Logger.Info("PrepareDatabaseMigrations: migrations completed successfully")
 	return nil
 }
 
 // IngestImages scans the images directory and loads all images into the database.
 // This can be called asynchronously after the HTTP server starts.
 func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
-	log.Printf("IngestImages: starting image ingestion from directory: %s", a.ImagesDir)
+	a.Logger.Info("IngestImages: starting image ingestion from directory", "dir", a.ImagesDir)
 
 	err := filepath.WalkDir(a.ImagesDir, func(fullPath string, info fs.DirEntry, err error) error {
 		if err != nil {
@@ -1000,7 +1000,7 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 			return fmt.Errorf("while checking if item '%s' is a file: datasets must be organized in a flat folder structure. Hint: use the 'ingest' subcommand.", fullPath)
 		}
 
-		log.Printf("IngestImages: processing image: %s", fullPath)
+		a.Logger.Debug("IngestImages: processing image", "path", fullPath)
 
 		// Verify it's an image
 		_, err = DecodeImage(fullPath)
@@ -1029,6 +1029,6 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 		return fmt.Errorf("while ingesting images: %w", err)
 	}
 
-	log.Printf("IngestImages: completed successfully!")
+	a.Logger.Info("IngestImages: completed successfully!")
 	return nil
 }

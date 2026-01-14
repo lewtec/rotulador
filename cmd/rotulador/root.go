@@ -6,7 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -25,51 +25,55 @@ With a set of trivial choices scale the classification of a set of images to man
     `),
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		logger, err := getLogger(cmd)
+		if err != nil {
+			return err
+		}
 		// 1. Handle directory argument and exit
 		if len(args) == 1 {
 			arg := args[0]
 			if stat, err := os.Stat(arg); err == nil && stat.IsDir() {
 				// It's a folder. Check for config, create if needed, then exit.
-				log.Printf("Detected folder argument: %s", arg)
+				logger.Info("Detected folder argument", "arg", arg)
 				configFile := filepath.Join(arg, "config.yaml")
 				databaseFile := filepath.Join(arg, "annotations.db")
 				imagesDir := filepath.Join(arg, "images")
 
 				if _, err := os.Stat(configFile); os.IsNotExist(err) {
-					log.Printf("Creating default config: %s", configFile)
+					logger.Info("Creating default config", "configFile", configFile)
 					if err := createSampleConfig(configFile, arg); err != nil {
 						return fmt.Errorf("failed to create config: %w", err)
 					}
-					log.Printf("✓ Config file created.")
+					logger.Info("✓ Config file created.")
 				} else {
-					log.Printf("✓ Config file already exists: %s.", configFile)
+					logger.Info("✓ Config file already exists.", "configFile", configFile)
 				}
 
 				// Create empty database file
 				if _, err := os.Stat(databaseFile); os.IsNotExist(err) {
-					log.Printf("Creating empty database: %s", databaseFile)
+					logger.Info("Creating empty database", "databaseFile", databaseFile)
 					file, err := os.Create(databaseFile)
 					if err != nil {
 						return fmt.Errorf("failed to create database file: %w", err)
 					}
 					file.Close()
-					log.Printf("✓ Database file created.")
+					logger.Info("✓ Database file created.")
 				} else {
-					log.Printf("✓ Database file already exists: %s.", databaseFile)
+					logger.Info("✓ Database file already exists.", "databaseFile", databaseFile)
 				}
 
 				// Create images directory
 				if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
-					log.Printf("Creating images directory: %s", imagesDir)
+					logger.Info("Creating images directory", "imagesDir", imagesDir)
 					if err := os.MkdirAll(imagesDir, 0755); err != nil {
 						return fmt.Errorf("failed to create images directory: %w", err)
 					}
-					log.Printf("✓ Images directory created.")
+					logger.Info("✓ Images directory created.")
 				} else {
-					log.Printf("✓ Images directory already exists: %s.", imagesDir)
+					logger.Info("✓ Images directory already exists.", "imagesDir", imagesDir)
 				}
 
-				log.Printf("You can now run 'rotulador %s' to start the server.", arg)
+				logger.Info("You can now run 'rotulador' to start the server.", "arg", arg)
 				return nil // Always exit after handling a directory argument
 			}
 		}
@@ -100,7 +104,7 @@ With a set of trivial choices scale the classification of a set of images to man
 		}
 
 		// 5. Server startup logic
-		log.Printf("Initializing project...")
+		logger.Info("Initializing project...")
 
 		config, err := annotation.LoadConfig(configFile)
 		if err != nil {
@@ -117,6 +121,7 @@ With a set of trivial choices scale the classification of a set of images to man
 			ImagesDir: imagesDir,
 			Database:  db,
 			Config:    config,
+			Logger:    logger,
 		}
 
 		// Run database migrations synchronously before starting the server
@@ -126,34 +131,72 @@ With a set of trivial choices scale the classification of a set of images to man
 
 		addr, _ := cmd.Flags().GetString("addr")
 
-		log.Printf("Configuration: %s", configFile)
-		log.Printf("Database: %s", databaseFile)
-		log.Printf("Images: %s", imagesDir)
-		log.Printf("Tasks configured: %d", len(config.Tasks))
+		logger.Info("Configuration",
+			"configFile", configFile,
+			"databaseFile", databaseFile,
+			"imagesDir", imagesDir,
+		)
+		logger.Info("Tasks configured", "count", len(config.Tasks))
 		for _, task := range config.Tasks {
-			log.Printf("  - %s: %s", task.ID, task.Name)
+			logger.Info("  -", "id", task.ID, "name", task.Name)
 		}
 
 		// Start image ingestion in background (non-blocking)
 		go func() {
 			if err := app.IngestImages(context.Background()); err != nil {
-				log.Printf("Error during background image ingestion: %v", err)
+				logger.Error("Error during background image ingestion", "err", err)
 			}
 		}()
 
-		log.Printf("Server is ready and listening on: %s", addr)
-		log.Printf("Images are being loaded in the background...")
+		logger.Info("Server is ready and listening", "addr", addr)
+		logger.Info("Images are being loaded in the background...")
 
 		return http.ListenAndServe(addr, app.GetHTTPHandler())
 	},
 }
 
 func main() {
-	err := rootCmd.Execute()
-	if err != nil {
-		log.Fatalf("Error executing command: %v", err)
+	var logger *slog.Logger
+	// Pre-initialize logger before cobra parsing
+	if len(os.Args) > 1 {
+		for _, arg := range os.Args[1:] {
+			if arg == "--json" {
+				logger = slog.New(slog.NewJSONHandler(os.Stderr, nil))
+				break
+			}
+		}
+	}
+	if logger == nil {
+		logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
+	}
+	ctx := context.WithValue(context.Background(), loggerKey, logger)
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
+		logger.Error("Error executing command", "err", err)
 		os.Exit(1)
 	}
+}
+
+type contextKey string
+
+const loggerKey contextKey = "logger"
+
+func getLogger(cmd *cobra.Command) (*slog.Logger, error) {
+	// 1. Get from context (highest priority)
+	if logger, ok := cmd.Context().Value(loggerKey).(*slog.Logger); ok {
+		return logger, nil
+	}
+
+	// 2. Get from --json flag
+	useJSON, err := cmd.Flags().GetBool("json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read 'json' flag: %w", err)
+	}
+	if useJSON {
+		return slog.New(slog.NewJSONHandler(os.Stderr, nil)), nil
+	}
+
+	// 3. Default to text handler
+	return slog.New(slog.NewTextHandler(os.Stderr, nil)), nil
 }
 
 func init() {
@@ -162,4 +205,5 @@ func init() {
 	rootCmd.Flags().StringP("database", "d", "", "Database file path (defaults to annotations.db in config file's directory)")
 	rootCmd.Flags().StringP("images", "i", "", "Images directory path (defaults to 'images' in config file's directory)")
 	rootCmd.Flags().StringP("addr", "a", ":8080", "Address to bind the webserver")
+	rootCmd.PersistentFlags().Bool("json", false, "Enable JSON logging")
 }

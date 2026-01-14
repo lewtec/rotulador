@@ -5,13 +5,11 @@ package main
 
 import (
 	"fmt"
-	"os"
-    "log"
-    "io/fs"
-    "sync"
-
 	"image"
+	"io/fs"
+	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/lewtec/rotulador/annotation"
 	"github.com/spf13/cobra"
@@ -21,74 +19,79 @@ import (
 var ingestCmd = &cobra.Command{
 	Use:   "ingest",
 	Short: "Ingest a folder of files to a folder of images.",
-	Long: `Ingest a folder of files that were extracted from somewhere and organize in a flat hierarchy of images.`,
-    Args: func (cmd *cobra.Command, args []string) error {
-        if err := cobra.MinimumNArgs(2)(cmd, args); err != nil {
-            return err
-        }
-        inputs := args[0:len(args) - 1]
-        output := args[len(args)-1]
-        for i, input := range(inputs) {
-            fileInfo, err := os.Stat(input)
-            if err != nil {
-                return fmt.Errorf("on %dth argument: %w", i + 1, err)
-            }
-            if !fileInfo.IsDir() {
-                return fmt.Errorf("on %dth argument: must be a directory", i + 1)
-            }
-        }
-        return os.MkdirAll(output, 0777)
-    },
-	Run: func(cmd *cobra.Command, args []string) {
-        inputs := args[0:len(args) - 1]
-        output := args[len(args)-1]
+	Long:  `Ingest a folder of files that were extracted from somewhere and organize in a flat hierarchy of images.`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if err := cobra.MinimumNArgs(2)(cmd, args); err != nil {
+			return err
+		}
+		inputs := args[0 : len(args)-1]
+		output := args[len(args)-1]
+		for i, input := range inputs {
+			fileInfo, err := os.Stat(input)
+			if err != nil {
+				return fmt.Errorf("on %dth argument: %w", i+1, err)
+			}
+			if !fileInfo.IsDir() {
+				return fmt.Errorf("on %dth argument: must be a directory", i+1)
+			}
+		}
+		return os.MkdirAll(output, 0777)
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		logger, err := getLogger(cmd)
+		if err != nil {
+			return err
+		}
+		inputs := args[0 : len(args)-1]
+		output := args[len(args)-1]
 
-        crawledFilepaths := make(chan image.Image, 10) // pipeline
+		crawledFilepaths := make(chan image.Image, 10) // pipeline
 
-        var wg sync.WaitGroup
-        ingestWorker := func(queue chan image.Image) {
-            defer wg.Done()
-            for image := range queue {
-                err := annotation.IngestImage(image, output)
-                if err != nil {
-                    log.Printf("Ingesting image error: %s", err)
-                }
-            }
-        }
-        defer wg.Wait()
-        for i := uint(0); i < jobs; i++ {
-            wg.Add(1)
-            go ingestWorker(crawledFilepaths)
-        }
+		var wg sync.WaitGroup
+		ingestWorker := func(queue chan image.Image) {
+			defer wg.Done()
+			for image := range queue {
+				err := annotation.IngestImage(image, output)
+				if err != nil {
+					logger.Error("Ingesting image error", "err", err)
+				}
+			}
+		}
+		defer wg.Wait()
+		for i := uint(0); i < jobs; i++ {
+			wg.Add(1)
+			go ingestWorker(crawledFilepaths)
+		}
 
-        for _, input := range inputs {
-            filepath.WalkDir(input, func(path string, info fs.DirEntry, err error) error {
-                if err != nil {
-                    return err
-                }
-                if info.IsDir() {
-                    return nil
-                }
-                img, err := annotation.DecodeImage(path)
-                if err != nil {
-                    return nil
-                }
-                log.Printf("found image '%s'", path)
-                crawledFilepaths <- img
-                return nil
-            })
-        }
-        close(crawledFilepaths)
+		for _, input := range inputs {
+			filepath.WalkDir(input, func(path string, info fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if info.IsDir() {
+					return nil
+				}
+				img, err := annotation.DecodeImage(path)
+				if err != nil {
+					return nil
+				}
+				logger.Info("found image", "path", path)
+				crawledFilepaths <- img
+				return nil
+			})
+		}
+		close(crawledFilepaths)
+		return nil
 	},
 }
 
 var (
-    jobs uint
+	jobs uint
 )
 
 func init() {
 	rootCmd.AddCommand(ingestCmd)
-    ingestCmd.PersistentFlags().UintVarP(&jobs, "jobs", "j", 1, "Amount of concurrent ingestors")
+	ingestCmd.PersistentFlags().UintVarP(&jobs, "jobs", "j", 1, "Amount of concurrent ingestors")
 
 	// Here you will define your flags and configuration settings.
 
