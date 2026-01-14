@@ -57,14 +57,20 @@ Use the `if` field to create dependent tasks:
 
 ### Authentication
 
-Add users in the `auth` section:
+Add users in the `auth` section. Passwords must be stored as bcrypt hashes.
+
+To generate a hash, use the `hash-password` command:
+```bash
+rotulador hash-password 'your_secure_password'
+# Output: $2a$10$... (copy this hash into your config)
+```
+
+Then, add the user to your `config.yaml`:
 ```yaml
 auth:
   username:
-    password: "plaintext_password"
+    password: "$2a$10$..."
 ```
-
-⚠️ **Security Note**: Passwords are stored in plaintext in the config. Use strong passwords and keep your config file secure.
 
 ## Architecture
 

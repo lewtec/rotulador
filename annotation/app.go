@@ -928,23 +928,25 @@ func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handl
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if ok {
-			var item *ConfigAuth = nil
+			var item *ConfigAuth
 			item, ok = a.Config.Authentication[username]
 			if ok {
-				if password == item.Password {
+				// SECURITY: Use bcrypt to compare the provided password with the stored hash.
+				if CheckPasswordHash(password, item.Password) {
 					log.Printf("auth for user %s: success", username)
 					handler.ServeHTTP(w, r)
 					return
 				}
 				log.Printf("auth for user %s: bad password", username)
 			} else {
-
 				log.Printf("auth for user %s: no such user", username)
 			}
+		} else {
+			log.Printf("auth: no credentials provided")
 		}
-		log.Printf("auth: not ok")
+
 		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-		w.WriteHeader(http.StatusUnauthorized)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 	})
 }
 
