@@ -7,7 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -33,6 +33,10 @@ The new schema uses:
 Example: rotulador migrate-legacy-db old.db new.db config.yaml`,
 	Args: cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		logger, err := getLogger(cmd)
+		if err != nil {
+			return err
+		}
 		oldDBPath := args[0]
 		newDBPath := args[1]
 		configPath := args[2]
@@ -52,12 +56,13 @@ Example: rotulador migrate-legacy-db old.db new.db config.yaml`,
 			return fmt.Errorf("new database already exists: %s (delete it first if you want to recreate)", newDBPath)
 		}
 
-		log.Printf("Starting database migration...")
-		log.Printf("  Old DB: %s", oldDBPath)
-		log.Printf("  New DB: %s", newDBPath)
-		log.Printf("  Config: %s", configPath)
+		logger.Info("Starting database migration...",
+			"oldDB", oldDBPath,
+			"newDB", newDBPath,
+			"config", configPath,
+		)
 
-		return migrateLegacyDatabase(cmd.Context(), oldDBPath, newDBPath, configPath)
+		return migrateLegacyDatabase(cmd.Context(), oldDBPath, newDBPath, configPath, logger)
 	},
 }
 
@@ -77,7 +82,7 @@ type LegacyAnnotation struct {
 	Sure  int
 }
 
-func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath string) error {
+func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath string, logger *slog.Logger) error {
 	// Load config to get task list
 	config, err := loadConfigForMigration(configPath)
 	if err != nil {
@@ -92,7 +97,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	defer oldDB.Close()
 
 	// Verify old database has expected schema
-	if err := verifyLegacySchema(ctx, oldDB, config.Tasks); err != nil {
+	if err := verifyLegacySchema(ctx, oldDB, config.Tasks, logger); err != nil {
 		return fmt.Errorf("old database schema validation failed: %w", err)
 	}
 
@@ -116,21 +121,21 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	defer tx.Rollback()
 
 	// Step 1: Migrate images
-	log.Printf("Migrating images...")
+	logger.Info("Migrating images...")
 	imageMapping, err := migrateImages(ctx, oldDB, tx)
 	if err != nil {
 		return fmt.Errorf("failed to migrate images: %w", err)
 	}
-	log.Printf("  ✓ Migrated %d images", len(imageMapping))
+	logger.Info("✓ Migrated images", "count", len(imageMapping))
 
 	// Step 2: Migrate annotations for each task
 	for stageIndex, task := range config.Tasks {
-		log.Printf("Migrating task '%s' (stage %d)...", task.ID, stageIndex)
-		count, err := migrateTaskAnnotations(ctx, oldDB, tx, task.ID, stageIndex, imageMapping)
+		logger.Info("Migrating task", "taskID", task.ID, "stage", stageIndex)
+		count, err := migrateTaskAnnotations(ctx, oldDB, tx, task.ID, stageIndex, imageMapping, logger)
 		if err != nil {
 			return fmt.Errorf("failed to migrate task %s: %w", task.ID, err)
 		}
-		log.Printf("  ✓ Migrated %d annotations", count)
+		logger.Info("✓ Migrated annotations", "count", count)
 	}
 
 	// Commit transaction
@@ -138,12 +143,12 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	log.Printf("✓ Migration completed successfully!")
-	log.Printf("You can now use the new database with: rotulador %s", newDBPath)
+	logger.Info("✓ Migration completed successfully!")
+	logger.Info("You can now use the new database with 'rotulador'", "newDB", newDBPath)
 	return nil
 }
 
-func verifyLegacySchema(ctx context.Context, db *sql.DB, tasks []ConfigTask) error {
+func verifyLegacySchema(ctx context.Context, db *sql.DB, tasks []ConfigTask, logger *slog.Logger) error {
 	// Check if images table exists with sha256 column
 	var count int
 	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='images'").Scan(&count)
@@ -162,7 +167,7 @@ func verifyLegacySchema(ctx context.Context, db *sql.DB, tasks []ConfigTask) err
 		tableName := fmt.Sprintf("task_%s", task.ID)
 		err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", tableName).Scan(&count)
 		if err != nil || count == 0 {
-			log.Printf("  Warning: task table '%s' not found, skipping", tableName)
+			logger.Warn("task table not found, skipping", "tableName", tableName)
 		}
 	}
 
@@ -227,7 +232,7 @@ func migrateImages(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx) (map[strin
 	return imageMapping, rows.Err()
 }
 
-func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, taskID string, stageIndex int, imageMapping map[string]int64) (int, error) {
+func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, taskID string, stageIndex int, imageMapping map[string]int64, logger *slog.Logger) (int, error) {
 	tableName := fmt.Sprintf("task_%s", taskID)
 
 	// Check if table exists
@@ -256,7 +261,7 @@ func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, t
 		// Get new image ID
 		newImageID, ok := imageMapping[ann.Image]
 		if !ok {
-			log.Printf("  Warning: annotation references unknown image %s, skipping", ann.Image)
+			logger.Warn("annotation references unknown image, skipping", "image", ann.Image)
 			continue
 		}
 

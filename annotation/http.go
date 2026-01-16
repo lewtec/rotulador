@@ -1,7 +1,7 @@
 package annotation
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -15,7 +15,18 @@ func i18nMiddleware(handler http.Handler) http.Handler {
 	})
 }
 
-func HTTPLogger(handler http.Handler) http.Handler {
+// HTTPLogger provides a middleware to log HTTP requests using a structured logger.
+type HTTPLogger struct {
+	logger *slog.Logger
+}
+
+// NewHTTPLogger creates a new HTTPLogger middleware.
+func NewHTTPLogger(logger *slog.Logger) *HTTPLogger {
+	return &HTTPLogger{logger: logger}
+}
+
+// Middleware returns the HTTP handling middleware.
+func (l *HTTPLogger) Middleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		initialTime := time.Now()
 		method := r.Method
@@ -24,7 +35,14 @@ func HTTPLogger(handler http.Handler) http.Handler {
 		handler.ServeHTTP(wr, r)
 		finalTime := time.Now()
 		statusCode := wr.Status
-		log.Printf("http: time:%dms %d %s %s", finalTime.Sub(initialTime)/time.Millisecond, statusCode, method, path)
+		duration := finalTime.Sub(initialTime)
+
+		l.logger.Info("http request",
+			"method", method,
+			"path", path,
+			"status", statusCode,
+			"duration", duration,
+		)
 	})
 }
 
