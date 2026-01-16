@@ -200,6 +200,9 @@ func getLogger(cmd *cobra.Command) (*slog.Logger, error) {
 }
 
 func init() {
+	// Add subcommands
+	rootCmd.AddCommand(hashPasswordCmd)
+
 	// Optional flags (only used when not providing a folder argument)
 	rootCmd.Flags().StringP("config", "c", "", "Config file for the annotation")
 	rootCmd.Flags().StringP("database", "d", "", "Database file path (defaults to annotations.db in config file's directory)")

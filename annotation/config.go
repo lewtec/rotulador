@@ -97,9 +97,19 @@ func LoadConfig(filename string) (*Config, error) {
 		}
 		log.Printf("Loaded %d i18n strings from YAML config", len(ret.I18N))
 	}
-	for user := range ret.Authentication {
-		if ret.Authentication[user].Password == "" {
+	for user, auth := range ret.Authentication {
+		if auth.Password == "" {
 			return nil, fmt.Errorf("user %s has a null password", user)
+		}
+		// Check if the password is already a bcrypt hash.
+		// A simple heuristic is to check if it starts with '$2'.
+		if len(auth.Password) < 4 || auth.Password[0:2] != "$2" {
+			log.Printf("Warning: password for user '%s' is in plaintext. Hashing it automatically.", user)
+			hashedPassword, err := HashPassword(auth.Password)
+			if err != nil {
+				return nil, fmt.Errorf("failed to hash password for user '%s': %w", user, err)
+			}
+			ret.Authentication[user].Password = hashedPassword
 		}
 	}
 	return &ret, nil
