@@ -31,7 +31,6 @@ type AnnotatorApp struct {
 	Config         *Config
 	Logger         *slog.Logger
 	OffsetAdvance  int
-	i18n           map[string]string
 	imageRepo      *repository.ImageRepository
 	annotationRepo *repository.AnnotationRepository
 }
@@ -46,14 +45,6 @@ func (a *AnnotatorApp) init() {
 	// Initialize repositories
 	a.imageRepo = repository.NewImageRepository(a.Database)
 	a.annotationRepo = repository.NewAnnotationRepository(a.Database)
-}
-
-func stringOr(str, or string) string {
-	if str != "" {
-		return str
-	} else {
-		return or
-	}
 }
 
 func pathParts(path string) []string {
@@ -946,7 +937,7 @@ func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handl
 				a.Logger.Warn("auth for user: no such user", "username", username)
 			}
 		} else {
-			log.Printf("auth: no credentials provided")
+			a.Logger.Warn("auth: no credentials provided")
 		}
 		a.Logger.Warn("auth: not ok")
 		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
@@ -981,6 +972,9 @@ func (a *AnnotatorApp) PrepareDatabaseMigrations(ctx context.Context) error {
 		return err
 	}
 	m, err := migrate.NewWithInstance("iofs", migrationsFS, "sqlite", db)
+	if err != nil {
+		return err
+	}
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return err
 	}
