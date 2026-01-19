@@ -946,7 +946,7 @@ func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handl
 				a.Logger.Warn("auth for user: no such user", "username", username)
 			}
 		} else {
-			log.Printf("auth: no credentials provided")
+			a.Logger.Warn("auth: no credentials provided")
 		}
 		a.Logger.Warn("auth: not ok")
 		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
