@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -902,7 +901,18 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		}
 
 		a.Logger.Debug("http: asset is", "sha256", sha256, "filename", filename)
-		fullPath := path.Join(a.ImagesDir, filename)
+
+		// SECURITY: Prevent path traversal
+		cleanImagesDir := filepath.Clean(a.ImagesDir)
+		fullPath := filepath.Join(cleanImagesDir, filename)
+
+		// Check if the resolved path starts with the images directory
+		if !strings.HasPrefix(fullPath, cleanImagesDir+string(os.PathSeparator)) {
+			a.Logger.Warn("security: path traversal attempt detected", "sha256", sha256, "filename", filename, "resolved", fullPath)
+			http.NotFoundHandler().ServeHTTP(w, r)
+			return
+		}
+
 		f, err := os.Open(fullPath)
 		if errors.Is(err, os.ErrNotExist) {
 			http.NotFoundHandler().ServeHTTP(w, r)
@@ -946,7 +956,7 @@ func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handl
 				a.Logger.Warn("auth for user: no such user", "username", username)
 			}
 		} else {
-			log.Printf("auth: no credentials provided")
+			a.Logger.Warn("auth: no credentials provided")
 		}
 		a.Logger.Warn("auth: not ok")
 		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
