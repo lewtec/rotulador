@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -902,7 +901,12 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		}
 
 		a.Logger.Debug("http: asset is", "sha256", sha256, "filename", filename)
-		fullPath := path.Join(a.ImagesDir, filename)
+		fullPath, err := secureJoin(a.ImagesDir, filename)
+		if err != nil {
+			a.Logger.Warn("http: asset path security check failed", "sha256", sha256, "filename", filename, "err", err)
+			http.NotFoundHandler().ServeHTTP(w, r)
+			return
+		}
 		f, err := os.Open(fullPath)
 		if errors.Is(err, os.ErrNotExist) {
 			http.NotFoundHandler().ServeHTTP(w, r)
@@ -946,7 +950,7 @@ func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handl
 				a.Logger.Warn("auth for user: no such user", "username", username)
 			}
 		} else {
-			log.Printf("auth: no credentials provided")
+			a.Logger.Info("auth: no credentials provided")
 		}
 		a.Logger.Warn("auth: not ok")
 		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
@@ -1035,4 +1039,21 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 
 	a.Logger.Info("IngestImages: completed successfully!")
 	return nil
+}
+
+// secureJoin joins baseDir and filename and ensures the result is within baseDir.
+// It resolves baseDir to an absolute path to prevent traversal issues with relative paths.
+func secureJoin(baseDir, filename string) (string, error) {
+	absBase, err := filepath.Abs(baseDir)
+	if err != nil {
+		return "", fmt.Errorf("invalid base directory: %w", err)
+	}
+
+	fullPath := filepath.Join(absBase, filename)
+
+	if !strings.HasPrefix(fullPath, absBase+string(os.PathSeparator)) {
+		return "", fmt.Errorf("path traversal detected: %s", filename)
+	}
+
+	return fullPath, nil
 }
