@@ -4,11 +4,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{.CSRFToken}}">
   <title>{{ block "title" . }}{{.Title}}{{ end }}</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script src="https://unpkg.com/htmx.org@1.9.6"
     integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
     crossorigin="anonymous"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      document.body.addEventListener('htmx:configRequest', function(evt) {
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        if (tokenMeta) {
+          evt.detail.headers['X-CSRF-Token'] = tokenMeta.getAttribute('content');
+        }
+      });
+    });
+  </script>
   <style>
   {{ .CSS }}
   </style>
