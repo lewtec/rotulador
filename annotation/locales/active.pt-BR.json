@@ -63,10 +63,6 @@
     "hash": "sha1-52851f96722cddb464564a1572603b50c69b5540",
     "other": "Dependências:"
   },
-  "Description": {
-    "hash": "sha1-55f8ebc805e65b5b71ddafdae390e3be2bcd69af",
-    "other": "Descrição"
-  },
   "Examples": {
     "hash": "sha1-eb01bf04c9a0e8a71c45816513df424f1c7ffedb",
     "other": "Exemplos"
@@ -134,6 +130,10 @@
   "Project help": {
     "hash": "sha1-aec5dc767105e008655e5d51f796c22d08e0072b",
     "other": "Ajuda do projeto"
+  },
+  "ProjectDescription": {
+    "hash": "sha1-55f8ebc805e65b5b71ddafdae390e3be2bcd69af",
+    "other": "Descrição"
   },
   "Rotate 180 degrees": {
     "hash": "sha1-aa676a7fd8ce10add26d0eedd71c7fdc1c379a96",

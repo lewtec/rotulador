@@ -31,7 +31,6 @@ type AnnotatorApp struct {
 	Config         *Config
 	Logger         *slog.Logger
 	OffsetAdvance  int
-	i18n           map[string]string
 	imageRepo      *repository.ImageRepository
 	annotationRepo *repository.AnnotationRepository
 }
@@ -46,14 +45,6 @@ func (a *AnnotatorApp) init() {
 	// Initialize repositories
 	a.imageRepo = repository.NewImageRepository(a.Database)
 	a.annotationRepo = repository.NewAnnotationRepository(a.Database)
-}
-
-func stringOr(str, or string) string {
-	if str != "" {
-		return str
-	} else {
-		return or
-	}
 }
 
 func pathParts(path string) []string {
@@ -654,7 +645,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		itemPath := pathParts(r.URL.Path)
 		title := "Help"
 
-		var tasks []TaskWithCount = nil
+		var tasks []TaskWithCount
 		var currentTask *ConfigTask = nil
 
 		if len(itemPath) == 1 {
@@ -782,8 +773,12 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 
 		if r.Method == http.MethodPost {
 			a.Logger.Debug("POST")
-			r.ParseForm()
-			if !(r.Form.Has("selectedClass") && r.Form.Has("sure")) {
+			if err := r.ParseForm(); err != nil {
+				a.Logger.Error("error parsing form", "err", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			if !r.Form.Has("selectedClass") || !r.Form.Has("sure") {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -834,7 +829,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		for class := range task.Classes {
 			classNames = append(classNames, class)
 		}
-		sort.Sort(sort.StringSlice(classNames))
+		sort.Strings(classNames)
 
 		classes := []ClassButton{}
 		keyIndex := 1
@@ -913,8 +908,14 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			a.Logger.Error("error: http: while serving image asset", "err", err)
 			return
 		}
-		defer f.Close()
-		io.Copy(w, f)
+		defer func() {
+			if err := f.Close(); err != nil {
+				a.Logger.Error("error closing file", "err", err)
+			}
+		}()
+		if _, err := io.Copy(w, f); err != nil {
+			a.Logger.Error("error copying file to response", "err", err)
+		}
 	})
 
 	a.Logger.Debug("images dir", "dir", a.ImagesDir)
@@ -946,7 +947,7 @@ func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handl
 				a.Logger.Warn("auth for user: no such user", "username", username)
 			}
 		} else {
-			log.Printf("auth: no credentials provided")
+			a.Logger.Warn("auth: no credentials provided")
 		}
 		a.Logger.Warn("auth: not ok")
 		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
@@ -981,6 +982,9 @@ func (a *AnnotatorApp) PrepareDatabaseMigrations(ctx context.Context) error {
 		return err
 	}
 	m, err := migrate.NewWithInstance("iofs", migrationsFS, "sqlite", db)
+	if err != nil {
+		return err
+	}
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return err
 	}
@@ -1001,7 +1005,7 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 			return nil
 		}
 		if info.IsDir() {
-			return fmt.Errorf("while checking if item '%s' is a file: datasets must be organized in a flat folder structure. Hint: use the 'ingest' subcommand.", fullPath)
+			return fmt.Errorf("while checking if item '%s' is a file: datasets must be organized in a flat folder structure; hint: use the 'ingest' subcommand", fullPath)
 		}
 
 		a.Logger.Debug("IngestImages: processing image", "path", fullPath)
@@ -1009,7 +1013,7 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 		// Verify it's an image
 		_, err = DecodeImage(fullPath)
 		if err != nil {
-			return fmt.Errorf("while checking if item '%s' is an image: %w", fullPath, err)
+			return fmt.Errorf("while checking if item '%s' is a file: datasets must be organized in a flat folder structure; hint: use the 'ingest' subcommand", fullPath)
 		}
 
 		// Hash the file to get SHA256

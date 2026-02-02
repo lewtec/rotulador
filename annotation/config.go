@@ -3,7 +3,7 @@ package annotation
 import (
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -45,10 +45,14 @@ type ConfigClass struct {
 func LoadConfig(filename string) (*Config, error) {
 	var ret Config
 	f, err := os.Open(filename)
-	defer f.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			slog.Warn("failed to close config file", "err", err)
+		}
+	}()
 	data, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
@@ -92,10 +96,10 @@ func LoadConfig(filename string) (*Config, error) {
 			}
 			// Add to bundle as English messages
 			if err := AddMessage("en", term.Name, term.Value); err != nil {
-				log.Printf("Warning: failed to add i18n message %s: %v", term.Name, err)
+				slog.Warn("failed to add i18n message", "term", term.Name, "err", err)
 			}
 		}
-		log.Printf("Loaded %d i18n strings from YAML config", len(ret.I18N))
+		slog.Info("Loaded i18n strings from YAML config", "count", len(ret.I18N))
 	}
 	for user, auth := range ret.Authentication {
 		if auth.Password == "" {
@@ -104,7 +108,7 @@ func LoadConfig(filename string) (*Config, error) {
 		// Check if the password is already a bcrypt hash.
 		// A simple heuristic is to check if it starts with '$2'.
 		if len(auth.Password) < 4 || auth.Password[0:2] != "$2" {
-			log.Printf("Warning: password for user '%s' is in plaintext. Hashing it automatically.", user)
+			slog.Warn("password is in plaintext. Hashing it automatically.", "user", user)
 			hashedPassword, err := HashPassword(auth.Password)
 			if err != nil {
 				return nil, fmt.Errorf("failed to hash password for user '%s': %w", user, err)

@@ -3,22 +3,25 @@ package annotation
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/google/uuid"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	"image/png"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
+
+	"github.com/google/uuid"
 )
 
-func DecodeImage(filepath string) (image.Image, error) {
-	f, err := os.Open(filepath)
-	defer f.Close()
+func DecodeImage(path string) (image.Image, error) {
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		_ = f.Close()
+	}()
 	m, _, err := image.Decode(f)
 	if err != nil {
 		return nil, err
@@ -27,7 +30,7 @@ func DecodeImage(filepath string) (image.Image, error) {
 }
 
 func IngestImage(img image.Image, outputDir string) error {
-	tempFile := path.Join(outputDir, fmt.Sprintf("%s.png", uuid.New()))
+	tempFile := filepath.Join(outputDir, fmt.Sprintf("%s.png", uuid.New()))
 	f, err := os.Create(tempFile)
 	if err != nil {
 		return err
@@ -42,9 +45,9 @@ func IngestImage(img image.Image, outputDir string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Rename(tempFile, path.Join(outputDir, fmt.Sprintf("%x.png", hasher.Sum(nil))))
+	err = os.Rename(tempFile, filepath.Join(outputDir, fmt.Sprintf("%x.png", hasher.Sum(nil))))
 	if err != nil {
-		os.Remove(tempFile)
+		_ = os.Remove(tempFile)
 		return err
 	}
 	return err

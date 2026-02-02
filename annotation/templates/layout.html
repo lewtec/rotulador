@@ -1,120 +1,153 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ block "title" . }}{{.Title}}{{ end }}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script
+      src="https://unpkg.com/htmx.org@1.9.6"
+      integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      {{ .CSS }}
+    </style>
+    <script>
+      // Theme toggle functionality
+      function initTheme() {
+        const theme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      }
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ block "title" . }}{{.Title}}{{ end }}</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script src="https://unpkg.com/htmx.org@1.9.6"
-    integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
-    crossorigin="anonymous"></script>
-  <style>
-  {{ .CSS }}
-  </style>
-  <script>
-    // Theme toggle functionality
-    function initTheme() {
-      const theme = localStorage.getItem('theme') || 'light';
-      document.documentElement.setAttribute('data-theme', theme);
-    }
+      function toggleTheme() {
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        html.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+      }
 
-    function toggleTheme() {
-      const html = document.documentElement;
-      const currentTheme = html.getAttribute('data-theme');
-      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-      html.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-    }
+      // Initialize theme before page loads
+      initTheme();
+    </script>
+  </head>
 
-    // Initialize theme before page loads
-    initTheme();
-  </script>
-</head>
-
-<body class="bg-base-100">
-  <header>
-    <nav class="bg-base-200 shadow-lg">
-      <div class="container mx-auto flex items-center justify-between px-4 py-2">
-        <div class="flex-1">
-          <a href="/" class="btn btn-ghost text-xl">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-            Rotulador
-          </a>
+  <body class="bg-base-100">
+    <header>
+      <nav class="bg-base-200 shadow-lg">
+        <div
+          class="container mx-auto flex items-center justify-between px-4 py-2"
+        >
+          <div class="flex-1">
+            <a href="/" class="btn btn-ghost text-xl">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                />
+              </svg>
+              Rotulador
+            </a>
+          </div>
+          <div class="flex-none">
+            <ul class="menu menu-horizontal px-1">
+              <li><a href="/">{{i "Home"}}</a></li>
+              <li><a href="/help">{{i "Help"}}</a></li>
+              <li><a href="/annotate">{{i "Annotate"}}</a></li>
+              <li>
+                <a
+                  onclick="
+                    toggleTheme();
+                    return false;
+                  "
+                  href="#"
+                  aria-label='{{i "Toggle theme"}}'
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                    />
+                  </svg>
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div class="flex-none">
-          <ul class="menu menu-horizontal px-1">
-            <li><a href="/">{{i "Home"}}</a></li>
-            <li><a href="/help">{{i "Help"}}</a></li>
-            <li><a href="/annotate">{{i "Annotate"}}</a></li>
-            <li>
-              <a onclick="toggleTheme(); return false;" href="#" aria-label="{{i "Toggle theme"}}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              </a>
-            </li>
-          </ul>
-        </div>
+      </nav>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      {{block "content" .}}{{end}}
+    </main>
+
+    <footer class="footer footer-center p-4 bg-base-200 text-base-content mt-8">
+      <aside>
+        <p>Rotulador - {{i "Image Annotation Tool"}}</p>
+      </aside>
+    </footer>
+
+    {{define "progressBar"}}
+    <!-- Android-style segmented progress bar -->
+    {{if .}} {{if gt .Total 0}}
+    <div class="flex w-full h-8 rounded-lg overflow-hidden shadow-sm mb-4">
+      {{if gt .Completed 0}}
+      <div
+        class="bg-success flex items-center justify-center text-success-content text-xs font-bold transition-all hover:opacity-90"
+        style="width: {{.CompletedPercent}}%"
+        title='{{.Completed}} {{i "completed"}} ({{printf "%.1f" .CompletedPercent}}%)'
+      >
+        {{if gt .CompletedPercent 5.0}}{{.Completed}}{{end}}
       </div>
-    </nav>
-  </header>
-
-  <main class="container mx-auto px-4 py-8">
-    {{block "content" .}}{{end}}
-  </main>
-
-  <footer class="footer footer-center p-4 bg-base-200 text-base-content mt-8">
-    <aside>
-      <p>Rotulador - {{i "Image Annotation Tool"}}</p>
-    </aside>
-  </footer>
-
-  {{define "progressBar"}}
-  <!-- Android-style segmented progress bar -->
-  {{if .}}
-  {{if gt .Total 0}}
-  <div class="flex w-full h-8 rounded-lg overflow-hidden shadow-sm mb-4">
-    {{if gt .Completed 0}}
-    <div class="bg-success flex items-center justify-center text-success-content text-xs font-bold transition-all hover:opacity-90"
-         style="width: {{.CompletedPercent}}%"
-         title="{{.Completed}} {{i "completed"}} ({{printf "%.1f" .CompletedPercent}}%)">
-      {{if gt .CompletedPercent 5.0}}{{.Completed}}{{end}}
+      {{end}} {{if gt .Pending 0}}
+      <div
+        class="bg-info flex items-center justify-center text-info-content text-xs font-bold transition-all hover:opacity-90"
+        style="width: {{.PendingPercent}}%"
+        title='{{.Pending}} {{i "pending"}} ({{printf "%.1f" .PendingPercent}}%)'
+      >
+        {{if gt .PendingPercent 5.0}}{{.Pending}}{{end}}
+      </div>
+      {{end}} {{if gt .NotYetAnnotated 0}}
+      <div
+        class="bg-base-300 flex items-center justify-center text-base-content text-xs transition-all hover:opacity-90"
+        style="width: {{.NotYetAnnotatedPercent}}%"
+        title='{{.NotYetAnnotated}} {{i "not yet annotated in previous phase"}} ({{printf "%.1f" .NotYetAnnotatedPercent}}%)'
+      >
+        {{if gt .NotYetAnnotatedPercent 5.0}}{{.NotYetAnnotated}}{{end}}
+      </div>
+      {{end}} {{if gt .FilteredWrongClass 0}}
+      <div
+        class="bg-error flex items-center justify-center text-error-content text-xs transition-all hover:opacity-90"
+        style="width: {{.FilteredPercent}}%"
+        title='{{.FilteredWrongClass}} {{i "annotated with wrong class in previous phase"}} ({{printf "%.1f" .FilteredPercent}}%)'
+      >
+        {{if gt .FilteredPercent 5.0}}{{.FilteredWrongClass}}{{end}}
+      </div>
+      {{end}}
     </div>
-    {{end}}
-    {{if gt .Pending 0}}
-    <div class="bg-info flex items-center justify-center text-info-content text-xs font-bold transition-all hover:opacity-90"
-         style="width: {{.PendingPercent}}%"
-         title="{{.Pending}} {{i "pending"}} ({{printf "%.1f" .PendingPercent}}%)">
-      {{if gt .PendingPercent 5.0}}{{.Pending}}{{end}}
-    </div>
-    {{end}}
-    {{if gt .NotYetAnnotated 0}}
-    <div class="bg-base-300 flex items-center justify-center text-base-content text-xs transition-all hover:opacity-90"
-         style="width: {{.NotYetAnnotatedPercent}}%"
-         title="{{.NotYetAnnotated}} {{i "not yet annotated in previous phase"}} ({{printf "%.1f" .NotYetAnnotatedPercent}}%)">
-      {{if gt .NotYetAnnotatedPercent 5.0}}{{.NotYetAnnotated}}{{end}}
-    </div>
-    {{end}}
-    {{if gt .FilteredWrongClass 0}}
-    <div class="bg-error flex items-center justify-center text-error-content text-xs transition-all hover:opacity-90"
-         style="width: {{.FilteredPercent}}%"
-         title="{{.FilteredWrongClass}} {{i "annotated with wrong class in previous phase"}} ({{printf "%.1f" .FilteredPercent}}%)">
-      {{if gt .FilteredPercent 5.0}}{{.FilteredWrongClass}}{{end}}
-    </div>
-    {{end}}
-  </div>
-  {{else}}
-  <progress class="progress progress-primary w-full mb-4" value="0" max="100"></progress>
-  {{end}}
-  {{end}}
-  {{end}}
-</body>
-
+    {{else}}
+    <progress
+      class="progress progress-primary w-full mb-4"
+      value="0"
+      max="100"
+    ></progress>
+    {{end}} {{end}} {{end}}
+  </body>
 </html>

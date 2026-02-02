@@ -13,7 +13,10 @@
       <div class="flex-1">
         <h2 class="card-title">{{.TaskName}}</h2>
         <div class="flex gap-3 items-center mt-1">
-          <p class="text-xs opacity-70 font-mono cursor-pointer" onclick="navigator.clipboard.writeText('{{.ImageFilename}}'); showToast('{{i "Copied to clipboard!"}}')">
+          <p
+            class="text-xs opacity-70 font-mono cursor-pointer"
+            onclick='navigator.clipboard.writeText("{{.ImageFilename}}"); showToast("{{i "Copied to clipboard!"}}")'
+          >
             {{.ImageFilename}}
           </p>
           {{if .Progress}}
@@ -24,9 +27,19 @@
         </div>
       </div>
       <a href="/help/{{.TaskID}}" class="btn btn-sm btn-ghost flex-shrink-0">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       </a>
     </div>
@@ -36,34 +49,49 @@
 
 <div class="annotation-buttons mb-6" id="annotation-controls">
   {{range $idx, $class := .Classes}}
-  <button class="btn btn-primary btn-lg flex-1 min-w-[150px]" hx-post="/annotate/{{$.TaskID}}/{{$.ImageID}}"
-    hx-vals='{"selectedClass": "{{$class.ID}}", "sure": "on"}' data-key="{{$class.Key}}">
-    {{i $class.Name}}
-    {{if $class.Key}}<kbd class="kbd kbd-sm ml-2">{{$class.Key}}</kbd>{{end}}
+  <button
+    class="btn btn-primary btn-lg flex-1 min-w-[150px]"
+    hx-post="/annotate/{{$.TaskID}}/{{$.ImageID}}"
+    hx-vals='{"selectedClass": "{{$class.ID}}", "sure": "on"}'
+    data-key="{{$class.Key}}"
+  >
+    {{i $class.Name}} {{if $class.Key}}<kbd class="kbd kbd-sm ml-2"
+      >{{$class.Key}}</kbd
+    >{{end}}
   </button>
   {{end}}
-  <button class="btn btn-warning btn-lg flex-1 min-w-[150px]" hx-post="/annotate/{{.TaskID}}/{{.ImageID}}"
-    hx-vals='{"selectedClass": "", "sure": "off"}' data-key="?">
+  <button
+    class="btn btn-warning btn-lg flex-1 min-w-[150px]"
+    hx-post="/annotate/{{.TaskID}}/{{.ImageID}}"
+    hx-vals='{"selectedClass": "", "sure": "off"}'
+    data-key="?"
+  >
     {{i "Not Sure"}} <kbd class="kbd kbd-sm ml-2">?</kbd>
   </button>
 </div>
 
-<div class="toast toast-center" id="copy-toast" style="display: none;">
+<div class="toast toast-center" id="copy-toast" style="display: none">
   <div class="alert alert-success">
     <span id="copy-toast-message">{{i "Copied to clipboard!"}}</span>
   </div>
 </div>
 
 <div class="image-container">
-  <img src="/asset/{{.ImageID}}" alt="Image to annotate" class="rounded-lg shadow-2xl" />
+  <img
+    src="/asset/{{.ImageID}}"
+    alt="Image to annotate"
+    class="rounded-lg shadow-2xl"
+  />
 </div>
 
 <script>
   // Keyboard shortcuts for annotation
-  document.addEventListener('keydown', function (e) {
-    const buttons = document.querySelectorAll('#annotation-controls button[data-key]');
-    buttons.forEach(button => {
-      const key = button.getAttribute('data-key');
+  document.addEventListener("keydown", function (e) {
+    const buttons = document.querySelectorAll(
+      "#annotation-controls button[data-key]",
+    );
+    buttons.forEach((button) => {
+      const key = button.getAttribute("data-key");
       if (key && e.key.toLowerCase() === key.toLowerCase()) {
         e.preventDefault();
         button.click();
@@ -73,12 +101,12 @@
 
   // Toast function
   function showToast(message) {
-    const toast = document.getElementById('copy-toast');
-    const toastMessage = document.getElementById('copy-toast-message');
+    const toast = document.getElementById("copy-toast");
+    const toastMessage = document.getElementById("copy-toast-message");
     toastMessage.innerText = message;
-    toast.style.display = 'block';
+    toast.style.display = "block";
     setTimeout(() => {
-      toast.style.display = 'none';
+      toast.style.display = "none";
     }, 2000);
   }
 </script>

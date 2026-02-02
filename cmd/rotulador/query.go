@@ -36,7 +36,9 @@ func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...interface
 		pointers[i] = &container[i]
 	}
 	for result.Next() {
-		result.Scan(pointers...)
+		if err := result.Scan(pointers...); err != nil {
+			return err
+		}
 		fmt.Println(strings.Join(container, "\t"))
 	}
 	return nil
@@ -72,7 +74,9 @@ Examples:
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() {
+			_ = db.Close()
+		}()
 
 		tx, err := db.BeginTx(cmd.Context(), &sql.TxOptions{
 			Isolation: sql.LevelReadUncommitted,
@@ -80,7 +84,9 @@ Examples:
 		if err != nil {
 			return err
 		}
-		defer tx.Rollback()
+		defer func() {
+			_ = tx.Rollback()
+		}()
 
 		queryArgs := []interface{}{}
 		query := ""
@@ -97,12 +103,12 @@ Examples:
 
 		// Build query to find images with specific annotations
 		if showIDs {
-			query += "SELECT images.id "
+			query += "SELECT images.sha256 "
 		} else {
-			query += "SELECT images.path "
+			query += "SELECT images.filename "
 		}
 		query += "FROM annotations "
-		query += "JOIN images ON annotations.image_id = images.id "
+		query += "JOIN images ON annotations.image_sha256 = images.sha256 "
 		query += "WHERE annotations.stage_index = ? "
 		queryArgs = append(queryArgs, args[1])
 
@@ -112,8 +118,8 @@ Examples:
 		}
 
 		if len(args) >= 4 {
-			query += "AND (CAST(images.id AS TEXT) = ? OR images.path = ? OR images.original_filename = ?) "
-			queryArgs = append(queryArgs, args[3], args[3], args[3])
+			query += "AND (images.sha256 = ? OR images.filename = ?) "
+			queryArgs = append(queryArgs, args[3], args[3])
 		}
 
 		return PrintQuery(cmd.Context(), tx, query, queryArgs...)

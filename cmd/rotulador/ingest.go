@@ -64,7 +64,7 @@ var ingestCmd = &cobra.Command{
 		}
 
 		for _, input := range inputs {
-			filepath.WalkDir(input, func(path string, info fs.DirEntry, err error) error {
+			if err := filepath.WalkDir(input, func(path string, info fs.DirEntry, err error) error {
 				if err != nil {
 					return err
 				}
@@ -78,7 +78,9 @@ var ingestCmd = &cobra.Command{
 				logger.Info("found image", "path", path)
 				crawledFilepaths <- img
 				return nil
-			})
+			}); err != nil {
+				logger.Error("error walking directory", "path", input, "err", err)
+			}
 		}
 		close(crawledFilepaths)
 		return nil

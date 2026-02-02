@@ -3,7 +3,7 @@ export default {
   content: [
     "./templates/**/*.html",
     "./annotation/templates/**/*.html",
-    "./annotation/tmpl/**/*.html"
+    "./annotation/tmpl/**/*.html",
   ],
   daisyui: {
     themes: ["light", "dark"],
@@ -12,4 +12,4 @@ export default {
     styled: true,
     utils: true,
   },
-}
+};

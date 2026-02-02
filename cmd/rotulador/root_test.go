@@ -71,7 +71,9 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 		dbPath := filepath.Join(tempDir, "annotations.db")
 		imagesPath := filepath.Join(tempDir, "images")
 
-		os.WriteFile(configPath, []byte(""), 0644) // Create dummy config
+		if err := os.WriteFile(configPath, []byte(""), 0644); err != nil {
+			t.Fatalf("failed to write dummy config: %v", err)
+		}
 
 		_, errOut, err := executeCommand(tempDir)
 		if err != nil {
@@ -93,9 +95,9 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 	t.Run("when argument is a file, assumes it's a config and tries to run", func(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "test-config.yaml")
-		dbPath := filepath.Join(tempDir, "annotations.db") // Expected default path
+		dbPath := filepath.Join(tempDir, "annotations.db")              // Expected default path
 		imagesPath := filepath.Join(filepath.Dir(configPath), "images") // Expected default path
-		
+
 		// Create a valid config file
 		validConfig := `
 meta:
@@ -110,8 +112,12 @@ tasks:
       good: { name: "Good" }
       bad: { name: "Bad" }
 `
-		os.WriteFile(configPath, []byte(validConfig), 0644)
-		os.Mkdir(imagesPath, 0755)
+		if err := os.WriteFile(configPath, []byte(validConfig), 0644); err != nil {
+			t.Fatalf("failed to write config: %v", err)
+		}
+		if err := os.Mkdir(imagesPath, 0755); err != nil {
+			t.Fatalf("failed to create images dir: %v", err)
+		}
 
 		// Note: --database and --images flags are omitted to test the new default logic
 		_, errOut, err := executeCommand(configPath, "--addr", ":8082")

@@ -1,0 +1,6 @@
+coverage.html
+annotation/assets/css/output.css
+bin/
+build/
+dist/
+node_modules/

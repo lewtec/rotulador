@@ -1,0 +1,3141 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>annotation: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+
+				<option value="file0">github.com/lewtec/rotulador/annotation/app.go (0.0%)</option>
+
+				<option value="file1">github.com/lewtec/rotulador/annotation/cache.go (0.0%)</option>
+
+				<option value="file2">github.com/lewtec/rotulador/annotation/config.go (0.0%)</option>
+
+				<option value="file3">github.com/lewtec/rotulador/annotation/db.go (0.0%)</option>
+
+				<option value="file4">github.com/lewtec/rotulador/annotation/hash.go (0.0%)</option>
+
+				<option value="file5">github.com/lewtec/rotulador/annotation/http.go (0.0%)</option>
+
+				<option value="file6">github.com/lewtec/rotulador/annotation/i18n.go (0.0%)</option>
+
+				<option value="file7">github.com/lewtec/rotulador/annotation/image.go (0.0%)</option>
+
+				<option value="file8">github.com/lewtec/rotulador/annotation/template.go (0.0%)</option>
+
+				<option value="file9">github.com/lewtec/rotulador/annotation/template_manager.go (0.0%)</option>
+
+				<option value="file10">github.com/lewtec/rotulador/internal/repository/annotation_repository.go (72.4%)</option>
+
+				<option value="file11">github.com/lewtec/rotulador/internal/repository/image_repository.go (84.4%)</option>
+
+				<option value="file12">github.com/lewtec/rotulador/internal/repository/testing.go (56.2%)</option>
+
+				<option value="file13">github.com/lewtec/rotulador/internal/sqlc/annotations.sql.go (0.0%)</option>
+
+				<option value="file14">github.com/lewtec/rotulador/internal/sqlc/db.go (0.0%)</option>
+
+				<option value="file15">github.com/lewtec/rotulador/internal/sqlc/images.sql.go (0.0%)</option>
+
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+
+			</div>
+		</div>
+		<div id="content">
+
+		<pre class="file" id="file0" style="display: none">package annotation
+
+import (
+        "context"
+        "database/sql"
+        "errors"
+        "fmt"
+        "io"
+        "io/fs"
+        "log/slog"
+        "net/http"
+        "os"
+        "path"
+        "path/filepath"
+        "sort"
+        "strings"
+
+        "math/rand"
+
+        "github.com/golang-migrate/migrate/v4"
+        "github.com/golang-migrate/migrate/v4/database/sqlite"
+        "github.com/golang-migrate/migrate/v4/source/iofs"
+        "github.com/lewtec/rotulador/db/migrations"
+        "github.com/lewtec/rotulador/internal/domain"
+        "github.com/lewtec/rotulador/internal/repository"
+)
+
+type AnnotatorApp struct {
+        ImagesDir      string
+        Database       *sql.DB
+        Config         *Config
+        Logger         *slog.Logger
+        OffsetAdvance  int
+        imageRepo      *repository.ImageRepository
+        annotationRepo *repository.AnnotationRepository
+}
+
+func (a *AnnotatorApp) init() <span class="cov0" title="0">{
+        if a.ImagesDir[len(a.ImagesDir)-1] == '/' </span><span class="cov0" title="0">{
+                a.ImagesDir = a.ImagesDir[:len(a.ImagesDir)-1]
+        }</span>
+        <span class="cov0" title="0">if a.OffsetAdvance == 0 </span><span class="cov0" title="0">{
+                a.OffsetAdvance = 10
+        }</span>
+        // Initialize repositories
+        <span class="cov0" title="0">a.imageRepo = repository.NewImageRepository(a.Database)
+        a.annotationRepo = repository.NewAnnotationRepository(a.Database)</span>
+}
+
+func pathParts(path string) []string <span class="cov0" title="0">{
+        parts := strings.Split(path, "/")
+        if len(parts) &gt; 0 &amp;&amp; parts[0] == "" </span><span class="cov0" title="0">{
+                parts = parts[1:]
+        }</span>
+        <span class="cov0" title="0">if len(parts) &gt; 0 &amp;&amp; parts[len(parts)-1] == "" </span><span class="cov0" title="0">{
+                parts = parts[:len(parts)-1]
+        }</span>
+        <span class="cov0" title="0">return parts</span>
+}
+
+type AnnotationStep struct {
+        TaskID    string
+        ImageID   string
+        ImageName string
+}
+
+type TaskWithCount struct {
+        *ConfigTask
+        AvailableCount int
+        TotalCount     int
+        CompletedCount int
+        PhaseProgress  *PhaseProgress
+}
+
+type PhaseProgress struct {
+        Completed              int     // Images completed in this phase
+        Pending                int     // Images eligible but not yet annotated
+        FilteredWrongClass     int     // Images annotated in dependency phase but with wrong class
+        NotYetAnnotated        int     // Images not yet annotated in dependency phase
+        Total                  int     // Total images in the entire dataset
+        CompletedPercent       float64 // Percentage of completed images
+        PendingPercent         float64 // Percentage of pending images
+        FilteredPercent        float64 // Percentage of filtered (wrong class) images
+        NotYetAnnotatedPercent float64 // Percentage of not yet annotated images
+}
+
+// getCachedImageList returns the list of all images, using cache if available
+func (a *AnnotatorApp) getCachedImageList(ctx context.Context) ([]*domain.Image, error) <span class="cov0" title="0">{
+        // Try to get from cache first
+        if cache := GetRequestCache(ctx); cache != nil </span><span class="cov0" title="0">{
+                if images, ok := cache.GetImages(); ok </span><span class="cov0" title="0">{
+                        return images, nil
+                }</span>
+        }
+
+        // Cache miss or no cache available, fetch from database
+        <span class="cov0" title="0">images, err := a.imageRepo.List(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Store in cache if available
+        <span class="cov0" title="0">if cache := GetRequestCache(ctx); cache != nil </span><span class="cov0" title="0">{
+                cache.SetImages(images)
+        }</span>
+
+        <span class="cov0" title="0">return images, nil</span>
+}
+
+// CountEligibleImages counts all images that are eligible for this task (regardless of annotation status)
+func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (int, error) <span class="cov0" title="0">{
+        // Find stage index for this task
+        stageIndex := -1
+        for i, task := range a.Config.Tasks </span><span class="cov0" title="0">{
+                if task.ID == taskID </span><span class="cov0" title="0">{
+                        stageIndex = i
+                        break</span>
+                }
+        }
+        <span class="cov0" title="0">if stageIndex == -1 </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("task not found: %s", taskID)
+        }</span>
+
+        <span class="cov0" title="0">task := a.Config.Tasks[stageIndex]
+
+        // If no dependencies, all images are eligible
+        if len(task.If) == 0 </span><span class="cov0" title="0">{
+                count, err := a.imageRepo.Count(ctx)
+                return int(count), err
+        }</span>
+
+        // Pre-fetch all dependency data before looping (optimization: move queries outside loop)
+        <span class="cov0" title="0">imageHashesByDep := make(map[string]map[string]bool)
+        for depTaskID, requiredValue := range task.If </span><span class="cov0" title="0">{
+                // Find the stage index for the dependency task
+                depStageIndex := -1
+                for i, t := range a.Config.Tasks </span><span class="cov0" title="0">{
+                        if t.ID == depTaskID </span><span class="cov0" title="0">{
+                                depStageIndex = i
+                                break</span>
+                        }
+                }
+                <span class="cov0" title="0">if depStageIndex == -1 </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                // Fetch all image hashes for this dependency ONCE
+                <span class="cov0" title="0">imageHashes, err := a.annotationRepo.GetImageHashesWithAnnotation(ctx, int64(depStageIndex), requiredValue)
+                if err != nil </span><span class="cov0" title="0">{
+                        return 0, fmt.Errorf("while checking dependency: %w", err)
+                }</span>
+
+                // Convert to map for O(1) lookup
+                <span class="cov0" title="0">hashSet := make(map[string]bool, len(imageHashes))
+                for _, hash := range imageHashes </span><span class="cov0" title="0">{
+                        hashSet[hash] = true
+                }</span>
+                <span class="cov0" title="0">imageHashesByDep[depTaskID] = hashSet</span>
+        }
+
+        // Get all images and filter by dependencies (using cache)
+        <span class="cov0" title="0">allImages, err := a.getCachedImageList(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("while listing images: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">validCount := 0
+        for _, img := range allImages </span><span class="cov0" title="0">{
+                valid := true
+                // Check each dependency using pre-fetched map
+                for depTaskID := range task.If </span><span class="cov0" title="0">{
+                        if !imageHashesByDep[depTaskID][img.SHA256] </span><span class="cov0" title="0">{
+                                valid = false
+                                break</span>
+                        }
+                }
+
+                <span class="cov0" title="0">if valid </span><span class="cov0" title="0">{
+                        validCount++
+                }</span>
+        }
+
+        <span class="cov0" title="0">return validCount, nil</span>
+}
+
+func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) (int, error) <span class="cov0" title="0">{
+        // Find stage index for this task
+        stageIndex := -1
+        for i, task := range a.Config.Tasks </span><span class="cov0" title="0">{
+                if task.ID == taskID </span><span class="cov0" title="0">{
+                        stageIndex = i
+                        break</span>
+                }
+        }
+        <span class="cov0" title="0">if stageIndex == -1 </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("task not found: %s", taskID)
+        }</span>
+
+        <span class="cov0" title="0">task := a.Config.Tasks[stageIndex]
+
+        // Count images without annotation for this stage
+        count, err := a.annotationRepo.CountImagesWithoutAnnotationForStage(ctx, int64(stageIndex))
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("while counting available images: %w", err)
+        }</span>
+
+        // Handle task dependencies (If field)
+        // If there are dependencies, we need to filter images that meet the criteria
+        <span class="cov0" title="0">if len(task.If) &gt; 0 </span><span class="cov0" title="0">{
+                // Pre-fetch all dependency data before looping (optimization: move queries outside loop)
+                imageHashesByDep := make(map[string]map[string]bool)
+                for depTaskID, requiredValue := range task.If </span><span class="cov0" title="0">{
+                        // Find the stage index for the dependency task
+                        depStageIndex := -1
+                        for i, t := range a.Config.Tasks </span><span class="cov0" title="0">{
+                                if t.ID == depTaskID </span><span class="cov0" title="0">{
+                                        depStageIndex = i
+                                        break</span>
+                                }
+                        }
+                        <span class="cov0" title="0">if depStageIndex == -1 </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+
+                        // Fetch all image hashes for this dependency ONCE
+                        <span class="cov0" title="0">imageHashes, err := a.annotationRepo.GetImageHashesWithAnnotation(ctx, int64(depStageIndex), requiredValue)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return 0, fmt.Errorf("while checking dependency: %w", err)
+                        }</span>
+
+                        // Convert to map for O(1) lookup
+                        <span class="cov0" title="0">hashSet := make(map[string]bool, len(imageHashes))
+                        for _, hash := range imageHashes </span><span class="cov0" title="0">{
+                                hashSet[hash] = true
+                        }</span>
+                        <span class="cov0" title="0">imageHashesByDep[depTaskID] = hashSet</span>
+                }
+
+                // Get all candidate images (using cache)
+                <span class="cov0" title="0">allImages, err := a.getCachedImageList(ctx)
+                if err != nil </span><span class="cov0" title="0">{
+                        return 0, fmt.Errorf("while listing images: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">validCount := 0
+                for _, img := range allImages </span><span class="cov0" title="0">{
+                        valid := true
+                        // Check each dependency using pre-fetched map
+                        for depTaskID := range task.If </span><span class="cov0" title="0">{
+                                if !imageHashesByDep[depTaskID][img.SHA256] </span><span class="cov0" title="0">{
+                                        valid = false
+                                        break</span>
+                                }
+                        }
+
+                        <span class="cov0" title="0">if valid </span><span class="cov0" title="0">{
+                                // Check if this image has annotation for current stage
+                                hasAnnotation, err := a.annotationRepo.CheckAnnotationExists(ctx, img.SHA256, "", int64(stageIndex))
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return 0, err
+                                }</span>
+                                <span class="cov0" title="0">if !hasAnnotation </span><span class="cov0" title="0">{
+                                        validCount++
+                                }</span>
+                        }
+                }
+                <span class="cov0" title="0">return validCount, nil</span>
+        }
+
+        <span class="cov0" title="0">return int(count), nil</span>
+}
+
+// GetPhaseProgressStats calculates comprehensive progress statistics for a task
+func (a *AnnotatorApp) GetPhaseProgressStats(ctx context.Context, taskID string) (*PhaseProgress, error) <span class="cov0" title="0">{
+        // Get total images in the entire dataset
+        totalCount, err := a.imageRepo.Count(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("while counting total images: %w", err)
+        }</span>
+
+        // Get eligible images (that pass filters from previous phases)
+        <span class="cov0" title="0">eligibleCount, err := a.CountEligibleImages(ctx, taskID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("while counting eligible images: %w", err)
+        }</span>
+
+        // Get available images (eligible but not yet annotated)
+        <span class="cov0" title="0">availableCount, err := a.CountAvailableImages(ctx, taskID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("while counting available images: %w", err)
+        }</span>
+
+        // Calculate completed and pending
+        <span class="cov0" title="0">completed := eligibleCount - availableCount
+        if completed &lt; 0 </span><span class="cov0" title="0">{
+                completed = 0
+        }</span>
+        <span class="cov0" title="0">pending := availableCount
+
+        total := int(totalCount)
+        notEligible := total - eligibleCount
+
+        // Now differentiate between filtered (annotated with wrong class) and not yet annotated
+        var filteredWrongClass, notYetAnnotated int
+
+        // Find task and check if it has dependencies
+        stageIndex := -1
+        for i, task := range a.Config.Tasks </span><span class="cov0" title="0">{
+                if task.ID == taskID </span><span class="cov0" title="0">{
+                        stageIndex = i
+                        break</span>
+                }
+        }
+
+        <span class="cov0" title="0">if stageIndex != -1 </span><span class="cov0" title="0">{
+                task := a.Config.Tasks[stageIndex]
+
+                // If task has dependencies, analyze the not-eligible images
+                if len(task.If) &gt; 0 </span><span class="cov0" title="0">{
+                        // Pre-fetch all dependency data before looping (optimization: move queries outside loop)
+                        imageHashesByDep := make(map[string]map[string]bool)
+                        for depTaskID, requiredValue := range task.If </span><span class="cov0" title="0">{
+                                depStageIndex := -1
+                                for i, t := range a.Config.Tasks </span><span class="cov0" title="0">{
+                                        if t.ID == depTaskID </span><span class="cov0" title="0">{
+                                                depStageIndex = i
+                                                break</span>
+                                        }
+                                }
+                                <span class="cov0" title="0">if depStageIndex == -1 </span><span class="cov0" title="0">{
+                                        continue</span>
+                                }
+
+                                // Fetch all image hashes for this dependency ONCE
+                                <span class="cov0" title="0">imageHashes, err := a.annotationRepo.GetImageHashesWithAnnotation(ctx, int64(depStageIndex), requiredValue)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return nil, fmt.Errorf("while checking dependency: %w", err)
+                                }</span>
+
+                                // Convert to map for O(1) lookup
+                                <span class="cov0" title="0">hashSet := make(map[string]bool, len(imageHashes))
+                                for _, hash := range imageHashes </span><span class="cov0" title="0">{
+                                        hashSet[hash] = true
+                                }</span>
+                                <span class="cov0" title="0">imageHashesByDep[depTaskID] = hashSet</span>
+                        }
+
+                        // Get all images (using cache)
+                        <span class="cov0" title="0">allImages, err := a.getCachedImageList(ctx)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("while listing images: %w", err)
+                        }</span>
+
+                        // Get images that passed the filter (eligible)
+                        <span class="cov0" title="0">eligibleHashes := make(map[string]bool)
+                        for _, img := range allImages </span><span class="cov0" title="0">{
+                                valid := true
+                                // Check each dependency using pre-fetched map
+                                for depTaskID := range task.If </span><span class="cov0" title="0">{
+                                        if !imageHashesByDep[depTaskID][img.SHA256] </span><span class="cov0" title="0">{
+                                                valid = false
+                                                break</span>
+                                        }
+                                }
+
+                                <span class="cov0" title="0">if valid </span><span class="cov0" title="0">{
+                                        eligibleHashes[img.SHA256] = true
+                                }</span>
+                        }
+
+                        // Check not-eligible images to see if they were annotated in dependency phase
+                        <span class="cov0" title="0">for _, img := range allImages </span><span class="cov0" title="0">{
+                                if !eligibleHashes[img.SHA256] </span><span class="cov0" title="0">{
+                                        // This image is not eligible - check if it was annotated in dependency phase
+                                        annotatedInDep := false
+                                        for depTaskID := range task.If </span><span class="cov0" title="0">{
+                                                depStageIndex := -1
+                                                for i, t := range a.Config.Tasks </span><span class="cov0" title="0">{
+                                                        if t.ID == depTaskID </span><span class="cov0" title="0">{
+                                                                depStageIndex = i
+                                                                break</span>
+                                                        }
+                                                }
+                                                <span class="cov0" title="0">if depStageIndex == -1 </span><span class="cov0" title="0">{
+                                                        continue</span>
+                                                }
+
+                                                // Check if this image has ANY annotation in the dependency phase
+                                                <span class="cov0" title="0">hasAnnotation, err := a.annotationRepo.CheckAnnotationExists(ctx, img.SHA256, "", int64(depStageIndex))
+                                                if err == nil &amp;&amp; hasAnnotation </span><span class="cov0" title="0">{
+                                                        annotatedInDep = true
+                                                        break</span>
+                                                }
+                                        }
+
+                                        <span class="cov0" title="0">if annotatedInDep </span><span class="cov0" title="0">{
+                                                filteredWrongClass++
+                                        }</span> else<span class="cov0" title="0"> {
+                                                notYetAnnotated++
+                                        }</span>
+                                }
+                        }
+                } else<span class="cov0" title="0"> {
+                        // No dependencies, so all not-eligible images are "not yet annotated"
+                        notYetAnnotated = notEligible
+                }</span>
+        }
+
+        // Calculate percentages
+        <span class="cov0" title="0">var completedPercent, pendingPercent, filteredPercent, notYetAnnotatedPercent float64
+        if total &gt; 0 </span><span class="cov0" title="0">{
+                completedPercent = float64(completed) / float64(total) * 100
+                pendingPercent = float64(pending) / float64(total) * 100
+                filteredPercent = float64(filteredWrongClass) / float64(total) * 100
+                notYetAnnotatedPercent = float64(notYetAnnotated) / float64(total) * 100
+        }</span>
+
+        <span class="cov0" title="0">return &amp;PhaseProgress{
+                Completed:              completed,
+                Pending:                pending,
+                FilteredWrongClass:     filteredWrongClass,
+                NotYetAnnotated:        notYetAnnotated,
+                Total:                  total,
+                CompletedPercent:       completedPercent,
+                PendingPercent:         pendingPercent,
+                FilteredPercent:        filteredPercent,
+                NotYetAnnotatedPercent: notYetAnnotatedPercent,
+        }, nil</span>
+}
+
+func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*AnnotationStep, error) <span class="cov0" title="0">{
+        // If no task specified, try each task in order
+        if taskID == "" </span><span class="cov0" title="0">{
+                for _, task := range a.Config.Tasks </span><span class="cov0" title="0">{
+                        step, err := a.NextAnnotationStep(ctx, task.ID)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+                        <span class="cov0" title="0">if step == nil </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+                        <span class="cov0" title="0">return step, nil</span>
+                }
+                <span class="cov0" title="0">return nil, nil</span>
+        }
+
+        // Find stage index for this task
+        <span class="cov0" title="0">stageIndex := -1
+        for i, task := range a.Config.Tasks </span><span class="cov0" title="0">{
+                if task.ID == taskID </span><span class="cov0" title="0">{
+                        stageIndex = i
+                        break</span>
+                }
+        }
+        <span class="cov0" title="0">if stageIndex == -1 </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("task not found: %s", taskID)
+        }</span>
+
+        <span class="cov0" title="0">task := a.Config.Tasks[stageIndex]
+
+        // Pre-fetch all dependency data before looping (optimization: move queries outside loop)
+        imageHashesByDep := make(map[string]map[string]bool)
+        if len(task.If) &gt; 0 </span><span class="cov0" title="0">{
+                for depTaskID, requiredValue := range task.If </span><span class="cov0" title="0">{
+                        // Find the stage index for the dependency task
+                        depStageIndex := -1
+                        for i, t := range a.Config.Tasks </span><span class="cov0" title="0">{
+                                if t.ID == depTaskID </span><span class="cov0" title="0">{
+                                        depStageIndex = i
+                                        break</span>
+                                }
+                        }
+                        <span class="cov0" title="0">if depStageIndex == -1 </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+
+                        // Fetch all image hashes for this dependency ONCE
+                        <span class="cov0" title="0">imageHashes, err := a.annotationRepo.GetImageHashesWithAnnotation(ctx, int64(depStageIndex), requiredValue)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("while checking dependency: %w", err)
+                        }</span>
+
+                        // Convert to map for O(1) lookup
+                        <span class="cov0" title="0">hashSet := make(map[string]bool, len(imageHashes))
+                        for _, hash := range imageHashes </span><span class="cov0" title="0">{
+                                hashSet[hash] = true
+                        }</span>
+                        <span class="cov0" title="0">imageHashesByDep[depTaskID] = hashSet</span>
+                }
+        }
+
+        // Get images without annotation for this stage (using cache)
+        <span class="cov0" title="0">allImages, err := a.getCachedImageList(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("while listing images: %w", err)
+        }</span>
+
+        // Filter images based on dependencies and annotation status
+        <span class="cov0" title="0">var candidateImages []string
+        for _, img := range allImages </span><span class="cov0" title="0">{
+                // Check if image already has annotation for this stage
+                hasAnnotation, err := a.annotationRepo.CheckAnnotationExists(ctx, img.SHA256, "", int64(stageIndex))
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">if hasAnnotation </span><span class="cov0" title="0">{
+                        continue</span> // Skip images that already have annotation
+                }
+
+                // Check task dependencies (If field) using pre-fetched map
+                <span class="cov0" title="0">valid := true
+                if len(task.If) &gt; 0 </span><span class="cov0" title="0">{
+                        for depTaskID := range task.If </span><span class="cov0" title="0">{
+                                if !imageHashesByDep[depTaskID][img.SHA256] </span><span class="cov0" title="0">{
+                                        valid = false
+                                        break</span>
+                                }
+                        }
+                }
+
+                <span class="cov0" title="0">if valid </span><span class="cov0" title="0">{
+                        candidateImages = append(candidateImages, img.SHA256)
+                        // Limit candidates to OffsetAdvance for performance
+                        if len(candidateImages) &gt;= a.OffsetAdvance </span><span class="cov0" title="0">{
+                                break</span>
+                        }
+                }
+        }
+
+        // No images available
+        <span class="cov0" title="0">if len(candidateImages) == 0 </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+
+        // Randomly select one image SHA256
+        <span class="cov0" title="0">selectedSHA256 := candidateImages[rand.Intn(len(candidateImages))]
+
+        // Get image details
+        selectedImage, err := a.imageRepo.GetBySHA256(ctx, selectedSHA256)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("while getting image details: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;AnnotationStep{
+                TaskID:    taskID,
+                ImageID:   selectedSHA256,
+                ImageName: selectedImage.Filename,
+        }, nil</span>
+}
+
+func (a *AnnotatorApp) GetImageFilename(ctx context.Context, sha256 string) (filename string, err error) <span class="cov0" title="0">{
+        // Get image from repository using SHA256 hash
+        img, err := a.imageRepo.GetBySHA256(ctx, sha256)
+        if err != nil </span><span class="cov0" title="0">{
+                if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return "", fmt.Errorf("image not found: %s", sha256)
+                }</span>
+                <span class="cov0" title="0">return "", err</span>
+        }
+
+        <span class="cov0" title="0">return img.Filename, nil</span>
+}
+
+type AnnotationResponse struct {
+        ImageID string
+        TaskID  string
+        User    string
+        Value   string
+        Sure    bool
+}
+
+func (a *AnnotatorApp) SubmitAnnotation(ctx context.Context, annotation AnnotationResponse) error <span class="cov0" title="0">{
+        // Find stage index for this task
+        stageIndex := -1
+        for i, task := range a.Config.Tasks </span><span class="cov0" title="0">{
+                if task.ID == annotation.TaskID </span><span class="cov0" title="0">{
+                        stageIndex = i
+                        break</span>
+                }
+        }
+        <span class="cov0" title="0">if stageIndex == -1 </span><span class="cov0" title="0">{
+                return fmt.Errorf("no such task: %s", annotation.TaskID)
+        }</span>
+
+        // ImageID is already the SHA256 hash, use it directly
+        <span class="cov0" title="0">_, err := a.annotationRepo.Create(ctx, annotation.ImageID, annotation.User, stageIndex, annotation.Value)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("while creating annotation: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (a *AnnotatorApp) GetTask(taskID string) *ConfigTask <span class="cov0" title="0">{
+        for _, currentTask := range a.Config.Tasks </span><span class="cov0" title="0">{
+                if currentTask.ID == taskID </span><span class="cov0" title="0">{
+                        return currentTask
+                }</span>
+        }
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ClassButton represents a class button with keyboard shortcut
+type ClassButton struct {
+        ID   string
+        Name string
+        Key  string
+}
+
+func (a *AnnotatorApp) GetHTTPHandler() http.Handler <span class="cov0" title="0">{
+        a.init()
+        mux := http.NewServeMux()
+
+        // Home page
+        mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                if r.URL.Path != "/" </span><span class="cov0" title="0">{
+                        http.NotFoundHandler().ServeHTTP(w, r)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">data := map[string]interface{}{
+                        "Title":       "Welcome to Rotulador",
+                        "ProjectName": "Welcome to Rotulador",
+                        "Description": a.Config.Meta.Description,
+                }
+
+                err := RenderPageWithRequest(r, w, "home.html", data)
+                if err != nil </span><span class="cov0" title="0">{
+                        a.Logger.Error("error rendering home template", "err", err)
+                        w.WriteHeader(http.StatusInternalServerError)
+                }</span>
+        })
+
+        // Favicon handler
+        <span class="cov0" title="0">mux.HandleFunc("/favicon.svg", func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                w.Header().Set("Content-Type", "image/svg+xml")
+                w.Header().Set("Cache-Control", "public, max-age=31536000")
+                if _, err := w.Write([]byte(GetFavicon())); err != nil </span><span class="cov0" title="0">{
+                        a.Logger.Error("error writing favicon response", "err", err)
+                }</span>
+        })
+
+        // Help pages
+        <span class="cov0" title="0">mux.HandleFunc("/help/", func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                itemPath := pathParts(r.URL.Path)
+                title := "Help"
+
+                var tasks []TaskWithCount
+                var currentTask *ConfigTask = nil
+
+                if len(itemPath) == 1 </span><span class="cov0" title="0">{
+                        // Only populate tasks for the timeline view (no markdown for tasks)
+                        tasks = make([]TaskWithCount, 0, len(a.Config.Tasks))
+
+                        for _, task := range a.Config.Tasks </span><span class="cov0" title="0">{
+                                availableCount, err := a.CountAvailableImages(r.Context(), task.ID)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        a.Logger.Error("error counting available images", "task", task.ID, "err", err)
+                                        availableCount = 0
+                                }</span>
+
+                                <span class="cov0" title="0">totalEligible, err := a.CountEligibleImages(r.Context(), task.ID)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        a.Logger.Error("error counting eligible images", "task", task.ID, "err", err)
+                                        totalEligible = availableCount // fallback to available
+                                }</span>
+
+                                <span class="cov0" title="0">completedCount := totalEligible - availableCount
+                                if completedCount &lt; 0 </span><span class="cov0" title="0">{
+                                        completedCount = 0
+                                }</span>
+
+                                // Get comprehensive phase progress stats
+                                <span class="cov0" title="0">phaseProgress, err := a.GetPhaseProgressStats(r.Context(), task.ID)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        a.Logger.Error("error getting phase progress", "task", task.ID, "err", err)
+                                        phaseProgress = &amp;PhaseProgress{}
+                                }</span>
+
+                                <span class="cov0" title="0">tasks = append(tasks, TaskWithCount{
+                                        ConfigTask:     task,
+                                        AvailableCount: availableCount,
+                                        TotalCount:     totalEligible,
+                                        CompletedCount: completedCount,
+                                        PhaseProgress:  phaseProgress,
+                                })</span>
+                        }
+                } else<span class="cov0" title="0"> if len(itemPath) == 2 </span><span class="cov0" title="0">{
+                        helpTask := itemPath[1]
+                        task := a.GetTask(helpTask)
+                        if task == nil </span><span class="cov0" title="0">{
+                                http.NotFoundHandler().ServeHTTP(w, r)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">currentTask = task
+
+                        // Get progress stats for this specific task
+                        phaseProgress, err := a.GetPhaseProgressStats(r.Context(), helpTask)
+                        if err != nil </span><span class="cov0" title="0">{
+                                a.Logger.Error("error getting phase progress", "task", helpTask, "err", err)
+                                phaseProgress = &amp;PhaseProgress{}
+                        }</span>
+
+                        // Get available count to check if there are images to annotate
+                        <span class="cov0" title="0">availableCount, err := a.CountAvailableImages(r.Context(), helpTask)
+                        if err != nil </span><span class="cov0" title="0">{
+                                a.Logger.Error("error counting available images", "task", helpTask, "err", err)
+                                availableCount = 0
+                        }</span>
+
+                        <span class="cov0" title="0">tasks = []TaskWithCount{
+                                {
+                                        ConfigTask:     task,
+                                        AvailableCount: availableCount,
+                                        TotalCount:     phaseProgress.Completed + phaseProgress.Pending,
+                                        CompletedCount: phaseProgress.Completed,
+                                        PhaseProgress:  phaseProgress,
+                                },
+                        }</span>
+                } else<span class="cov0" title="0"> {
+                        http.NotFoundHandler().ServeHTTP(w, r)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">data := map[string]interface{}{
+                        "Title":       title,
+                        "Description": a.Config.Meta.Description,
+                        "Task":        currentTask,
+                        "Tasks":       tasks,
+                }
+
+                err := RenderPageWithRequest(r, w, "help.html", data)
+                if err != nil </span><span class="cov0" title="0">{
+                        a.Logger.Error("error rendering help template", "err", err)
+                        w.WriteHeader(http.StatusInternalServerError)
+                }</span>
+        })
+
+        // Annotate pages
+        <span class="cov0" title="0">mux.HandleFunc("/annotate/", func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                itemPath := pathParts(r.URL.Path)
+
+                if len(itemPath) != 3 </span><span class="cov0" title="0">{
+                        taskID := r.URL.Query().Get("task")
+                        step, err := a.NextAnnotationStep(r.Context(), taskID)
+                        if err != nil </span><span class="cov0" title="0">{
+                                a.Logger.Error("error in annotate when getting next step from scratch", "err", err)
+                                w.WriteHeader(500)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">if step == nil </span><span class="cov0" title="0">{
+                                data := map[string]interface{}{
+                                        "Title": "All annotations are done!",
+                                }
+                                err := RenderPageWithRequest(r, w, "complete.html", data)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        a.Logger.Error("error rendering complete template", "err", err)
+                                }</span>
+                                <span class="cov0" title="0">return</span>
+                        }
+                        <span class="cov0" title="0">http.Redirect(w, r, fmt.Sprintf("/annotate/%s/%s", step.TaskID, step.ImageID), http.StatusSeeOther)
+                        return</span>
+                }
+
+                <span class="cov0" title="0">taskID := itemPath[1]
+                imageID := itemPath[2]
+                task := a.GetTask(taskID)
+                if task == nil </span><span class="cov0" title="0">{
+                        http.NotFoundHandler().ServeHTTP(w, r)
+                        return
+                }</span>
+                <span class="cov0" title="0">imageFilename, _ := a.GetImageFilename(r.Context(), imageID)
+
+                if r.Method == http.MethodPost </span><span class="cov0" title="0">{
+                        a.Logger.Debug("POST")
+                        if err := r.ParseForm(); err != nil </span><span class="cov0" title="0">{
+                                a.Logger.Error("error parsing form", "err", err)
+                                w.WriteHeader(http.StatusBadRequest)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">if !r.Form.Has("selectedClass") || !r.Form.Has("sure") </span><span class="cov0" title="0">{
+                                w.WriteHeader(http.StatusBadRequest)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">selectedClass := r.FormValue("selectedClass")
+                        _, isClassValid := task.Classes[selectedClass]
+                        a.Logger.Debug("Selected class", "class", selectedClass, "empty", selectedClass == "", "valid", isClassValid)
+                        sure := r.FormValue("sure") == "on"
+                        a.Logger.Debug("Sure", "sure", sure)
+                        user, _, _ := r.BasicAuth()
+                        err := a.SubmitAnnotation(r.Context(), AnnotationResponse{
+                                ImageID: imageID,
+                                TaskID:  taskID,
+                                User:    user,
+                                Value:   selectedClass,
+                                Sure:    sure,
+                        })
+                        if err != nil </span><span class="cov0" title="0">{
+                                a.Logger.Error("error while submitting annotation", "err", err)
+                                w.WriteHeader(http.StatusInternalServerError)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">step, err := a.NextAnnotationStep(r.Context(), taskID)
+                        if err != nil </span><span class="cov0" title="0">{
+                                a.Logger.Error("error while getting next step", "err", err)
+                                w.WriteHeader(http.StatusInternalServerError)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">if step == nil </span><span class="cov0" title="0">{
+                                step, err = a.NextAnnotationStep(r.Context(), "")
+                                if err != nil </span><span class="cov0" title="0">{
+                                        a.Logger.Error("error while getting next step at the end of task", "err", err)
+                                        w.WriteHeader(http.StatusInternalServerError)
+                                        return
+                                }</span>
+                        }
+                        <span class="cov0" title="0">if step == nil </span><span class="cov0" title="0">{
+                                w.Header().Add("HX-Redirect", "/")
+                        }</span> else<span class="cov0" title="0"> if step.TaskID != taskID </span><span class="cov0" title="0">{
+                                w.Header().Add("HX-Redirect", fmt.Sprintf("/help/%s", step.TaskID))
+                        }</span> else<span class="cov0" title="0"> {
+                                w.Header().Add("HX-Redirect", fmt.Sprintf("/annotate/%s/%s", taskID, step.ImageID))
+                        }</span>
+                        <span class="cov0" title="0">return</span>
+                }
+
+                // Build classes with keyboard shortcuts
+                <span class="cov0" title="0">classNames := make([]string, 0, len(task.Classes))
+                for class := range task.Classes </span><span class="cov0" title="0">{
+                        classNames = append(classNames, class)
+                }</span>
+                <span class="cov0" title="0">sort.Strings(classNames)
+
+                classes := []ClassButton{}
+                keyIndex := 1
+                for _, className := range classNames </span><span class="cov0" title="0">{
+                        classMeta := task.Classes[className]
+                        key := ""
+                        if keyIndex &lt;= 9 </span><span class="cov0" title="0">{
+                                key = fmt.Sprintf("%d", keyIndex)
+                                keyIndex++
+                        }</span>
+                        <span class="cov0" title="0">classes = append(classes, ClassButton{
+                                ID:   className,
+                                Name: i(classMeta.Name),
+                                Key:  key,
+                        })</span>
+                }
+
+                // Get comprehensive progress information
+                <span class="cov0" title="0">phaseProgress, err := a.GetPhaseProgressStats(r.Context(), taskID)
+                if err != nil </span><span class="cov0" title="0">{
+                        a.Logger.Error("error getting phase progress", "err", err)
+                        // Fallback to empty progress
+                        phaseProgress = &amp;PhaseProgress{}
+                }</span>
+
+                <span class="cov0" title="0">data := map[string]interface{}{
+                        "Title":         "annotation",
+                        "TaskID":        taskID,
+                        "TaskName":      task.Name,
+                        "ImageID":       imageID,
+                        "ImageFilename": imageFilename,
+                        "Classes":       classes,
+                        "PhaseProgress": phaseProgress,
+                        // Keep old Progress for backward compatibility
+                        "Progress": map[string]interface{}{
+                                "AvailableCount": phaseProgress.Pending,
+                                "TotalCount":     phaseProgress.Completed + phaseProgress.Pending,
+                                "CompletedCount": phaseProgress.Completed,
+                        },
+                }
+
+                err = RenderPageWithRequest(r, w, "annotate.html", data)
+                if err != nil </span><span class="cov0" title="0">{
+                        a.Logger.Error("error rendering annotate template", "err", err)
+                        w.WriteHeader(http.StatusInternalServerError)
+                }</span>
+        })
+
+        // Asset handler - serves images by SHA256 hash
+        <span class="cov0" title="0">mux.HandleFunc("/asset/", func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                itemPath := pathParts(r.URL.Path)
+                if len(itemPath) != 2 </span><span class="cov0" title="0">{
+                        http.NotFoundHandler().ServeHTTP(w, r)
+                        return
+                }</span>
+                <span class="cov0" title="0">sha256 := itemPath[1]
+                a.Logger.Debug("http: fetching asset", "sha256", sha256)
+
+                // Get image filename from repository
+                filename, err := a.GetImageFilename(r.Context(), sha256)
+                if err != nil </span><span class="cov0" title="0">{
+                        a.Logger.Warn("http: asset was not found", "sha256", sha256, "err", err)
+                        http.NotFoundHandler().ServeHTTP(w, r)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">a.Logger.Debug("http: asset is", "sha256", sha256, "filename", filename)
+                fullPath := path.Join(a.ImagesDir, filename)
+                f, err := os.Open(fullPath)
+                if errors.Is(err, os.ErrNotExist) </span><span class="cov0" title="0">{
+                        http.NotFoundHandler().ServeHTTP(w, r)
+                        return
+                }</span>
+                <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                        w.WriteHeader(http.StatusInternalServerError)
+                        a.Logger.Error("error: http: while serving image asset", "err", err)
+                        return
+                }</span>
+                <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{
+                        if err := f.Close(); err != nil </span><span class="cov0" title="0">{
+                                a.Logger.Error("error closing file", "err", err)
+                        }</span>
+                }()
+                <span class="cov0" title="0">if _, err := io.Copy(w, f); err != nil </span><span class="cov0" title="0">{
+                        a.Logger.Error("error copying file to response", "err", err)
+                }</span>
+        })
+
+        <span class="cov0" title="0">a.Logger.Debug("images dir", "dir", a.ImagesDir)
+
+        var handler http.Handler = mux
+        loggerMiddleware := NewHTTPLogger(a.Logger)
+        handler = i18nMiddleware(handler)
+        handler = loggerMiddleware.Middleware(handler)
+        handler = a.authenticationMiddleware(handler)
+        handler = requestCacheMiddleware(handler)
+        return handler</span>
+}
+
+func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                username, password, ok := r.BasicAuth()
+                if ok </span><span class="cov0" title="0">{
+                        var item *ConfigAuth
+                        item, ok = a.Config.Authentication[username]
+                        if ok </span><span class="cov0" title="0">{
+                                // SECURITY: Use bcrypt to compare the provided password with the stored hash.
+                                if CheckPasswordHash(password, item.Password) </span><span class="cov0" title="0">{
+                                        a.Logger.Info("auth for user: success", "username", username)
+                                        handler.ServeHTTP(w, r)
+                                        return
+                                }</span>
+                                <span class="cov0" title="0">a.Logger.Warn("auth for user: bad password", "username", username)</span>
+                        } else<span class="cov0" title="0"> {
+                                a.Logger.Warn("auth for user: no such user", "username", username)
+                        }</span>
+                } else<span class="cov0" title="0"> {
+                        a.Logger.Warn("auth: no credentials provided")
+                }</span>
+                <span class="cov0" title="0">a.Logger.Warn("auth: not ok")
+                w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+                http.Error(w, "Unauthorized", http.StatusUnauthorized)</span>
+        })
+}
+
+// PrepareDatabase runs both database migrations and image ingestion synchronously.
+// For better startup performance, consider using PrepareDatabaseMigrations() synchronously
+// and IngestImages() asynchronously instead.
+func (a *AnnotatorApp) PrepareDatabase(ctx context.Context) error <span class="cov0" title="0">{
+        if err := a.PrepareDatabaseMigrations(ctx); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">if err := a.IngestImages(ctx); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">a.Logger.Info("PrepareDatabase: success! Database is ready")
+        return nil</span>
+}
+
+// PrepareDatabaseMigrations runs database schema migrations.
+// This must be called synchronously before starting the HTTP server.
+func (a *AnnotatorApp) PrepareDatabaseMigrations(ctx context.Context) error <span class="cov0" title="0">{
+        a.init()
+        db, err := sqlite.WithInstance(a.Database, &amp;sqlite.Config{})
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">migrationsFS, err := iofs.New(migrations.Migrations, ".")
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">m, err := migrate.NewWithInstance("iofs", migrationsFS, "sqlite", db)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">if err := m.Up(); err != nil &amp;&amp; err != migrate.ErrNoChange </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">a.Logger.Info("PrepareDatabaseMigrations: migrations completed successfully")
+        return nil</span>
+}
+
+// IngestImages scans the images directory and loads all images into the database.
+// This can be called asynchronously after the HTTP server starts.
+func (a *AnnotatorApp) IngestImages(ctx context.Context) error <span class="cov0" title="0">{
+        a.Logger.Info("IngestImages: starting image ingestion from directory", "dir", a.ImagesDir)
+
+        err := filepath.WalkDir(a.ImagesDir, func(fullPath string, info fs.DirEntry, err error) error </span><span class="cov0" title="0">{
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov0" title="0">if fullPath == a.ImagesDir </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+                <span class="cov0" title="0">if info.IsDir() </span><span class="cov0" title="0">{
+                        return fmt.Errorf("while checking if item '%s' is a file: datasets must be organized in a flat folder structure; hint: use the 'ingest' subcommand", fullPath)
+                }</span>
+
+                <span class="cov0" title="0">a.Logger.Debug("IngestImages: processing image", "path", fullPath)
+
+                // Verify it's an image
+                _, err = DecodeImage(fullPath)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("while checking if item '%s' is a file: datasets must be organized in a flat folder structure; hint: use the 'ingest' subcommand", fullPath)
+                }</span>
+
+                // Hash the file to get SHA256
+                <span class="cov0" title="0">fileHash, err := HashFile(fullPath)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("while hashing image '%s': %w", fullPath, err)
+                }</span>
+
+                // Use repository to create image (with upsert behavior via ON CONFLICT)
+                <span class="cov0" title="0">_, err = a.imageRepo.Create(ctx, fileHash, info.Name())
+                if err != nil </span><span class="cov0" title="0">{
+                        // Ignore duplicate errors (hash already exists)
+                        if !strings.Contains(err.Error(), "UNIQUE constraint") </span><span class="cov0" title="0">{
+                                return fmt.Errorf("while inserting image '%s': %w", fullPath, err)
+                        }</span>
+                }
+
+                <span class="cov0" title="0">return nil</span>
+        })
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("while ingesting images: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">a.Logger.Info("IngestImages: completed successfully!")
+        return nil</span>
+}
+</pre>
+
+		<pre class="file" id="file1" style="display: none">package annotation
+
+import (
+        "context"
+        "net/http"
+        "sync"
+
+        "github.com/lewtec/rotulador/internal/domain"
+)
+
+// contextKey is a custom type for context keys to avoid collisions
+type contextKey string
+
+const requestCacheKey contextKey = "request_cache"
+
+// RequestCache holds cached data for a single HTTP request
+type RequestCache struct {
+        mu     sync.RWMutex
+        images []*domain.Image
+}
+
+// NewRequestCache creates a new request cache
+func NewRequestCache() *RequestCache <span class="cov0" title="0">{
+        return &amp;RequestCache{}
+}</span>
+
+// GetImages returns cached images if available
+func (rc *RequestCache) GetImages() ([]*domain.Image, bool) <span class="cov0" title="0">{
+        rc.mu.RLock()
+        defer rc.mu.RUnlock()
+        if rc.images != nil </span><span class="cov0" title="0">{
+                return rc.images, true
+        }</span>
+        <span class="cov0" title="0">return nil, false</span>
+}
+
+// SetImages caches the images list
+func (rc *RequestCache) SetImages(images []*domain.Image) <span class="cov0" title="0">{
+        rc.mu.Lock()
+        defer rc.mu.Unlock()
+        rc.images = images
+}</span>
+
+// WithRequestCache adds a request cache to the context
+func WithRequestCache(ctx context.Context) context.Context <span class="cov0" title="0">{
+        return context.WithValue(ctx, requestCacheKey, NewRequestCache())
+}</span>
+
+// GetRequestCache retrieves the request cache from context
+func GetRequestCache(ctx context.Context) *RequestCache <span class="cov0" title="0">{
+        if cache, ok := ctx.Value(requestCacheKey).(*RequestCache); ok </span><span class="cov0" title="0">{
+                return cache
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+// requestCacheMiddleware adds a request cache to the context for each request
+func requestCacheMiddleware(next http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                ctx := WithRequestCache(r.Context())
+                next.ServeHTTP(w, r.WithContext(ctx))
+        }</span>)
+}
+</pre>
+
+		<pre class="file" id="file2" style="display: none">package annotation
+
+import (
+        "fmt"
+        "io"
+        "log/slog"
+        "os"
+
+        "gopkg.in/yaml.v3"
+)
+
+type Config struct {
+        Meta struct {
+                Description string `yaml:"description"`
+        } `yaml:"meta"`
+        Tasks          []*ConfigTask          `yaml:"tasks"`
+        Authentication map[string]*ConfigAuth `yaml:"auth"`
+        I18N           []ConfigI18N           `yaml:"i18n"`
+}
+
+type ConfigI18N struct {
+        Name  string `yaml:"name"`
+        Value string `yaml:"value"`
+}
+
+type ConfigAuth struct {
+        Password string `yaml:"password"`
+}
+
+type ConfigTask struct {
+        ID        string                  `yaml:"id"`
+        Name      string                  `yaml:"name"`
+        ShortName string                  `yaml:"short_name"`
+        Type      string                  `yaml:"type"`
+        If        map[string]string       `yaml:"if"`
+        Classes   map[string]*ConfigClass `yaml:"classes"`
+}
+
+type ConfigClass struct {
+        Name        string   `yaml:"name"`
+        Description string   `yaml:"description"`
+        Examples    []string `yaml:"examples"`
+}
+
+func LoadConfig(filename string) (*Config, error) <span class="cov0" title="0">{
+        var ret Config
+        f, err := os.Open(filename)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{
+                if err := f.Close(); err != nil </span><span class="cov0" title="0">{
+                        slog.Warn("failed to close config file", "err", err)
+                }</span>
+        }()
+        <span class="cov0" title="0">data, err := io.ReadAll(f)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">err = yaml.Unmarshal(data, &amp;ret)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">_taskDict := map[string]string{}
+        for _, task := range ret.Tasks </span><span class="cov0" title="0">{
+                taskName := task.ID
+                _, ok := _taskDict[taskName]
+                if ok </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("task with %s is defined twice", taskName)
+                }</span>
+                <span class="cov0" title="0">_taskDict[taskName] = ""
+                if task.Type == "" </span><span class="cov0" title="0">{
+                        task.Type = "class"
+                }</span>
+                <span class="cov0" title="0">if task.ShortName == "" </span><span class="cov0" title="0">{
+                        task.ShortName = task.Name
+                }</span>
+                <span class="cov0" title="0">if task.Classes == nil </span><span class="cov0" title="0">{
+                        task.Classes = getClassesFromClassType(task.Type)
+                }</span>
+                <span class="cov0" title="0">if task.Classes == nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("task %s does not have any classes or a compatible type", taskName)
+                }</span>
+        }
+        <span class="cov0" title="0">if len(ret.Authentication) == 0 </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("no users specified")
+        }</span>
+        // Load i18n strings from YAML config into default locale
+        <span class="cov0" title="0">if len(ret.I18N) &gt; 0 </span><span class="cov0" title="0">{
+                for _, term := range ret.I18N </span><span class="cov0" title="0">{
+                        if term.Name == "" </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("one i18n item is invalid: does not provide the name attribute")
+                        }</span>
+                        <span class="cov0" title="0">if term.Value == "" </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("one i18n item is invalid: does not provide the value attribute")
+                        }</span>
+                        // Add to bundle as English messages
+                        <span class="cov0" title="0">if err := AddMessage("en", term.Name, term.Value); err != nil </span><span class="cov0" title="0">{
+                                slog.Warn("failed to add i18n message", "term", term.Name, "err", err)
+                        }</span>
+                }
+                <span class="cov0" title="0">slog.Info("Loaded i18n strings from YAML config", "count", len(ret.I18N))</span>
+        }
+        <span class="cov0" title="0">for user, auth := range ret.Authentication </span><span class="cov0" title="0">{
+                if auth.Password == "" </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("user %s has a null password", user)
+                }</span>
+                // Check if the password is already a bcrypt hash.
+                // A simple heuristic is to check if it starts with '$2'.
+                <span class="cov0" title="0">if len(auth.Password) &lt; 4 || auth.Password[0:2] != "$2" </span><span class="cov0" title="0">{
+                        slog.Warn("password is in plaintext. Hashing it automatically.", "user", user)
+                        hashedPassword, err := HashPassword(auth.Password)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("failed to hash password for user '%s': %w", user, err)
+                        }</span>
+                        <span class="cov0" title="0">ret.Authentication[user].Password = hashedPassword</span>
+                }
+        }
+        <span class="cov0" title="0">return &amp;ret, nil</span>
+}
+
+func getClassesFromClassType(classType string) map[string]*ConfigClass <span class="cov0" title="0">{
+        switch classType </span>{
+        case "boolean":<span class="cov0" title="0">
+                return map[string]*ConfigClass{
+                        "true": {
+                                Name: "Yes",
+                        },
+                        "false": {
+                                Name: "No",
+                        },
+                }</span>
+        case "rotation":<span class="cov0" title="0">
+                return map[string]*ConfigClass{
+                        "ok": {
+                                Name:        "OK",
+                                Description: "Not rotated",
+                        },
+                        "h_inv": {
+                                Name:        "Invert X",
+                                Description: "Invert in horizontal axis",
+                        },
+                        "v_inv": {
+                                Name:        "Invert Y",
+                                Description: "Invert in vertical axis",
+                        },
+                        "+90": {
+                                Name:        "+90deg",
+                                Description: "Rotate 90 degrees horary",
+                        },
+                        "-90": {
+                                Name:        "-90deg",
+                                Description: "Rotate 90 degrees antihorary",
+                        },
+                        "180": {
+                                Name:        "180deg",
+                                Description: "Rotate 180 degrees",
+                        },
+                }</span>
+        default:<span class="cov0" title="0">
+                return nil</span>
+        }
+}
+</pre>
+
+		<pre class="file" id="file3" style="display: none">package annotation
+
+import (
+        "database/sql"
+
+        _ "modernc.org/sqlite"
+)
+
+func GetDatabase(filename string) (*sql.DB, error) <span class="cov0" title="0">{
+        db, err := sql.Open("sqlite", filename)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Enable WAL mode for better concurrency (allows reads during writes)
+        <span class="cov0" title="0">_, err = db.Exec("PRAGMA journal_mode=WAL")
+        if err != nil </span><span class="cov0" title="0">{
+                _ = db.Close()
+                return nil, err
+        }</span>
+
+        // Set busy timeout to 5 seconds (wait instead of immediately failing with SQLITE_BUSY)
+        <span class="cov0" title="0">_, err = db.Exec("PRAGMA busy_timeout=5000")
+        if err != nil </span><span class="cov0" title="0">{
+                _ = db.Close()
+                return nil, err
+        }</span>
+
+        // With WAL mode + busy_timeout, SQLite handles concurrency correctly
+        // No need to artificially limit connections - let database/sql use defaults
+
+        <span class="cov0" title="0">return db, nil</span>
+}
+</pre>
+
+		<pre class="file" id="file4" style="display: none">package annotation
+
+import (
+        "crypto/sha256"
+        "fmt"
+        "io"
+        "os"
+
+        "golang.org/x/crypto/bcrypt"
+)
+
+// HashPassword securely hashes a password using bcrypt.
+func HashPassword(password string) (string, error) <span class="cov0" title="0">{
+        bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+        return string(bytes), err
+}</span>
+
+// CheckPasswordHash compares a plaintext password with a hashed password.
+func CheckPasswordHash(password, hash string) bool <span class="cov0" title="0">{
+        err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+        return err == nil
+}</span>
+
+func HashFile(filepath string) (string, error) <span class="cov0" title="0">{
+        f, err := os.Open(filepath)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov0" title="0">hasher := sha256.New()
+        _, err = io.Copy(hasher, f)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov0" title="0">hash := fmt.Sprintf("%x", hasher.Sum(nil))
+        return hash, nil</span>
+}
+</pre>
+
+		<pre class="file" id="file5" style="display: none">package annotation
+
+import (
+        "log/slog"
+        "net/http"
+        "time"
+)
+
+// i18nMiddleware adds the appropriate localizer to the request context
+func i18nMiddleware(handler http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                localizer := GetLocalizerFromRequest(r)
+                ctx := WithLocalizer(r.Context(), localizer)
+                handler.ServeHTTP(w, r.WithContext(ctx))
+        }</span>)
+}
+
+// HTTPLogger provides a middleware to log HTTP requests using a structured logger.
+type HTTPLogger struct {
+        logger *slog.Logger
+}
+
+// NewHTTPLogger creates a new HTTPLogger middleware.
+func NewHTTPLogger(logger *slog.Logger) *HTTPLogger <span class="cov0" title="0">{
+        return &amp;HTTPLogger{logger: logger}
+}</span>
+
+// Middleware returns the HTTP handling middleware.
+func (l *HTTPLogger) Middleware(handler http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                initialTime := time.Now()
+                method := r.Method
+                path := r.URL.String()
+                wr := NewStatusCodeRecorderResponseWriter(w)
+                handler.ServeHTTP(wr, r)
+                finalTime := time.Now()
+                statusCode := wr.Status
+                duration := finalTime.Sub(initialTime)
+
+                l.logger.Info("http request",
+                        "method", method,
+                        "path", path,
+                        "status", statusCode,
+                        "duration", duration,
+                )
+        }</span>)
+}
+
+type StatusCodeRecorderResponseWriter struct {
+        http.ResponseWriter
+        Status int
+}
+
+func (r *StatusCodeRecorderResponseWriter) WriteHeader(status int) <span class="cov0" title="0">{
+        r.Status = status
+        r.ResponseWriter.WriteHeader(status)
+}</span>
+
+func NewStatusCodeRecorderResponseWriter(w http.ResponseWriter) *StatusCodeRecorderResponseWriter <span class="cov0" title="0">{
+        return &amp;StatusCodeRecorderResponseWriter{ResponseWriter: w, Status: 200}
+}</span>
+</pre>
+
+		<pre class="file" id="file6" style="display: none">package annotation
+
+import (
+        "context"
+        "embed"
+        "encoding/json"
+        "log"
+        "net/http"
+        "runtime"
+        "strconv"
+        "strings"
+        "sync"
+
+        "github.com/nicksnyder/go-i18n/v2/i18n"
+        "golang.org/x/text/language"
+)
+
+//go:embed locales/*.json
+var localesFS embed.FS
+
+var (
+        bundle        *i18n.Bundle
+        defaultLocal  *i18n.Localizer
+        currentLocale string = "en"
+
+        // Goroutine-local storage for localizers
+        goroutineLocalizers sync.Map // map[uint64]*i18n.Localizer
+)
+
+type localizerKey struct{}
+
+// getGoroutineID returns the current goroutine ID
+func getGoroutineID() uint64 <span class="cov0" title="0">{
+        var buf [64]byte
+        n := runtime.Stack(buf[:], false)
+        idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+        id, _ := strconv.ParseUint(idField, 10, 64)
+        return id
+}</span>
+
+func init() <span class="cov0" title="0">{
+        bundle = i18n.NewBundle(language.English)
+        bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
+
+        // Load all locale files
+        locales := []string{"en", "pt-BR"}
+        for _, locale := range locales </span><span class="cov0" title="0">{
+                data, err := localesFS.ReadFile("locales/" + locale + ".json")
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Printf("i18n: WARNING - failed to read locale file %s: %v", locale, err)
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">_, err = bundle.ParseMessageFileBytes(data, locale+".json")
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Printf("i18n: failed to parse locale file %s: %v", locale, err)
+                        continue</span>
+                }
+        }
+
+        <span class="cov0" title="0">defaultLocal = i18n.NewLocalizer(bundle, currentLocale)</span>
+}
+
+// SetLanguage sets the current language for translations
+func SetLanguage(lang string) <span class="cov0" title="0">{
+        currentLocale = lang
+        defaultLocal = i18n.NewLocalizer(bundle, currentLocale)
+}</span>
+
+// AddMessage adds a message to the bundle dynamically (useful for YAML config)
+func AddMessage(lang, messageID, translation string) error <span class="cov0" title="0">{
+        return bundle.AddMessages(language.MustParse(lang), &amp;i18n.Message{
+                ID:    messageID,
+                Other: translation,
+        })
+}</span>
+
+// GetLocalizerFromContext retrieves the localizer from context, or returns default
+func GetLocalizerFromContext(ctx context.Context) *i18n.Localizer <span class="cov0" title="0">{
+        if ctx == nil </span><span class="cov0" title="0">{
+                return defaultLocal
+        }</span>
+
+        <span class="cov0" title="0">if localizer, ok := ctx.Value(localizerKey{}).(*i18n.Localizer); ok </span><span class="cov0" title="0">{
+                return localizer
+        }</span>
+        <span class="cov0" title="0">return defaultLocal</span>
+}
+
+// WithLocalizer adds a localizer to the context
+func WithLocalizer(ctx context.Context, localizer *i18n.Localizer) context.Context <span class="cov0" title="0">{
+        return context.WithValue(ctx, localizerKey{}, localizer)
+}</span>
+
+// GetLocalizerFromRequest creates a localizer based on the Accept-Language header
+func GetLocalizerFromRequest(r *http.Request) *i18n.Localizer <span class="cov0" title="0">{
+        acceptLang := r.Header.Get("Accept-Language")
+
+        // Parse Accept-Language header to get preferred languages
+        // Format: "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7"
+        var langs []string
+        if acceptLang != "" </span><span class="cov0" title="0">{
+                parts := strings.Split(acceptLang, ",")
+                for _, part := range parts </span><span class="cov0" title="0">{
+                        // Remove quality values (;q=0.9)
+                        lang := strings.TrimSpace(strings.Split(part, ";")[0])
+                        if lang != "" </span><span class="cov0" title="0">{
+                                langs = append(langs, lang)
+                        }</span>
+                }
+        }
+
+        // Add default language as fallback
+        <span class="cov0" title="0">if len(langs) == 0 </span><span class="cov0" title="0">{
+                langs = []string{currentLocale}
+        }</span>
+
+        <span class="cov0" title="0">return i18n.NewLocalizer(bundle, langs...)</span>
+}
+
+// i translates a message ID using the goroutine-local localizer if available,
+// otherwise uses the default localizer
+func i(messageID string) string <span class="cov0" title="0">{
+        // Try to get goroutine-local localizer first
+        gid := getGoroutineID()
+        if loc, ok := goroutineLocalizers.Load(gid); ok </span><span class="cov0" title="0">{
+                if localizer, ok := loc.(*i18n.Localizer); ok </span><span class="cov0" title="0">{
+                        msg, err := localizer.Localize(&amp;i18n.LocalizeConfig{
+                                MessageID: messageID,
+                        })
+                        if err != nil </span><span class="cov0" title="0">{
+                                return messageID
+                        }</span>
+                        <span class="cov0" title="0">return msg</span>
+                }
+        }
+
+        // Fallback to default localizer
+        <span class="cov0" title="0">msg, err := defaultLocal.Localize(&amp;i18n.LocalizeConfig{
+                MessageID: messageID,
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return messageID
+        }</span>
+        <span class="cov0" title="0">return msg</span>
+}
+
+// T is an alias for i (for backward compatibility and convenience)
+func T(messageID string) string <span class="cov0" title="0">{
+        return i(messageID)
+}</span>
+
+// LocalizeWithData translates a message with template data
+func LocalizeWithData(messageID string, data map[string]interface{}) string <span class="cov0" title="0">{
+        msg, err := defaultLocal.Localize(&amp;i18n.LocalizeConfig{
+                MessageID:    messageID,
+                TemplateData: data,
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return messageID
+        }</span>
+        <span class="cov0" title="0">return msg</span>
+}
+
+// LocalizeWithContext translates a message using the localizer from context
+func LocalizeWithContext(ctx context.Context, messageID string) string <span class="cov0" title="0">{
+        localizer := GetLocalizerFromContext(ctx)
+        msg, err := localizer.Localize(&amp;i18n.LocalizeConfig{
+                MessageID: messageID,
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return messageID
+        }</span>
+        <span class="cov0" title="0">return msg</span>
+}
+
+// LocalizeWithContextAndData translates a message with template data using context
+func LocalizeWithContextAndData(ctx context.Context, messageID string, data map[string]interface{}) string <span class="cov0" title="0">{
+        localizer := GetLocalizerFromContext(ctx)
+        msg, err := localizer.Localize(&amp;i18n.LocalizeConfig{
+                MessageID:    messageID,
+                TemplateData: data,
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return messageID
+        }</span>
+        <span class="cov0" title="0">return msg</span>
+}
+</pre>
+
+		<pre class="file" id="file7" style="display: none">package annotation
+
+import (
+        "crypto/sha256"
+        "fmt"
+        "image"
+        _ "image/gif"
+        _ "image/jpeg"
+        "image/png"
+        "io"
+        "os"
+        "path/filepath"
+
+        "github.com/google/uuid"
+)
+
+func DecodeImage(path string) (image.Image, error) <span class="cov0" title="0">{
+        f, err := os.Open(path)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{
+                _ = f.Close()
+        }</span>()
+        <span class="cov0" title="0">m, _, err := image.Decode(f)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return m, err</span>
+}
+
+func IngestImage(img image.Image, outputDir string) error <span class="cov0" title="0">{
+        tempFile := filepath.Join(outputDir, fmt.Sprintf("%s.png", uuid.New()))
+        f, err := os.Create(tempFile)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">hasher := sha256.New()
+        w := io.MultiWriter(f, hasher)
+        err = png.Encode(w, img)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">err = f.Close()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">err = os.Rename(tempFile, filepath.Join(outputDir, fmt.Sprintf("%x.png", hasher.Sum(nil))))
+        if err != nil </span><span class="cov0" title="0">{
+                _ = os.Remove(tempFile)
+                return err
+        }</span>
+        <span class="cov0" title="0">return err</span>
+}
+</pre>
+
+		<pre class="file" id="file8" style="display: none">package annotation
+
+import (
+        "context"
+        "embed"
+        "html/template"
+        "io"
+        "net/http"
+
+        "github.com/russross/blackfriday/v2"
+)
+
+var (
+        //go:embed templates/*
+        templateFS embed.FS
+
+        //go:embed assets/css/output.css
+        cssContent string
+
+        //go:embed assets/favicon.svg
+        faviconContent string
+
+        // Template manager with mold for layout support
+        templateManager *TemplateManager = nil
+
+        // TemplateFuncMap contains custom template functions available globally
+        TemplateFuncMap = template.FuncMap{
+                "add": func(a, b int) int <span class="cov0" title="0">{ return a + b }</span>,
+                "sub": func(a, b int) int <span class="cov0" title="0">{ return a - b }</span>,
+                "i":   i, // Internationalization function (uses goroutine-local localizer)
+                "markdown": func(text string) template.HTML <span class="cov0" title="0">{
+                        // Convert markdown to HTML using blackfriday v2
+                        return template.HTML(blackfriday.Run([]byte(text)))
+                }</span>,
+        }
+)
+
+func init() <span class="cov0" title="0">{
+        // Initialize template manager with mold
+        // Mold will automatically parse all templates from the embed.FS
+        var err error
+        templateManager, err = NewTemplateManagerWithFuncMap(templateFS, TemplateFuncMap)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+}
+
+// RenderPageWithContext renders a page with context-aware i18n
+func RenderPageWithContext(ctx context.Context, w io.Writer, pageName string, data map[string]any) error <span class="cov0" title="0">{
+        // Inject CSS automatically
+        if data == nil </span><span class="cov0" title="0">{
+                data = make(map[string]any)
+        }</span>
+        <span class="cov0" title="0">data["CSS"] = template.CSS(cssContent)
+
+        // Set goroutine-local localizer for the i18n function in templates
+        localizer := GetLocalizerFromContext(ctx)
+        gid := getGoroutineID()
+        goroutineLocalizers.Store(gid, localizer)
+        defer goroutineLocalizers.Delete(gid) // Clean up after rendering
+
+        return templateManager.Render(w, "pages/"+pageName, data)</span>
+}
+
+// RenderPageWithRequest renders a page with request-aware i18n
+// ALWAYS use this function for rendering pages to ensure proper i18n support
+func RenderPageWithRequest(r *http.Request, w io.Writer, pageName string, data map[string]any) error <span class="cov0" title="0">{
+        return RenderPageWithContext(r.Context(), w, pageName, data)
+}</span>
+
+// GetFavicon returns the embedded favicon content
+func GetFavicon() string <span class="cov0" title="0">{
+        return faviconContent
+}</span>
+</pre>
+
+		<pre class="file" id="file9" style="display: none">package annotation
+
+import (
+        "embed"
+        "html/template"
+        "io"
+        "io/fs"
+        "sync"
+
+        "github.com/abiosoft/mold"
+)
+
+// TemplateManager manages templates using mold for layout inheritance
+type TemplateManager struct {
+        engine mold.Engine
+        mu     sync.RWMutex
+}
+
+// BlockData represents data that can be passed to templates
+type BlockData struct {
+        Title   string
+        Content interface{}
+        Data    interface{}
+        Blocks  map[string]interface{}
+}
+
+// NewTemplateManager creates a new template manager using mold
+// The fs should be an embed.FS containing your templates
+func NewTemplateManager(templateFS embed.FS, options ...mold.Option) (*TemplateManager, error) <span class="cov0" title="0">{
+        opts := options
+        opts = append(opts, mold.WithRoot("templates"))
+        opts = append(opts, mold.WithLayout("layout.html"))
+        engine, err := mold.New(templateFS, opts...)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;TemplateManager{
+                engine: engine,
+        }, nil</span>
+}
+
+// NewTemplateManagerWithFuncMap creates a new template manager with custom template functions
+func NewTemplateManagerWithFuncMap(templateFS embed.FS, funcMap template.FuncMap, options ...mold.Option) (*TemplateManager, error) <span class="cov0" title="0">{
+        opts := options
+        opts = append(opts, mold.WithRoot("templates"))
+        opts = append(opts, mold.WithLayout("layout.html"))
+        opts = append(opts, mold.WithFuncMap(funcMap))
+        engine, err := mold.New(templateFS, opts...)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;TemplateManager{
+                engine: engine,
+        }, nil</span>
+}
+
+// NewTemplateManagerWithFS creates a template manager from a plain fs.FS
+func NewTemplateManagerWithFS(fsys fs.FS, options ...mold.Option) (*TemplateManager, error) <span class="cov0" title="0">{
+        engine, err := mold.New(fsys, options...)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;TemplateManager{
+                engine: engine,
+        }, nil</span>
+}
+
+// Render renders a page template (mold will automatically handle layout inheritance)
+func (tm *TemplateManager) Render(w io.Writer, pageName string, data interface{}) error <span class="cov0" title="0">{
+        tm.mu.RLock()
+        defer tm.mu.RUnlock()
+
+        return tm.engine.Render(w, pageName, data)
+}</span>
+
+// RenderWithBlocks renders a template with explicit block definitions
+func (tm *TemplateManager) RenderWithBlocks(w io.Writer, templateName string, blocks map[string]interface{}) error <span class="cov0" title="0">{
+        return tm.Render(w, templateName, blocks)
+}</span>
+
+// AddFuncMap adds custom template functions
+func (tm *TemplateManager) AddFuncMap(funcMap template.FuncMap) {<span class="cov0" title="0">
+        // Note: With the new mold API, functions should be added during creation using WithFuncMap
+        // This method is kept for backwards compatibility but won't work with an already-created engine
+        // Consider recreating the engine with WithFuncMap option instead
+}</span>
+</pre>
+
+		<pre class="file" id="file10" style="display: none">package repository
+
+import (
+        "context"
+        "database/sql"
+
+        "github.com/lewtec/rotulador/internal/domain"
+        "github.com/lewtec/rotulador/internal/sqlc"
+)
+
+// AnnotationRepository implements domain.AnnotationRepository using SQLC
+type AnnotationRepository struct {
+        queries *sqlc.Queries
+}
+
+// NewAnnotationRepository creates a new AnnotationRepository
+func NewAnnotationRepository(db *sql.DB) *AnnotationRepository <span class="cov7" title="11">{
+        return &amp;AnnotationRepository{
+                queries: sqlc.New(db),
+        }
+}</span>
+
+// NewAnnotationRepositoryWithTx creates a new AnnotationRepository with a transaction
+func NewAnnotationRepositoryWithTx(tx *sql.Tx) *AnnotationRepository <span class="cov0" title="0">{
+        return &amp;AnnotationRepository{
+                queries: sqlc.New(tx),
+        }
+}</span>
+
+// Create creates or updates an annotation (upsert)
+func (r *AnnotationRepository) Create(ctx context.Context, imageSHA256 string, username string, stageIndex int, optionValue string) (*domain.Annotation, error) <span class="cov9" title="25">{
+        params := sqlc.CreateAnnotationParams{
+                ImageSha256: imageSHA256,
+                Username:    username,
+                StageIndex:  int64(stageIndex),
+                OptionValue: optionValue,
+        }
+
+        ann, err := r.queries.CreateAnnotation(ctx, params)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov9" title="25">return toDomainAnnotation(ann), nil</span>
+}
+
+// Get retrieves a specific annotation
+func (r *AnnotationRepository) Get(ctx context.Context, imageSHA256 string, username string, stageIndex int) (*domain.Annotation, error) <span class="cov2" title="2">{
+        params := sqlc.GetAnnotationParams{
+                ImageSha256: imageSHA256,
+                Username:    username,
+                StageIndex:  int64(stageIndex),
+        }
+
+        ann, err := r.queries.GetAnnotation(ctx, params)
+        if err != nil </span><span class="cov1" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov1" title="1">{
+                        return nil, nil
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov1" title="1">return toDomainAnnotation(ann), nil</span>
+}
+
+// GetForImage retrieves all annotations for a specific image
+func (r *AnnotationRepository) GetForImage(ctx context.Context, imageSHA256 string) ([]*domain.Annotation, error) <span class="cov2" title="2">{
+        anns, err := r.queries.GetAnnotationsForImage(ctx, imageSHA256)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov2" title="2">result := make([]*domain.Annotation, len(anns))
+        for i, ann := range anns </span><span class="cov3" title="3">{
+                result[i] = toDomainAnnotation(ann)
+        }</span>
+
+        <span class="cov2" title="2">return result, nil</span>
+}
+
+// GetByUser retrieves annotations by a specific user (paginated)
+func (r *AnnotationRepository) GetByUser(ctx context.Context, username string, limit, offset int) ([]*domain.AnnotationWithImage, error) <span class="cov3" title="3">{
+        params := sqlc.GetAnnotationsByUserParams{
+                Username: username,
+                Limit:    int64(limit),
+                Offset:   int64(offset),
+        }
+
+        rows, err := r.queries.GetAnnotationsByUser(ctx, params)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov3" title="3">result := make([]*domain.AnnotationWithImage, len(rows))
+        for i, row := range rows </span><span class="cov4" title="4">{
+                ann := domain.AnnotationWithImage{
+                        Annotation: domain.Annotation{
+                                ID:          row.ID,
+                                ImageSHA256: row.ImageSha256,
+                                Username:    row.Username,
+                                StageIndex:  int(row.StageIndex),
+                                OptionValue: row.OptionValue,
+                        },
+                        ImageFilename: row.Filename,
+                }
+                if row.AnnotatedAt != nil </span><span class="cov4" title="4">{
+                        ann.AnnotatedAt = *row.AnnotatedAt
+                }</span>
+                <span class="cov4" title="4">result[i] = &amp;ann</span>
+        }
+
+        <span class="cov3" title="3">return result, nil</span>
+}
+
+// GetByImageAndUser retrieves all annotations for an image by a specific user
+func (r *AnnotationRepository) GetByImageAndUser(ctx context.Context, imageSHA256 string, username string) ([]*domain.Annotation, error) <span class="cov1" title="1">{
+        params := sqlc.GetAnnotationsByImageAndUserParams{
+                ImageSha256: imageSHA256,
+                Username:    username,
+        }
+
+        anns, err := r.queries.GetAnnotationsByImageAndUser(ctx, params)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov1" title="1">result := make([]*domain.Annotation, len(anns))
+        for i, ann := range anns </span><span class="cov2" title="2">{
+                result[i] = toDomainAnnotation(ann)
+        }</span>
+
+        <span class="cov1" title="1">return result, nil</span>
+}
+
+// CountByUser returns the total number of annotations by a user
+func (r *AnnotationRepository) CountByUser(ctx context.Context, username string) (int64, error) <span class="cov1" title="1">{
+        return r.queries.CountAnnotationsByUser(ctx, username)
+}</span>
+
+// ListPendingImagesForUserAndStage finds images that need annotation by a user for a specific stage
+func (r *AnnotationRepository) ListPendingImagesForUserAndStage(ctx context.Context, username string, stageIndex int, limit int) ([]*domain.Image, error) <span class="cov2" title="2">{
+        params := sqlc.ListPendingImagesForUserAndStageParams{
+                Username:   username,
+                StageIndex: int64(stageIndex),
+                Limit:      int64(limit),
+        }
+
+        images, err := r.queries.ListPendingImagesForUserAndStage(ctx, params)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov2" title="2">result := make([]*domain.Image, len(images))
+        for i, img := range images </span><span class="cov5" title="5">{
+                result[i] = toDomainImage(img)
+        }</span>
+
+        <span class="cov2" title="2">return result, nil</span>
+}
+
+// Exists checks if an annotation exists
+func (r *AnnotationRepository) Exists(ctx context.Context, imageSHA256 string, username string, stageIndex int) (bool, error) <span class="cov3" title="3">{
+        params := sqlc.CheckAnnotationExistsParams{
+                ImageSha256: imageSHA256,
+                Username:    username,
+                StageIndex:  int64(stageIndex),
+        }
+
+        // The generated CheckAnnotationExists returns int64 (0 or 1 for SQLite)
+        exists, err := r.queries.CheckAnnotationExists(ctx, params)
+        if err != nil </span><span class="cov0" title="0">{
+                return false, err
+        }</span>
+        <span class="cov3" title="3">return exists &gt; 0, nil</span>
+}
+
+// Delete removes an annotation by ID
+func (r *AnnotationRepository) Delete(ctx context.Context, id int64) error <span class="cov1" title="1">{
+        return r.queries.DeleteAnnotation(ctx, id)
+}</span>
+
+// DeleteForImage removes all annotations for an image
+func (r *AnnotationRepository) DeleteForImage(ctx context.Context, imageSHA256 string) error <span class="cov1" title="1">{
+        return r.queries.DeleteAnnotationsForImage(ctx, imageSHA256)
+}</span>
+
+// GetStats returns overall annotation statistics
+func (r *AnnotationRepository) GetStats(ctx context.Context) (*domain.AnnotationStats, error) <span class="cov1" title="1">{
+        stats, err := r.queries.GetAnnotationStats(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov1" title="1">return &amp;domain.AnnotationStats{
+                AnnotatedImages:  stats.AnnotatedImages,
+                TotalAnnotations: stats.TotalAnnotations,
+                TotalUsers:       stats.TotalUsers,
+        }, nil</span>
+}
+
+// toDomainAnnotation converts a sqlc.Annotation to domain.Annotation
+func toDomainAnnotation(ann sqlc.Annotation) *domain.Annotation <span class="cov10" title="31">{
+        d := &amp;domain.Annotation{
+                ID:          ann.ID,
+                ImageSHA256: ann.ImageSha256,
+                Username:    ann.Username,
+                StageIndex:  int(ann.StageIndex),
+                OptionValue: ann.OptionValue,
+        }
+        if ann.AnnotatedAt != nil </span><span class="cov10" title="31">{
+                d.AnnotatedAt = *ann.AnnotatedAt
+        }</span>
+        <span class="cov10" title="31">return d</span>
+}
+
+// CountImagesWithoutAnnotationForStage counts images without any annotation for a stage
+func (r *AnnotationRepository) CountImagesWithoutAnnotationForStage(ctx context.Context, stageIndex int64) (int64, error) <span class="cov0" title="0">{
+        return r.queries.CountImagesWithoutAnnotationForStage(ctx, stageIndex)
+}</span>
+
+// GetImageHashesWithAnnotation returns image SHA256 hashes that have a specific annotation value for a stage
+func (r *AnnotationRepository) GetImageHashesWithAnnotation(ctx context.Context, stageIndex int64, optionValue string) ([]string, error) <span class="cov0" title="0">{
+        params := sqlc.GetImageHashesWithAnnotationParams{
+                StageIndex:  stageIndex,
+                OptionValue: optionValue,
+        }
+        return r.queries.GetImageHashesWithAnnotation(ctx, params)
+}</span>
+
+// CountPendingImagesForUserAndStage counts images needing annotation by a user for a specific stage
+func (r *AnnotationRepository) CountPendingImagesForUserAndStage(ctx context.Context, username string, stageIndex int64) (int64, error) <span class="cov0" title="0">{
+        params := sqlc.CountPendingImagesForUserAndStageParams{
+                Username:   username,
+                StageIndex: stageIndex,
+        }
+        return r.queries.CountPendingImagesForUserAndStage(ctx, params)
+}</span>
+
+// CheckAnnotationExists checks if any annotation exists for an image at a stage (any user)
+func (r *AnnotationRepository) CheckAnnotationExists(ctx context.Context, imageSHA256 string, username string, stageIndex int64) (bool, error) <span class="cov0" title="0">{
+        // If username is empty, check if any annotation exists for this image+stage using optimized query
+        if username == "" </span><span class="cov0" title="0">{
+                params := sqlc.CheckAnnotationExistsForImageStageParams{
+                        ImageSha256: imageSHA256,
+                        StageIndex:  stageIndex,
+                }
+                exists, err := r.queries.CheckAnnotationExistsForImageStage(ctx, params)
+                if err != nil </span><span class="cov0" title="0">{
+                        return false, err
+                }</span>
+                <span class="cov0" title="0">return exists &gt; 0, nil</span>
+        }
+        // Otherwise use the specific user check
+        <span class="cov0" title="0">return r.Exists(ctx, imageSHA256, username, int(stageIndex))</span>
+}
+
+// Verify that AnnotationRepository implements domain.AnnotationRepository
+var _ domain.AnnotationRepository = (*AnnotationRepository)(nil)
+</pre>
+
+		<pre class="file" id="file11" style="display: none">package repository
+
+import (
+        "context"
+        "database/sql"
+
+        "github.com/lewtec/rotulador/internal/domain"
+        "github.com/lewtec/rotulador/internal/sqlc"
+)
+
+// ImageRepository implements domain.ImageRepository using SQLC
+type ImageRepository struct {
+        queries *sqlc.Queries
+}
+
+// NewImageRepository creates a new ImageRepository
+func NewImageRepository(db *sql.DB) *ImageRepository <span class="cov8" title="17">{
+        return &amp;ImageRepository{
+                queries: sqlc.New(db),
+        }
+}</span>
+
+// NewImageRepositoryWithTx creates a new ImageRepository with a transaction
+func NewImageRepositoryWithTx(tx *sql.Tx) *ImageRepository <span class="cov0" title="0">{
+        return &amp;ImageRepository{
+                queries: sqlc.New(tx),
+        }
+}</span>
+
+// Create creates a new image record
+func (r *ImageRepository) Create(ctx context.Context, sha256, filename string) (*domain.Image, error) <span class="cov9" title="26">{
+        params := sqlc.CreateImageParams{
+                Sha256:   sha256,
+                Filename: filename,
+        }
+
+        img, err := r.queries.CreateImage(ctx, params)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov9" title="26">return toDomainImage(img), nil</span>
+}
+
+// GetBySHA256 retrieves an image by its SHA256 hash
+func (r *ImageRepository) GetBySHA256(ctx context.Context, sha256 string) (*domain.Image, error) <span class="cov3" title="3">{
+        img, err := r.queries.GetImage(ctx, sha256)
+        if err != nil </span><span class="cov2" title="2">{
+                if err == sql.ErrNoRows </span><span class="cov2" title="2">{
+                        return nil, nil
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov1" title="1">return toDomainImage(img), nil</span>
+}
+
+// GetByFilename retrieves an image by its filename
+func (r *ImageRepository) GetByFilename(ctx context.Context, filename string) (*domain.Image, error) <span class="cov2" title="2">{
+        img, err := r.queries.GetImageByFilename(ctx, filename)
+        if err != nil </span><span class="cov1" title="1">{
+                if err == sql.ErrNoRows </span><span class="cov1" title="1">{
+                        return nil, nil
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov1" title="1">return toDomainImage(img), nil</span>
+}
+
+// List retrieves all images
+func (r *ImageRepository) List(ctx context.Context) ([]*domain.Image, error) <span class="cov1" title="1">{
+        images, err := r.queries.ListImages(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov1" title="1">result := make([]*domain.Image, len(images))
+        for i, img := range images </span><span class="cov2" title="2">{
+                result[i] = toDomainImage(img)
+        }</span>
+
+        <span class="cov1" title="1">return result, nil</span>
+}
+
+// Count returns the total number of images
+func (r *ImageRepository) Count(ctx context.Context) (int64, error) <span class="cov1" title="1">{
+        return r.queries.CountImages(ctx)
+}</span>
+
+// Delete removes an image by SHA256 hash
+func (r *ImageRepository) Delete(ctx context.Context, sha256 string) error <span class="cov1" title="1">{
+        return r.queries.DeleteImage(ctx, sha256)
+}</span>
+
+// toDomainImage converts a sqlc.Image to domain.Image
+func toDomainImage(img sqlc.Image) *domain.Image <span class="cov10" title="35">{
+        d := &amp;domain.Image{
+                SHA256:   img.Sha256,
+                Filename: img.Filename,
+        }
+        if img.IngestedAt != nil </span><span class="cov10" title="35">{
+                d.IngestedAt = *img.IngestedAt
+        }</span>
+        <span class="cov10" title="35">return d</span>
+}
+
+// Verify that ImageRepository implements domain.ImageRepository
+var _ domain.ImageRepository = (*ImageRepository)(nil)
+</pre>
+
+		<pre class="file" id="file12" style="display: none">package repository
+
+import (
+        "context"
+        "database/sql"
+        "testing"
+
+        _ "modernc.org/sqlite"
+)
+
+// SetupTestDB creates an in-memory SQLite database for testing
+func SetupTestDB(t *testing.T) *sql.DB <span class="cov10" title="17">{
+        t.Helper()
+
+        db, err := sql.Open("sqlite", ":memory:")
+        if err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("failed to open test database: %v", err)
+        }</span>
+
+        // Create schema
+        <span class="cov10" title="17">schema := `
+CREATE TABLE images (
+  sha256 TEXT PRIMARY KEY,
+  filename TEXT NOT NULL,
+  ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE annotations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  image_sha256 TEXT NOT NULL,
+  username TEXT NOT NULL,
+  stage_index INTEGER NOT NULL,
+  option_value TEXT NOT NULL,
+  annotated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(image_sha256, username, stage_index),
+  FOREIGN KEY(image_sha256) REFERENCES images(sha256) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_annotations_image_sha256 ON annotations(image_sha256);
+CREATE INDEX idx_annotations_username ON annotations(username);
+CREATE INDEX idx_annotations_stage ON annotations(stage_index);
+`
+
+        _, err = db.Exec(schema)
+        if err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("failed to create schema: %v", err)
+        }</span>
+
+        <span class="cov10" title="17">return db</span>
+}
+
+// CleanupTestDB closes the test database
+func CleanupTestDB(t *testing.T, db *sql.DB) <span class="cov10" title="17">{
+        t.Helper()
+        if err := db.Close(); err != nil </span><span class="cov0" title="0">{
+                t.Errorf("failed to close test database: %v", err)
+        }</span>
+}
+
+// MustExec executes a SQL statement and fails the test if it errors
+func MustExec(t *testing.T, db *sql.DB, query string, args ...interface{}) <span class="cov0" title="0">{
+        t.Helper()
+        _, err := db.ExecContext(context.Background(), query, args...)
+        if err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("failed to exec query: %v", err)
+        }</span>
+}
+</pre>
+
+		<pre class="file" id="file13" style="display: none">// Code generated by sqlc. DO NOT EDIT.
+// versions:
+//   sqlc v1.30.0
+// source: annotations.sql
+
+package sqlc
+
+import (
+        "context"
+        "strings"
+        "time"
+)
+
+const checkAnnotationExists = `-- name: CheckAnnotationExists :one
+SELECT EXISTS (
+    SELECT 1
+    FROM annotations
+    WHERE image_sha256 = ? AND username = ? AND stage_index = ?
+)
+`
+
+type CheckAnnotationExistsParams struct {
+        ImageSha256 string `json:"image_sha256"`
+        Username    string `json:"username"`
+        StageIndex  int64  `json:"stage_index"`
+}
+
+func (q *Queries) CheckAnnotationExists(ctx context.Context, arg CheckAnnotationExistsParams) (int64, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, checkAnnotationExists, arg.ImageSha256, arg.Username, arg.StageIndex)
+        var column_1 int64
+        err := row.Scan(&amp;column_1)
+        return column_1, err
+}</span>
+
+const checkAnnotationExistsForImageStage = `-- name: CheckAnnotationExistsForImageStage :one
+SELECT EXISTS (
+    SELECT 1
+    FROM annotations
+    WHERE image_sha256 = ? AND stage_index = ?
+)
+`
+
+type CheckAnnotationExistsForImageStageParams struct {
+        ImageSha256 string `json:"image_sha256"`
+        StageIndex  int64  `json:"stage_index"`
+}
+
+func (q *Queries) CheckAnnotationExistsForImageStage(ctx context.Context, arg CheckAnnotationExistsForImageStageParams) (int64, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, checkAnnotationExistsForImageStage, arg.ImageSha256, arg.StageIndex)
+        var column_1 int64
+        err := row.Scan(&amp;column_1)
+        return column_1, err
+}</span>
+
+const countAnnotationsByUser = `-- name: CountAnnotationsByUser :one
+SELECT COUNT(*) FROM annotations
+WHERE username = ?
+`
+
+func (q *Queries) CountAnnotationsByUser(ctx context.Context, username string) (int64, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, countAnnotationsByUser, username)
+        var count int64
+        err := row.Scan(&amp;count)
+        return count, err
+}</span>
+
+const countImagesWithAnnotation = `-- name: CountImagesWithAnnotation :one
+SELECT COUNT(DISTINCT image_sha256)
+FROM annotations
+WHERE stage_index = ? AND option_value = ?
+`
+
+type CountImagesWithAnnotationParams struct {
+        StageIndex  int64  `json:"stage_index"`
+        OptionValue string `json:"option_value"`
+}
+
+func (q *Queries) CountImagesWithAnnotation(ctx context.Context, arg CountImagesWithAnnotationParams) (int64, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, countImagesWithAnnotation, arg.StageIndex, arg.OptionValue)
+        var count int64
+        err := row.Scan(&amp;count)
+        return count, err
+}</span>
+
+const countImagesWithAnnotationInList = `-- name: CountImagesWithAnnotationInList :one
+SELECT COUNT(DISTINCT image_sha256)
+FROM annotations
+WHERE stage_index = ? AND option_value = ?
+  AND image_sha256 IN (/*SLICE:image_hashes*/?)
+`
+
+type CountImagesWithAnnotationInListParams struct {
+        StageIndex  int64    `json:"stage_index"`
+        OptionValue string   `json:"option_value"`
+        ImageHashes []string `json:"image_hashes"`
+}
+
+func (q *Queries) CountImagesWithAnnotationInList(ctx context.Context, arg CountImagesWithAnnotationInListParams) (int64, error) <span class="cov0" title="0">{
+        query := countImagesWithAnnotationInList
+        var queryParams []interface{}
+        queryParams = append(queryParams, arg.StageIndex)
+        queryParams = append(queryParams, arg.OptionValue)
+        if len(arg.ImageHashes) &gt; 0 </span><span class="cov0" title="0">{
+                for _, v := range arg.ImageHashes </span><span class="cov0" title="0">{
+                        queryParams = append(queryParams, v)
+                }</span>
+                <span class="cov0" title="0">query = strings.Replace(query, "/*SLICE:image_hashes*/?", strings.Repeat(",?", len(arg.ImageHashes))[1:], 1)</span>
+        } else<span class="cov0" title="0"> {
+                query = strings.Replace(query, "/*SLICE:image_hashes*/?", "NULL", 1)
+        }</span>
+        <span class="cov0" title="0">row := q.db.QueryRowContext(ctx, query, queryParams...)
+        var count int64
+        err := row.Scan(&amp;count)
+        return count, err</span>
+}
+
+const countImagesWithoutAnnotationForStage = `-- name: CountImagesWithoutAnnotationForStage :one
+WITH annotated_images AS (
+  SELECT DISTINCT image_sha256 FROM annotations WHERE stage_index = ?
+)
+SELECT COUNT(*)
+FROM images i
+LEFT JOIN annotated_images ai ON i.sha256 = ai.image_sha256
+WHERE ai.image_sha256 IS NULL
+`
+
+func (q *Queries) CountImagesWithoutAnnotationForStage(ctx context.Context, stageIndex int64) (int64, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, countImagesWithoutAnnotationForStage, stageIndex)
+        var count int64
+        err := row.Scan(&amp;count)
+        return count, err
+}</span>
+
+const countPendingImagesForUserAndStage = `-- name: CountPendingImagesForUserAndStage :one
+WITH annotated_images AS (
+  SELECT image_sha256 FROM annotations WHERE username = ? AND stage_index = ?
+)
+SELECT COUNT(*)
+FROM images i
+LEFT JOIN annotated_images ai ON i.sha256 = ai.image_sha256
+WHERE ai.image_sha256 IS NULL
+`
+
+type CountPendingImagesForUserAndStageParams struct {
+        Username   string `json:"username"`
+        StageIndex int64  `json:"stage_index"`
+}
+
+func (q *Queries) CountPendingImagesForUserAndStage(ctx context.Context, arg CountPendingImagesForUserAndStageParams) (int64, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, countPendingImagesForUserAndStage, arg.Username, arg.StageIndex)
+        var count int64
+        err := row.Scan(&amp;count)
+        return count, err
+}</span>
+
+const createAnnotation = `-- name: CreateAnnotation :one
+INSERT INTO annotations (image_sha256, username, stage_index, option_value)
+VALUES (?, ?, ?, ?)
+ON CONFLICT(image_sha256, username, stage_index)
+DO UPDATE SET
+  option_value = excluded.option_value,
+  annotated_at = CURRENT_TIMESTAMP
+RETURNING id, image_sha256, username, stage_index, option_value, annotated_at
+`
+
+type CreateAnnotationParams struct {
+        ImageSha256 string `json:"image_sha256"`
+        Username    string `json:"username"`
+        StageIndex  int64  `json:"stage_index"`
+        OptionValue string `json:"option_value"`
+}
+
+func (q *Queries) CreateAnnotation(ctx context.Context, arg CreateAnnotationParams) (Annotation, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, createAnnotation,
+                arg.ImageSha256,
+                arg.Username,
+                arg.StageIndex,
+                arg.OptionValue,
+        )
+        var i Annotation
+        err := row.Scan(
+                &amp;i.ID,
+                &amp;i.ImageSha256,
+                &amp;i.Username,
+                &amp;i.StageIndex,
+                &amp;i.OptionValue,
+                &amp;i.AnnotatedAt,
+        )
+        return i, err
+}</span>
+
+const deleteAnnotation = `-- name: DeleteAnnotation :exec
+DELETE FROM annotations
+WHERE id = ?
+`
+
+func (q *Queries) DeleteAnnotation(ctx context.Context, id int64) error <span class="cov0" title="0">{
+        _, err := q.db.ExecContext(ctx, deleteAnnotation, id)
+        return err
+}</span>
+
+const deleteAnnotationsForImage = `-- name: DeleteAnnotationsForImage :exec
+DELETE FROM annotations
+WHERE image_sha256 = ?
+`
+
+func (q *Queries) DeleteAnnotationsForImage(ctx context.Context, imageSha256 string) error <span class="cov0" title="0">{
+        _, err := q.db.ExecContext(ctx, deleteAnnotationsForImage, imageSha256)
+        return err
+}</span>
+
+const getAllImageSHA256s = `-- name: GetAllImageSHA256s :many
+SELECT sha256 FROM images ORDER BY sha256
+`
+
+func (q *Queries) GetAllImageSHA256s(ctx context.Context) ([]string, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, getAllImageSHA256s)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []string{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var sha256 string
+                if err := rows.Scan(&amp;sha256); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, sha256)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+
+const getAnnotation = `-- name: GetAnnotation :one
+SELECT id, image_sha256, username, stage_index, option_value, annotated_at FROM annotations
+WHERE image_sha256 = ? AND username = ? AND stage_index = ?
+`
+
+type GetAnnotationParams struct {
+        ImageSha256 string `json:"image_sha256"`
+        Username    string `json:"username"`
+        StageIndex  int64  `json:"stage_index"`
+}
+
+func (q *Queries) GetAnnotation(ctx context.Context, arg GetAnnotationParams) (Annotation, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, getAnnotation, arg.ImageSha256, arg.Username, arg.StageIndex)
+        var i Annotation
+        err := row.Scan(
+                &amp;i.ID,
+                &amp;i.ImageSha256,
+                &amp;i.Username,
+                &amp;i.StageIndex,
+                &amp;i.OptionValue,
+                &amp;i.AnnotatedAt,
+        )
+        return i, err
+}</span>
+
+const getAnnotationStats = `-- name: GetAnnotationStats :one
+SELECT
+  COUNT(DISTINCT image_sha256) as annotated_images,
+  COUNT(*) as total_annotations,
+  COUNT(DISTINCT username) as total_users
+FROM annotations
+`
+
+type GetAnnotationStatsRow struct {
+        AnnotatedImages  int64 `json:"annotated_images"`
+        TotalAnnotations int64 `json:"total_annotations"`
+        TotalUsers       int64 `json:"total_users"`
+}
+
+func (q *Queries) GetAnnotationStats(ctx context.Context) (GetAnnotationStatsRow, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, getAnnotationStats)
+        var i GetAnnotationStatsRow
+        err := row.Scan(&amp;i.AnnotatedImages, &amp;i.TotalAnnotations, &amp;i.TotalUsers)
+        return i, err
+}</span>
+
+const getAnnotationsByImageAndUser = `-- name: GetAnnotationsByImageAndUser :many
+SELECT id, image_sha256, username, stage_index, option_value, annotated_at FROM annotations
+WHERE image_sha256 = ? AND username = ?
+ORDER BY stage_index ASC
+`
+
+type GetAnnotationsByImageAndUserParams struct {
+        ImageSha256 string `json:"image_sha256"`
+        Username    string `json:"username"`
+}
+
+func (q *Queries) GetAnnotationsByImageAndUser(ctx context.Context, arg GetAnnotationsByImageAndUserParams) ([]Annotation, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, getAnnotationsByImageAndUser, arg.ImageSha256, arg.Username)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []Annotation{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var i Annotation
+                if err := rows.Scan(
+                        &amp;i.ID,
+                        &amp;i.ImageSha256,
+                        &amp;i.Username,
+                        &amp;i.StageIndex,
+                        &amp;i.OptionValue,
+                        &amp;i.AnnotatedAt,
+                ); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, i)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+
+const getAnnotationsByUser = `-- name: GetAnnotationsByUser :many
+SELECT a.id, a.image_sha256, a.username, a.stage_index, a.option_value, a.annotated_at, i.filename
+FROM annotations a
+JOIN images i ON a.image_sha256 = i.sha256
+WHERE a.username = ?
+ORDER BY a.annotated_at DESC
+LIMIT ? OFFSET ?
+`
+
+type GetAnnotationsByUserParams struct {
+        Username string `json:"username"`
+        Limit    int64  `json:"limit"`
+        Offset   int64  `json:"offset"`
+}
+
+type GetAnnotationsByUserRow struct {
+        ID          int64      `json:"id"`
+        ImageSha256 string     `json:"image_sha256"`
+        Username    string     `json:"username"`
+        StageIndex  int64      `json:"stage_index"`
+        OptionValue string     `json:"option_value"`
+        AnnotatedAt *time.Time `json:"annotated_at"`
+        Filename    string     `json:"filename"`
+}
+
+func (q *Queries) GetAnnotationsByUser(ctx context.Context, arg GetAnnotationsByUserParams) ([]GetAnnotationsByUserRow, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, getAnnotationsByUser, arg.Username, arg.Limit, arg.Offset)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []GetAnnotationsByUserRow{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var i GetAnnotationsByUserRow
+                if err := rows.Scan(
+                        &amp;i.ID,
+                        &amp;i.ImageSha256,
+                        &amp;i.Username,
+                        &amp;i.StageIndex,
+                        &amp;i.OptionValue,
+                        &amp;i.AnnotatedAt,
+                        &amp;i.Filename,
+                ); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, i)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+
+const getAnnotationsForImage = `-- name: GetAnnotationsForImage :many
+SELECT id, image_sha256, username, stage_index, option_value, annotated_at FROM annotations
+WHERE image_sha256 = ?
+ORDER BY stage_index ASC
+`
+
+func (q *Queries) GetAnnotationsForImage(ctx context.Context, imageSha256 string) ([]Annotation, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, getAnnotationsForImage, imageSha256)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []Annotation{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var i Annotation
+                if err := rows.Scan(
+                        &amp;i.ID,
+                        &amp;i.ImageSha256,
+                        &amp;i.Username,
+                        &amp;i.StageIndex,
+                        &amp;i.OptionValue,
+                        &amp;i.AnnotatedAt,
+                ); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, i)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+
+const getAnnotationsForStageAndValue = `-- name: GetAnnotationsForStageAndValue :many
+SELECT image_sha256, username, annotated_at
+FROM annotations
+WHERE stage_index = ? AND option_value = ?
+ORDER BY image_sha256
+`
+
+type GetAnnotationsForStageAndValueParams struct {
+        StageIndex  int64  `json:"stage_index"`
+        OptionValue string `json:"option_value"`
+}
+
+type GetAnnotationsForStageAndValueRow struct {
+        ImageSha256 string     `json:"image_sha256"`
+        Username    string     `json:"username"`
+        AnnotatedAt *time.Time `json:"annotated_at"`
+}
+
+func (q *Queries) GetAnnotationsForStageAndValue(ctx context.Context, arg GetAnnotationsForStageAndValueParams) ([]GetAnnotationsForStageAndValueRow, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, getAnnotationsForStageAndValue, arg.StageIndex, arg.OptionValue)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []GetAnnotationsForStageAndValueRow{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var i GetAnnotationsForStageAndValueRow
+                if err := rows.Scan(&amp;i.ImageSha256, &amp;i.Username, &amp;i.AnnotatedAt); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, i)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+
+const getImageHashesWithAnnotation = `-- name: GetImageHashesWithAnnotation :many
+SELECT DISTINCT image_sha256
+FROM annotations
+WHERE stage_index = ? AND option_value = ?
+`
+
+type GetImageHashesWithAnnotationParams struct {
+        StageIndex  int64  `json:"stage_index"`
+        OptionValue string `json:"option_value"`
+}
+
+func (q *Queries) GetImageHashesWithAnnotation(ctx context.Context, arg GetImageHashesWithAnnotationParams) ([]string, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, getImageHashesWithAnnotation, arg.StageIndex, arg.OptionValue)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []string{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var image_sha256 string
+                if err := rows.Scan(&amp;image_sha256); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, image_sha256)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+
+const getImagesWithoutAnnotationForStage = `-- name: GetImagesWithoutAnnotationForStage :many
+SELECT i.sha256, i.filename
+FROM images i
+WHERE NOT EXISTS (
+    SELECT 1 FROM annotations a
+    WHERE a.image_sha256 = i.sha256 AND a.stage_index = ?
+)
+ORDER BY i.filename
+`
+
+type GetImagesWithoutAnnotationForStageRow struct {
+        Sha256   string `json:"sha256"`
+        Filename string `json:"filename"`
+}
+
+func (q *Queries) GetImagesWithoutAnnotationForStage(ctx context.Context) ([]GetImagesWithoutAnnotationForStageRow, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, getImagesWithoutAnnotationForStage)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []GetImagesWithoutAnnotationForStageRow{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var i GetImagesWithoutAnnotationForStageRow
+                if err := rows.Scan(&amp;i.Sha256, &amp;i.Filename); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, i)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+
+const listPendingImagesForUserAndStage = `-- name: ListPendingImagesForUserAndStage :many
+WITH annotated_images AS (
+  SELECT image_sha256 FROM annotations WHERE username = ? AND stage_index = ?
+)
+SELECT i.sha256, i.filename, i.ingested_at
+FROM images i
+LEFT JOIN annotated_images ai ON i.sha256 = ai.image_sha256
+WHERE ai.image_sha256 IS NULL
+ORDER BY i.filename ASC
+LIMIT ?
+`
+
+type ListPendingImagesForUserAndStageParams struct {
+        Username   string `json:"username"`
+        StageIndex int64  `json:"stage_index"`
+        Limit      int64  `json:"limit"`
+}
+
+func (q *Queries) ListPendingImagesForUserAndStage(ctx context.Context, arg ListPendingImagesForUserAndStageParams) ([]Image, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, listPendingImagesForUserAndStage, arg.Username, arg.StageIndex, arg.Limit)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []Image{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var i Image
+                if err := rows.Scan(&amp;i.Sha256, &amp;i.Filename, &amp;i.IngestedAt); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, i)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+</pre>
+
+		<pre class="file" id="file14" style="display: none">// Code generated by sqlc. DO NOT EDIT.
+// versions:
+//   sqlc v1.30.0
+
+package sqlc
+
+import (
+        "context"
+        "database/sql"
+)
+
+type DBTX interface {
+        ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+        PrepareContext(context.Context, string) (*sql.Stmt, error)
+        QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+        QueryRowContext(context.Context, string, ...interface{}) *sql.Row
+}
+
+func New(db DBTX) *Queries <span class="cov0" title="0">{
+        return &amp;Queries{db: db}
+}</span>
+
+type Queries struct {
+        db DBTX
+}
+
+func (q *Queries) WithTx(tx *sql.Tx) *Queries <span class="cov0" title="0">{
+        return &amp;Queries{
+                db: tx,
+        }
+}</span>
+</pre>
+
+		<pre class="file" id="file15" style="display: none">// Code generated by sqlc. DO NOT EDIT.
+// versions:
+//   sqlc v1.30.0
+// source: images.sql
+
+package sqlc
+
+import (
+        "context"
+)
+
+const countImages = `-- name: CountImages :one
+SELECT COUNT(*) FROM images
+`
+
+func (q *Queries) CountImages(ctx context.Context) (int64, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, countImages)
+        var count int64
+        err := row.Scan(&amp;count)
+        return count, err
+}</span>
+
+const createImage = `-- name: CreateImage :one
+INSERT INTO images (sha256, filename)
+VALUES (?, ?)
+ON CONFLICT(sha256) DO UPDATE SET filename = excluded.filename
+RETURNING sha256, filename, ingested_at
+`
+
+type CreateImageParams struct {
+        Sha256   string `json:"sha256"`
+        Filename string `json:"filename"`
+}
+
+func (q *Queries) CreateImage(ctx context.Context, arg CreateImageParams) (Image, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, createImage, arg.Sha256, arg.Filename)
+        var i Image
+        err := row.Scan(&amp;i.Sha256, &amp;i.Filename, &amp;i.IngestedAt)
+        return i, err
+}</span>
+
+const deleteImage = `-- name: DeleteImage :exec
+DELETE FROM images
+WHERE sha256 = ?
+`
+
+func (q *Queries) DeleteImage(ctx context.Context, sha256 string) error <span class="cov0" title="0">{
+        _, err := q.db.ExecContext(ctx, deleteImage, sha256)
+        return err
+}</span>
+
+const getImage = `-- name: GetImage :one
+SELECT sha256, filename, ingested_at FROM images
+WHERE sha256 = ?
+`
+
+func (q *Queries) GetImage(ctx context.Context, sha256 string) (Image, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, getImage, sha256)
+        var i Image
+        err := row.Scan(&amp;i.Sha256, &amp;i.Filename, &amp;i.IngestedAt)
+        return i, err
+}</span>
+
+const getImageByFilename = `-- name: GetImageByFilename :one
+SELECT sha256, filename, ingested_at FROM images
+WHERE filename = ?
+`
+
+func (q *Queries) GetImageByFilename(ctx context.Context, filename string) (Image, error) <span class="cov0" title="0">{
+        row := q.db.QueryRowContext(ctx, getImageByFilename, filename)
+        var i Image
+        err := row.Scan(&amp;i.Sha256, &amp;i.Filename, &amp;i.IngestedAt)
+        return i, err
+}</span>
+
+const listImages = `-- name: ListImages :many
+SELECT sha256, filename, ingested_at FROM images
+ORDER BY filename
+`
+
+func (q *Queries) ListImages(ctx context.Context) ([]Image, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, listImages)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []Image{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var i Image
+                if err := rows.Scan(&amp;i.Sha256, &amp;i.Filename, &amp;i.IngestedAt); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, i)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+
+const listImagesNotFinished = `-- name: ListImagesNotFinished :many
+SELECT sha256, filename, ingested_at FROM images
+ORDER BY filename ASC
+LIMIT ?
+`
+
+func (q *Queries) ListImagesNotFinished(ctx context.Context, limit int64) ([]Image, error) <span class="cov0" title="0">{
+        rows, err := q.db.QueryContext(ctx, listImagesNotFinished, limit)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        items := []Image{}
+        for rows.Next() </span><span class="cov0" title="0">{
+                var i Image
+                if err := rows.Scan(&amp;i.Sha256, &amp;i.Filename, &amp;i.IngestedAt); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">items = append(items, i)</span>
+        }
+        <span class="cov0" title="0">if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return items, nil</span>
+}
+</pre>
+
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
