@@ -48,25 +48,6 @@ func (a *AnnotatorApp) init() {
 	a.annotationRepo = repository.NewAnnotationRepository(a.Database)
 }
 
-func stringOr(str, or string) string {
-	if str != "" {
-		return str
-	} else {
-		return or
-	}
-}
-
-func pathParts(path string) []string {
-	parts := strings.Split(path, "/")
-	if len(parts) > 0 && parts[0] == "" {
-		parts = parts[1:]
-	}
-	if len(parts) > 0 && parts[len(parts)-1] == "" {
-		parts = parts[:len(parts)-1]
-	}
-	return parts
-}
-
 type AnnotationStep struct {
 	TaskID    string
 	ImageID   string
@@ -119,13 +100,7 @@ func (a *AnnotatorApp) getCachedImageList(ctx context.Context) ([]*domain.Image,
 // CountEligibleImages counts all images that are eligible for this task (regardless of annotation status)
 func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (int, error) {
 	// Find stage index for this task
-	stageIndex := -1
-	for i, task := range a.Config.Tasks {
-		if task.ID == taskID {
-			stageIndex = i
-			break
-		}
-	}
+	stageIndex := a.findTaskIndex(taskID)
 	if stageIndex == -1 {
 		return 0, fmt.Errorf("task not found: %s", taskID)
 	}
@@ -139,32 +114,9 @@ func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (
 	}
 
 	// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
-	imageHashesByDep := make(map[string]map[string]bool)
-	for depTaskID, requiredValue := range task.If {
-		// Find the stage index for the dependency task
-		depStageIndex := -1
-		for i, t := range a.Config.Tasks {
-			if t.ID == depTaskID {
-				depStageIndex = i
-				break
-			}
-		}
-		if depStageIndex == -1 {
-			continue
-		}
-
-		// Fetch all image hashes for this dependency ONCE
-		imageHashes, err := a.annotationRepo.GetImageHashesWithAnnotation(ctx, int64(depStageIndex), requiredValue)
-		if err != nil {
-			return 0, fmt.Errorf("while checking dependency: %w", err)
-		}
-
-		// Convert to map for O(1) lookup
-		hashSet := make(map[string]bool, len(imageHashes))
-		for _, hash := range imageHashes {
-			hashSet[hash] = true
-		}
-		imageHashesByDep[depTaskID] = hashSet
+	imageHashesByDep, err := a.getDependencyImageHashes(ctx, task)
+	if err != nil {
+		return 0, err
 	}
 
 	// Get all images and filter by dependencies (using cache)
@@ -194,13 +146,7 @@ func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (
 
 func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) (int, error) {
 	// Find stage index for this task
-	stageIndex := -1
-	for i, task := range a.Config.Tasks {
-		if task.ID == taskID {
-			stageIndex = i
-			break
-		}
-	}
+	stageIndex := a.findTaskIndex(taskID)
 	if stageIndex == -1 {
 		return 0, fmt.Errorf("task not found: %s", taskID)
 	}
@@ -217,32 +163,9 @@ func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) 
 	// If there are dependencies, we need to filter images that meet the criteria
 	if len(task.If) > 0 {
 		// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
-		imageHashesByDep := make(map[string]map[string]bool)
-		for depTaskID, requiredValue := range task.If {
-			// Find the stage index for the dependency task
-			depStageIndex := -1
-			for i, t := range a.Config.Tasks {
-				if t.ID == depTaskID {
-					depStageIndex = i
-					break
-				}
-			}
-			if depStageIndex == -1 {
-				continue
-			}
-
-			// Fetch all image hashes for this dependency ONCE
-			imageHashes, err := a.annotationRepo.GetImageHashesWithAnnotation(ctx, int64(depStageIndex), requiredValue)
-			if err != nil {
-				return 0, fmt.Errorf("while checking dependency: %w", err)
-			}
-
-			// Convert to map for O(1) lookup
-			hashSet := make(map[string]bool, len(imageHashes))
-			for _, hash := range imageHashes {
-				hashSet[hash] = true
-			}
-			imageHashesByDep[depTaskID] = hashSet
+		imageHashesByDep, err := a.getDependencyImageHashes(ctx, task)
+		if err != nil {
+			return 0, err
 		}
 
 		// Get all candidate images (using cache)
@@ -313,13 +236,7 @@ func (a *AnnotatorApp) GetPhaseProgressStats(ctx context.Context, taskID string)
 	var filteredWrongClass, notYetAnnotated int
 
 	// Find task and check if it has dependencies
-	stageIndex := -1
-	for i, task := range a.Config.Tasks {
-		if task.ID == taskID {
-			stageIndex = i
-			break
-		}
-	}
+	stageIndex := a.findTaskIndex(taskID)
 
 	if stageIndex != -1 {
 		task := a.Config.Tasks[stageIndex]
@@ -327,31 +244,9 @@ func (a *AnnotatorApp) GetPhaseProgressStats(ctx context.Context, taskID string)
 		// If task has dependencies, analyze the not-eligible images
 		if len(task.If) > 0 {
 			// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
-			imageHashesByDep := make(map[string]map[string]bool)
-			for depTaskID, requiredValue := range task.If {
-				depStageIndex := -1
-				for i, t := range a.Config.Tasks {
-					if t.ID == depTaskID {
-						depStageIndex = i
-						break
-					}
-				}
-				if depStageIndex == -1 {
-					continue
-				}
-
-				// Fetch all image hashes for this dependency ONCE
-				imageHashes, err := a.annotationRepo.GetImageHashesWithAnnotation(ctx, int64(depStageIndex), requiredValue)
-				if err != nil {
-					return nil, fmt.Errorf("while checking dependency: %w", err)
-				}
-
-				// Convert to map for O(1) lookup
-				hashSet := make(map[string]bool, len(imageHashes))
-				for _, hash := range imageHashes {
-					hashSet[hash] = true
-				}
-				imageHashesByDep[depTaskID] = hashSet
+			imageHashesByDep, err := a.getDependencyImageHashes(ctx, task)
+			if err != nil {
+				return nil, err
 			}
 
 			// Get all images (using cache)
@@ -383,13 +278,7 @@ func (a *AnnotatorApp) GetPhaseProgressStats(ctx context.Context, taskID string)
 					// This image is not eligible - check if it was annotated in dependency phase
 					annotatedInDep := false
 					for depTaskID := range task.If {
-						depStageIndex := -1
-						for i, t := range a.Config.Tasks {
-							if t.ID == depTaskID {
-								depStageIndex = i
-								break
-							}
-						}
+						depStageIndex := a.findTaskIndex(depTaskID)
 						if depStageIndex == -1 {
 							continue
 						}
@@ -454,13 +343,7 @@ func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*
 	}
 
 	// Find stage index for this task
-	stageIndex := -1
-	for i, task := range a.Config.Tasks {
-		if task.ID == taskID {
-			stageIndex = i
-			break
-		}
-	}
+	stageIndex := a.findTaskIndex(taskID)
 	if stageIndex == -1 {
 		return nil, fmt.Errorf("task not found: %s", taskID)
 	}
@@ -470,31 +353,10 @@ func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*
 	// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
 	imageHashesByDep := make(map[string]map[string]bool)
 	if len(task.If) > 0 {
-		for depTaskID, requiredValue := range task.If {
-			// Find the stage index for the dependency task
-			depStageIndex := -1
-			for i, t := range a.Config.Tasks {
-				if t.ID == depTaskID {
-					depStageIndex = i
-					break
-				}
-			}
-			if depStageIndex == -1 {
-				continue
-			}
-
-			// Fetch all image hashes for this dependency ONCE
-			imageHashes, err := a.annotationRepo.GetImageHashesWithAnnotation(ctx, int64(depStageIndex), requiredValue)
-			if err != nil {
-				return nil, fmt.Errorf("while checking dependency: %w", err)
-			}
-
-			// Convert to map for O(1) lookup
-			hashSet := make(map[string]bool, len(imageHashes))
-			for _, hash := range imageHashes {
-				hashSet[hash] = true
-			}
-			imageHashesByDep[depTaskID] = hashSet
+		var err error
+		imageHashesByDep, err = a.getDependencyImageHashes(ctx, task)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -580,13 +442,7 @@ type AnnotationResponse struct {
 
 func (a *AnnotatorApp) SubmitAnnotation(ctx context.Context, annotation AnnotationResponse) error {
 	// Find stage index for this task
-	stageIndex := -1
-	for i, task := range a.Config.Tasks {
-		if task.ID == annotation.TaskID {
-			stageIndex = i
-			break
-		}
-	}
+	stageIndex := a.findTaskIndex(annotation.TaskID)
 	if stageIndex == -1 {
 		return fmt.Errorf("no such task: %s", annotation.TaskID)
 	}
@@ -946,7 +802,7 @@ func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handl
 				a.Logger.Warn("auth for user: no such user", "username", username)
 			}
 		} else {
-			log.Printf("auth: no credentials provided")
+			a.Logger.Warn("auth: no credentials provided")
 		}
 		a.Logger.Warn("auth: not ok")
 		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
