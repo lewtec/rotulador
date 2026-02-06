@@ -1,6 +1,7 @@
 package annotation
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"github.com/google/uuid"
@@ -15,10 +16,14 @@ import (
 
 func DecodeImage(filepath string) (image.Image, error) {
 	f, err := os.Open(filepath)
-	defer f.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			ReportError(context.TODO(), err, "msg", "failed to close image file", "path", filepath)
+		}
+	}()
 	m, _, err := image.Decode(f)
 	if err != nil {
 		return nil, err
@@ -44,7 +49,9 @@ func IngestImage(img image.Image, outputDir string) error {
 	}
 	err = os.Rename(tempFile, path.Join(outputDir, fmt.Sprintf("%x.png", hasher.Sum(nil))))
 	if err != nil {
-		os.Remove(tempFile)
+		if removeErr := os.Remove(tempFile); removeErr != nil {
+			ReportError(context.TODO(), removeErr, "msg", "failed to remove temp file", "path", tempFile)
+		}
 		return err
 	}
 	return err

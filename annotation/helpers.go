@@ -6,14 +6,6 @@ import (
 	"strings"
 )
 
-func stringOr(str, or string) string {
-	if str != "" {
-		return str
-	} else {
-		return or
-	}
-}
-
 func pathParts(path string) []string {
 	parts := strings.Split(path, "/")
 	if len(parts) > 0 && parts[0] == "" {

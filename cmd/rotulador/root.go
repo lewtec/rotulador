@@ -56,7 +56,9 @@ With a set of trivial choices scale the classification of a set of images to man
 					if err != nil {
 						return fmt.Errorf("failed to create database file: %w", err)
 					}
-					file.Close()
+					if err := file.Close(); err != nil {
+						annotation.ReportError(cmd.Context(), err, "msg", "failed to close database file", "path", databaseFile)
+					}
 					logger.Info("✓ Database file created.")
 				} else {
 					logger.Info("✓ Database file already exists.", "databaseFile", databaseFile)
@@ -115,7 +117,11 @@ With a set of trivial choices scale the classification of a set of images to man
 		if err != nil {
 			return fmt.Errorf("failed to open database: %w", err)
 		}
-		defer db.Close()
+		defer func() {
+			if err := db.Close(); err != nil {
+				annotation.ReportError(cmd.Context(), err, "msg", "failed to close database")
+			}
+		}()
 
 		app := &annotation.AnnotatorApp{
 			ImagesDir: imagesDir,
