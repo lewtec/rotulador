@@ -147,9 +147,15 @@ func TestImageRepository_Count(t *testing.T) {
 
 	t.Run("counts all images", func(t *testing.T) {
 		// Create test images
-		repo.Create(ctx, "hash1", "image1.jpg")
-		repo.Create(ctx, "hash2", "image2.jpg")
-		repo.Create(ctx, "hash3", "image3.jpg")
+		if _, err := repo.Create(ctx, "hash1", "image1.jpg"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := repo.Create(ctx, "hash2", "image2.jpg"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := repo.Create(ctx, "hash3", "image3.jpg"); err != nil {
+			t.Fatal(err)
+		}
 
 		count, err := repo.Count(ctx)
 		if err != nil {
@@ -192,22 +198,34 @@ func TestImageRepository_Delete(t *testing.T) {
 // Benchmark tests
 func BenchmarkImageRepository_Create(b *testing.B) {
 	db := SetupTestDB(&testing.T{})
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			b.Error(err)
+		}
+	}()
 
 	repo := NewImageRepository(db)
 	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		repo.Create(ctx, "hash", "test.jpg")
+		if _, err := repo.Create(ctx, "hash", "test.jpg"); err != nil {
+			b.Error(err)
+		}
 		// Clean up to avoid duplicates
-		db.Exec("DELETE FROM images")
+		if _, err := db.Exec("DELETE FROM images"); err != nil {
+			b.Error(err)
+		}
 	}
 }
 
 func BenchmarkImageRepository_GetBySHA256(b *testing.B) {
 	db := SetupTestDB(&testing.T{})
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			b.Error(err)
+		}
+	}()
 
 	repo := NewImageRepository(db)
 	ctx := context.Background()
@@ -217,6 +235,8 @@ func BenchmarkImageRepository_GetBySHA256(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		repo.GetBySHA256(ctx, img.SHA256)
+		if _, err := repo.GetBySHA256(ctx, img.SHA256); err != nil {
+			b.Error(err)
+		}
 	}
 }

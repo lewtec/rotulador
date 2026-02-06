@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/lewtec/rotulador/annotation"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	_ "modernc.org/sqlite"
@@ -94,7 +95,11 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	if err != nil {
 		return fmt.Errorf("failed to open old database: %w", err)
 	}
-	defer oldDB.Close()
+	defer func() {
+		if err := oldDB.Close(); err != nil {
+			annotation.ReportError(ctx, err, "msg", "failed to close old database")
+		}
+	}()
 
 	// Verify old database has expected schema
 	if err := verifyLegacySchema(ctx, oldDB, config.Tasks, logger); err != nil {
@@ -106,7 +111,11 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	if err != nil {
 		return fmt.Errorf("failed to create new database: %w", err)
 	}
-	defer newDB.Close()
+	defer func() {
+		if err := newDB.Close(); err != nil {
+			annotation.ReportError(ctx, err, "msg", "failed to close new database")
+		}
+	}()
 
 	// Run migrations on new database
 	if err := runMigrations(ctx, newDB); err != nil {
@@ -118,7 +127,11 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	if err != nil {
 		return fmt.Errorf("failed to start transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			annotation.ReportError(ctx, err, "msg", "failed to rollback transaction")
+		}
+	}()
 
 	// Step 1: Migrate images
 	logger.Info("Migrating images...")
@@ -201,7 +214,11 @@ func migrateImages(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx) (map[strin
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			annotation.ReportError(ctx, err, "msg", "failed to close rows")
+		}
+	}()
 
 	// Map from old sha256 to new ID
 	imageMapping := make(map[string]int64)
@@ -249,7 +266,11 @@ func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, t
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			annotation.ReportError(ctx, err, "msg", "failed to close rows")
+		}
+	}()
 
 	annotationCount := 0
 	for rows.Next() {

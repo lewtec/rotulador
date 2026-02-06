@@ -71,7 +71,9 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 		dbPath := filepath.Join(tempDir, "annotations.db")
 		imagesPath := filepath.Join(tempDir, "images")
 
-		os.WriteFile(configPath, []byte(""), 0644) // Create dummy config
+		if err := os.WriteFile(configPath, []byte(""), 0644); err != nil {
+			t.Fatal(err)
+		} // Create dummy config
 
 		_, errOut, err := executeCommand(tempDir)
 		if err != nil {
@@ -110,8 +112,12 @@ tasks:
       good: { name: "Good" }
       bad: { name: "Bad" }
 `
-		os.WriteFile(configPath, []byte(validConfig), 0644)
-		os.Mkdir(imagesPath, 0755)
+		if err := os.WriteFile(configPath, []byte(validConfig), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Mkdir(imagesPath, 0755); err != nil {
+			t.Fatal(err)
+		}
 
 		// Note: --database and --images flags are omitted to test the new default logic
 		_, errOut, err := executeCommand(configPath, "--addr", ":8082")
