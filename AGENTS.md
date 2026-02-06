@@ -15,7 +15,8 @@
 - Do not modify the database schema defined in `db/migrations` or rename columns.
 
 ## Database
-- The in-memory test database schema in `internal/repository/testing.go` must be manually synchronized with changes in `db/migrations`.
+- Database schema changes must be defined in `db/migrations` using `golang-migrate`.
+- The test database in `internal/repository/testing.go` automatically applies these migrations.
 
 ## Frontend
 - Frontend formatting is handled by `prettier`.
