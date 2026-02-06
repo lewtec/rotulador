@@ -13,13 +13,19 @@
   {{ .CSS }}
   </style>
   <script>
+    // Centralized error reporting for frontend
+    function reportError(error, context) {
+      console.error("Error detected:", context, error);
+      // Future: Send to backend or Sentry
+    }
+
     // Theme toggle functionality
     function initTheme() {
       try {
         const theme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', theme);
       } catch (e) {
-        console.error("Failed to initialize theme from localStorage:", e);
+        reportError(e, "Failed to initialize theme from localStorage");
       }
     }
 
@@ -31,7 +37,7 @@
         html.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
       } catch (e) {
-        console.error("Failed to toggle theme:", e);
+        reportError(e, "Failed to toggle theme");
       }
     }
 
