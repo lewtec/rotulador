@@ -16,7 +16,7 @@ Modern web-based annotation tool with a clean UI, keyboard shortcuts, and collab
 - **Responsive** - Works on desktop and mobile devices
 - **Fast** - No CGO dependencies, pure Go with SQLite, SQLc to reduce overhead and indirection.
 
-##  Quick Start
+## Quick Start
 
 ### Initialize a Project
 
@@ -37,22 +37,25 @@ rotulador folder/config.yaml
 
 Then open http://localhost:8080 in your browser!
 
-##  Configuration
+## Configuration
 
 There is a ready example in ./examples/test for you to play!
+
 ### Task Types
 
 **Built-in types:**
+
 - `boolean` - Yes/No questions
 - `rotation` - Detect image rotation/flipping
 - Custom - Define your own classes
 
 **Conditional tasks:**
 Use the `if` field to create dependent tasks:
+
 ```yaml
 - id: second_task
   if:
-    first_task: "expected_value"
+    first_task: 'expected_value'
 ```
 
 ### Authentication
@@ -60,27 +63,31 @@ Use the `if` field to create dependent tasks:
 Add users in the `auth` section. Passwords must be stored as bcrypt hashes.
 
 To generate a hash, use the `hash-password` command:
+
 ```bash
 rotulador hash-password 'your_secure_password'
 # Output: $2a$10$... (copy this hash into your config)
 ```
 
 Then, add the user to your `config.yaml`:
+
 ```yaml
 auth:
   username:
-    password: "$2a$10$..."
+    password: '$2a$10$...'
 ```
 
 ## Architecture
 
 ### Stack
+
 - **Backend**: Go templates with HTMX for SPA-like interactions
 - **Frontend**: DaisyUI + TailwindCSS with @tailwindcss/typography
 - **Templates**: Mold for layout inheritance
 - **Database**: SQLc + SQLite (modernc.org/sqlite - pure Go, no CGO)
 
 ### Project Structure
+
 ```
 rotulador/
 ├── annotation/          # Core annotation logic
@@ -99,12 +106,15 @@ rotulador/
 ## Development
 
 ### Prerequisites
+
 - Mise
 
 See mise.toml for details on commands
 
 ### Progress Tracking
+
 The system automatically tracks:
+
 - Completed annotations
 - Uncertain annotations (marked with `?`)
 - User attribution

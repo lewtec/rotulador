@@ -4,34 +4,34 @@ meta:
 
     Dataset de exemplo
 tasks:
-- id: has_carro
-  name: Tem a vista externa de um carro real na imagem?
-  short_name: Carro real?
-  type: boolean
-- id: rotation_base
-  if:
-    has_carro: true
-  name: Rotação de imagens para enquadrar um carro de baixo pra cima
-  short_name: Rotação
-  type: rotation
-- id: tipo_carro
-  if:
-    has_carro: true
-  name: Tipo de imagem de carro.
-  short_name: Tipo carro.
-  type: class
-  classes:
-    real_car:
-      name: Carro real
-      description: Carro no dia a dia
-      examples:
-        - null # todo: separar um
-    synthetic_car:
-      name: Carro sintético
-      description: Modelo ou imagem feita para impressionar
-    thrash:
-      name: Lixo
-      description: Não tem carro, é um desenho ou thumbnail do YouTube. Pode ser outra coisa também.
+  - id: has_carro
+    name: Tem a vista externa de um carro real na imagem?
+    short_name: Carro real?
+    type: boolean
+  - id: rotation_base
+    if:
+      has_carro: true
+    name: Rotação de imagens para enquadrar um carro de baixo pra cima
+    short_name: Rotação
+    type: rotation
+  - id: tipo_carro
+    if:
+      has_carro: true
+    name: Tipo de imagem de carro.
+    short_name: Tipo carro.
+    type: class
+    classes:
+      real_car:
+        name: Carro real
+        description: Carro no dia a dia
+        examples:
+          - null # todo: separar um
+      synthetic_car:
+        name: Carro sintético
+        description: Modelo ou imagem feita para impressionar
+      thrash:
+        name: Lixo
+        description: Não tem carro, é um desenho ou thumbnail do YouTube. Pode ser outra coisa também.
 auth:
   lucasew:
     password: 123
@@ -45,4 +45,3 @@ auth:
     password: 123
   calabreso:
     password: 123
-

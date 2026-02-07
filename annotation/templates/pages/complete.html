@@ -1,16 +1,25 @@
 {{ block "content" . }}
-<div class="hero min-h-[50vh] bg-base-200 rounded-lg">
+<div class="hero bg-base-200 min-h-[50vh] rounded-lg">
   <div class="hero-content text-center">
     <div class="max-w-md">
-      <h1 class="text-5xl font-bold mb-4">{{i "Congratulations!"}}</h1>
-      <p class="text-xl mb-8">{{i "All annotations are complete!"}}</p>
+      <h1 class="mb-4 text-5xl font-bold">{{i `Congratulations!`}}</h1>
+      <p class="mb-8 text-xl">{{i `All annotations are complete!`}}</p>
       <a href="/" class="btn btn-primary btn-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="mr-2 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+          />
         </svg>
-        {{i "Go to Home"}}
+        {{i `Go to Home`}}
       </a>
     </div>
   </div>
