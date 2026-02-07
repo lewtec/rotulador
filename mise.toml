@@ -2,24 +2,30 @@
 "github:sqlc-dev/sqlc" = "1.30.0"
 go = "1.25.5"
 "go:github.com/nicksnyder/go-i18n/v2/goi18n" = "2.6.1"
+"go:golang.org/x/tools/cmd/goimports" = "latest"
 golangci-lint = "2.8.0"
 node = "24"
 
-[tasks.gen]
-description = "Generate all assets"
-depends = ["gen:*"]
+[tasks.install]
+description = "Install dependencies"
+run = "go mod download && npm install"
 
-[tasks."gen:css"]
+[tasks.codegen]
+description = "Generate all assets"
+depends = ["codegen:*"]
+
+[tasks."codegen:css"]
 description = "Generate CSS from Tailwind"
 run = "npm run build:css"
 
-[tasks."gen:sqlc"]
+[tasks."codegen:sqlc"]
 description = "Generate Go code from SQL queries using sqlc"
 run = "sqlc generate"
 
-[tasks."gen:i18n"]
+[tasks."codegen:i18n"]
 description = "Extract and merge i18n strings"
 run = """
+rm -f active.en.json annotation/locales/active.en.json
 echo "→ Extracting translatable strings..."
 goi18n extract -format json -outdir .
 echo "→ Merging with existing translations..."
@@ -30,26 +36,43 @@ echo "✓ i18n files updated. Check annotation/locales/translate.*.json for new 
 
 [tasks.lint]
 description = "Run linters"
+depends = ["lint:*"]
+
+[tasks."lint:go"]
+description = "Lint Go code"
 run = "golangci-lint run"
 
-[tasks.ci]
-description = "Run CI checks (gen + lint + test + build)"
-depends = ["gen", "lint", "test"]
-run = "go build -v ./cmd/rotulador"
+[tasks."lint:prettier"]
+description = "Lint frontend code"
+run = "npx prettier --check ."
+
+[tasks.fmt]
+description = "Format code"
+depends = ["fmt:*"]
+
+[tasks."fmt:go"]
+description = "Format Go code"
+run = "goimports -w ."
+
+[tasks."fmt:prettier"]
+description = "Format frontend code"
+run = "npx prettier --write ."
 
 [tasks.test]
 description = "Run all tests with coverage"
-depends = ["gen"]
 run = """
-go test -v -race -coverprofile=coverage.out ./...
+go test -v -race -coverprofile=coverage.out ./annotation/...
 go tool cover -html=coverage.out -o coverage.html
 echo "✓ Coverage report generated: coverage.html"
 """
 
 [tasks."test-short"]
 description = "Run short tests (no integration tests)"
-depends = ["gen"]
-run = "go test -short -v ./..."
+run = "go test -short -v ./annotation/..."
+
+[tasks.ci]
+description = "Run CI checks"
+depends = ["lint", "test"]
 
 [tasks.build]
 description = "Build the binary"

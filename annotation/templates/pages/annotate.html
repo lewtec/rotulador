@@ -1,19 +1,22 @@
 {{ block "content" . }}
-<div class="breadcrumbs text-sm mb-4">
+<div class="breadcrumbs mb-4 text-sm">
   <ul>
-    <li><a href="/">{{i "Home"}}</a></li>
+    <li><a href="/">{{i `Home`}}</a></li>
     <li><a href="/help/{{.TaskID}}">{{.TaskName}}</a></li>
-    <li>{{i "Annotate"}}</li>
+    <li>{{i `Annotate`}}</li>
   </ul>
 </div>
 
-<div class="card bg-base-200 shadow-xl mb-4">
+<div class="card bg-base-200 mb-4 shadow-xl">
   <div class="card-body">
-    <div class="flex justify-between items-center mb-2">
+    <div class="mb-2 flex items-center justify-between">
       <div class="flex-1">
         <h2 class="card-title">{{.TaskName}}</h2>
-        <div class="flex gap-3 items-center mt-1">
-          <p class="text-xs opacity-70 font-mono cursor-pointer" onclick="navigator.clipboard.writeText('{{.ImageFilename}}'); showToast('{{i "Copied to clipboard!"}}')">
+        <div class="mt-1 flex items-center gap-3">
+          <p
+            class="cursor-pointer font-mono text-xs opacity-70"
+            onclick="navigator.clipboard.writeText('{{.ImageFilename}}'); showToast('{{i `Copied to clipboard!`}}')"
+          >
             {{.ImageFilename}}
           </p>
           {{if .Progress}}
@@ -24,9 +27,19 @@
         </div>
       </div>
       <a href="/help/{{.TaskID}}" class="btn btn-sm btn-ghost flex-shrink-0">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       </a>
     </div>
@@ -36,21 +49,28 @@
 
 <div class="annotation-buttons mb-6" id="annotation-controls">
   {{range $idx, $class := .Classes}}
-  <button class="btn btn-primary btn-lg flex-1 min-w-[150px]" hx-post="/annotate/{{$.TaskID}}/{{$.ImageID}}"
-    hx-vals='{"selectedClass": "{{$class.ID}}", "sure": "on"}' data-key="{{$class.Key}}">
-    {{i $class.Name}}
-    {{if $class.Key}}<kbd class="kbd kbd-sm ml-2">{{$class.Key}}</kbd>{{end}}
+  <button
+    class="btn btn-primary btn-lg min-w-[150px] flex-1"
+    hx-post="/annotate/{{$.TaskID}}/{{$.ImageID}}"
+    hx-vals='{"selectedClass": "{{$class.ID}}", "sure": "on"}'
+    data-key="{{$class.Key}}"
+  >
+    {{i $class.Name}} {{if $class.Key}}<kbd class="kbd kbd-sm ml-2">{{$class.Key}}</kbd>{{end}}
   </button>
   {{end}}
-  <button class="btn btn-warning btn-lg flex-1 min-w-[150px]" hx-post="/annotate/{{.TaskID}}/{{.ImageID}}"
-    hx-vals='{"selectedClass": "", "sure": "off"}' data-key="?">
-    {{i "Not Sure"}} <kbd class="kbd kbd-sm ml-2">?</kbd>
+  <button
+    class="btn btn-warning btn-lg min-w-[150px] flex-1"
+    hx-post="/annotate/{{.TaskID}}/{{.ImageID}}"
+    hx-vals='{"selectedClass": "", "sure": "off"}'
+    data-key="?"
+  >
+    {{i `Not Sure`}} <kbd class="kbd kbd-sm ml-2">?</kbd>
   </button>
 </div>
 
-<div class="toast toast-center" id="copy-toast" style="display: none;">
+<div class="toast toast-center" id="copy-toast" style="display: none">
   <div class="alert alert-success">
-    <span id="copy-toast-message">{{i "Copied to clipboard!"}}</span>
+    <span id="copy-toast-message">{{i `Copied to clipboard!`}}</span>
   </div>
 </div>
 
@@ -62,7 +82,7 @@
   // Keyboard shortcuts for annotation
   document.addEventListener('keydown', function (e) {
     const buttons = document.querySelectorAll('#annotation-controls button[data-key]');
-    buttons.forEach(button => {
+    buttons.forEach((button) => {
       const key = button.getAttribute('data-key');
       if (key && e.key.toLowerCase() === key.toLowerCase()) {
         e.preventDefault();

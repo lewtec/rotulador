@@ -1,0 +1,10 @@
+dist/
+node_modules/
+annotation/assets/css/output.css
+coverage.html
+coverage.out
+rotulador
+go.mod
+go.sum
+*.pb.go
+*_gen.go

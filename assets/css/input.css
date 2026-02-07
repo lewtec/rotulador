@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
 
@@ -7,18 +7,18 @@
 /* Custom styles for the annotation app */
 @layer components {
   .image-container {
-    @apply flex justify-center items-center max-w-full;
+    @apply flex max-w-full items-center justify-center;
   }
 
   .image-container img {
-    @apply max-w-full max-h-[70vh] object-contain;
+    @apply max-h-[70vh] max-w-full object-contain;
   }
 
   .annotation-buttons {
-    @apply flex flex-wrap gap-2 justify-center;
+    @apply flex flex-wrap justify-center gap-2;
   }
 
   .kbd-hint {
-    @apply text-xs opacity-70 ml-1;
+    @apply ml-1 text-xs opacity-70;
   }
 }

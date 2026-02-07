@@ -5,9 +5,11 @@ bin/
 # Build artifacts
 build/
 coverage.out
+coverage.html
 
 # Dependencies
 node_modules/
 
 # Generated assets
+annotation/assets/css/output.css
 assets/css/output.css
