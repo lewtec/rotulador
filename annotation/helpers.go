@@ -3,6 +3,8 @@ package annotation
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -52,4 +54,21 @@ func (a *AnnotatorApp) getDependencyImageHashes(ctx context.Context, task *Confi
 		imageHashesByDep[depTaskID] = hashSet
 	}
 	return imageHashesByDep, nil
+}
+
+// secureJoin joins baseDir and filename and ensures the result is within baseDir.
+// It resolves baseDir to an absolute path to prevent traversal issues with relative paths.
+func secureJoin(baseDir, filename string) (string, error) {
+	absBase, err := filepath.Abs(baseDir)
+	if err != nil {
+		return "", fmt.Errorf("invalid base directory: %w", err)
+	}
+
+	fullPath := filepath.Join(absBase, filename)
+
+	if !strings.HasPrefix(fullPath, absBase+string(os.PathSeparator)) {
+		return "", fmt.Errorf("path traversal detected: %s", filename)
+	}
+
+	return fullPath, nil
 }
