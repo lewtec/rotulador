@@ -24,6 +24,8 @@ import (
 	"github.com/lewtec/rotulador/internal/repository"
 )
 
+// AnnotatorApp is the main application struct that holds the configuration,
+// database connection, and repositories needed for the annotation tool.
 type AnnotatorApp struct {
 	ImagesDir      string
 	Database       *sql.DB
@@ -34,6 +36,9 @@ type AnnotatorApp struct {
 	annotationRepo *repository.AnnotationRepository
 }
 
+// init initializes the application by setting up defaults and repositories.
+// It ensures that ImagesDir does not have a trailing slash and sets a default
+// OffsetAdvance if not provided.
 func (a *AnnotatorApp) init() {
 	if a.ImagesDir[len(a.ImagesDir)-1] == '/' {
 		a.ImagesDir = a.ImagesDir[:len(a.ImagesDir)-1]
@@ -46,12 +51,16 @@ func (a *AnnotatorApp) init() {
 	a.annotationRepo = repository.NewAnnotationRepository(a.Database)
 }
 
+// AnnotationStep represents the next step in the annotation process,
+// identifying the task and image to be annotated.
 type AnnotationStep struct {
 	TaskID    string
 	ImageID   string
 	ImageName string
 }
 
+// TaskWithCount extends ConfigTask with statistical information about
+// the task's progress, including available, total, and completed counts.
 type TaskWithCount struct {
 	*ConfigTask
 	AvailableCount int
@@ -60,6 +69,8 @@ type TaskWithCount struct {
 	PhaseProgress  *PhaseProgress
 }
 
+// PhaseProgress holds comprehensive progress statistics for a specific task phase.
+// It tracks completed annotations, pending images, and images filtered out by dependencies.
 type PhaseProgress struct {
 	Completed              int     // Images completed in this phase
 	Pending                int     // Images eligible but not yet annotated
@@ -72,7 +83,8 @@ type PhaseProgress struct {
 	NotYetAnnotatedPercent float64 // Percentage of not yet annotated images
 }
 
-// getCachedImageList returns the list of all images, using cache if available
+// getCachedImageList returns the list of all images, using request-scoped cache if available.
+// If the cache is empty, it fetches the images from the database and populates the cache.
 func (a *AnnotatorApp) getCachedImageList(ctx context.Context) ([]*domain.Image, error) {
 	// Try to get from cache first
 	if cache := GetRequestCache(ctx); cache != nil {
@@ -95,7 +107,10 @@ func (a *AnnotatorApp) getCachedImageList(ctx context.Context) ([]*domain.Image,
 	return images, nil
 }
 
-// CountEligibleImages counts all images that are eligible for this task (regardless of annotation status)
+// CountEligibleImages counts all images that are eligible for a specific task.
+// An image is eligible if it satisfies all dependency criteria defined in the task configuration
+// by checking if the image has the required annotation value in the dependent task.
+// This count includes both annotated and unannotated images.
 func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (int, error) {
 	// Find stage index for this task
 	stageIndex := a.findTaskIndex(taskID)
@@ -142,6 +157,9 @@ func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (
 	return validCount, nil
 }
 
+// CountAvailableImages counts the number of images that are eligible for the task
+// but have not yet been annotated. It filters images based on task dependencies
+// and excludes images that already have an annotation for this task.
 func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) (int, error) {
 	// Find stage index for this task
 	stageIndex := a.findTaskIndex(taskID)
@@ -200,7 +218,9 @@ func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) 
 	return int(count), nil
 }
 
-// GetPhaseProgressStats calculates comprehensive progress statistics for a task
+// GetPhaseProgressStats calculates comprehensive progress statistics for a given task.
+// It returns a PhaseProgress struct containing detailed counts and percentages for
+// completed, pending, filtered, and not-yet-annotated images, considering task dependencies.
 func (a *AnnotatorApp) GetPhaseProgressStats(ctx context.Context, taskID string) (*PhaseProgress, error) {
 	// Get total images in the entire dataset
 	totalCount, err := a.imageRepo.Count(ctx)
@@ -324,6 +344,10 @@ func (a *AnnotatorApp) GetPhaseProgressStats(ctx context.Context, taskID string)
 	}, nil
 }
 
+// NextAnnotationStep determines the next image to be annotated for a given task.
+// It selects a random image from a pool of eligible candidates (up to OffsetAdvance)
+// that have not yet been annotated for the specified task.
+// If taskID is empty, it iterates through all configured tasks to find the first available step.
 func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*AnnotationStep, error) {
 	// If no task specified, try each task in order
 	if taskID == "" {
@@ -417,6 +441,8 @@ func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*
 	}, nil
 }
 
+// GetImageFilename retrieves the filename associated with a given SHA256 hash.
+// It queries the image repository and returns an error if the image is not found.
 func (a *AnnotatorApp) GetImageFilename(ctx context.Context, sha256 string) (filename string, err error) {
 	// Get image from repository using SHA256 hash
 	img, err := a.imageRepo.GetBySHA256(ctx, sha256)
@@ -430,6 +456,7 @@ func (a *AnnotatorApp) GetImageFilename(ctx context.Context, sha256 string) (fil
 	return img.Filename, nil
 }
 
+// AnnotationResponse represents the user's submission for an annotation task.
 type AnnotationResponse struct {
 	ImageID string
 	TaskID  string
@@ -438,6 +465,8 @@ type AnnotationResponse struct {
 	Sure    bool
 }
 
+// SubmitAnnotation records a user's annotation for a specific image and task.
+// It validates the task ID and creates a new annotation record in the repository.
 func (a *AnnotatorApp) SubmitAnnotation(ctx context.Context, annotation AnnotationResponse) error {
 	// Find stage index for this task
 	stageIndex := a.findTaskIndex(annotation.TaskID)
@@ -454,6 +483,8 @@ func (a *AnnotatorApp) SubmitAnnotation(ctx context.Context, annotation Annotati
 	return nil
 }
 
+// GetTask retrieves the task configuration for a given task ID.
+// It returns nil if no task with the specified ID is found.
 func (a *AnnotatorApp) GetTask(taskID string) *ConfigTask {
 	for _, currentTask := range a.Config.Tasks {
 		if currentTask.ID == taskID {
@@ -463,13 +494,17 @@ func (a *AnnotatorApp) GetTask(taskID string) *ConfigTask {
 	return nil
 }
 
-// ClassButton represents a class button with keyboard shortcut
+// ClassButton represents a UI button for selecting a class, including its
+// identifier, display name, and associated keyboard shortcut.
 type ClassButton struct {
 	ID   string
 	Name string
 	Key  string
 }
 
+// GetHTTPHandler initializes the application and returns the main HTTP handler.
+// It sets up routes for the home page, help pages, annotation interface, and asset serving.
+// The handler is wrapped with middleware for i18n, logging, authentication, and request caching.
 func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 	a.init()
 	mux := http.NewServeMux()
@@ -797,6 +832,9 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 	return handler
 }
 
+// authenticationMiddleware implements HTTP Basic Authentication.
+// It verifies the provided username and password against the configured users.
+// Passwords in the configuration are expected to be bcrypt hashes.
 func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()

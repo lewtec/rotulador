@@ -10,6 +10,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Config represents the top-level structure of the application's configuration file.
+// It includes metadata, task definitions, authentication settings, and i18n overrides.
 type Config struct {
 	Meta struct {
 		Description string `yaml:"description"`
@@ -19,30 +21,39 @@ type Config struct {
 	I18N           []ConfigI18N           `yaml:"i18n"`
 }
 
+// ConfigI18N defines a single internationalization override, allowing custom values
+// for specific UI strings.
 type ConfigI18N struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
 }
 
+// ConfigAuth holds authentication details for a user.
 type ConfigAuth struct {
 	Password string `yaml:"password"`
 }
 
+// ConfigTask defines a single annotation task, including its type, dependencies,
+// and available classes.
 type ConfigTask struct {
 	ID        string                  `yaml:"id"`
 	Name      string                  `yaml:"name"`
 	ShortName string                  `yaml:"short_name"`
-	Type      string                  `yaml:"type"`
-	If        map[string]string       `yaml:"if"`
+	Type      string                  `yaml:"type"` // e.g., "class", "boolean", "rotation"
+	If        map[string]string       `yaml:"if"`   // Dependencies on other tasks
 	Classes   map[string]*ConfigClass `yaml:"classes"`
 }
 
+// ConfigClass defines a classification option within a task.
 type ConfigClass struct {
 	Name        string   `yaml:"name"`
 	Description string   `yaml:"description"`
 	Examples    []string `yaml:"examples"`
 }
 
+// LoadConfig reads and parses the configuration file from the specified path.
+// It validates the configuration, sets defaults for task types, loads i18n strings,
+// and ensures passwords are hashed.
 func LoadConfig(filename string) (*Config, error) {
 	var ret Config
 	f, err := os.Open(filename)
@@ -120,6 +131,8 @@ func LoadConfig(filename string) (*Config, error) {
 	return &ret, nil
 }
 
+// getClassesFromClassType returns a set of predefined classes based on a task type alias.
+// Supported types include "boolean" (Yes/No) and "rotation" (orientation options).
 func getClassesFromClassType(classType string) map[string]*ConfigClass {
 	switch classType {
 	case "boolean":
