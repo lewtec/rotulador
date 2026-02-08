@@ -59,3 +59,29 @@ func (r *StatusCodeRecorderResponseWriter) WriteHeader(status int) {
 func NewStatusCodeRecorderResponseWriter(w http.ResponseWriter) *StatusCodeRecorderResponseWriter {
 	return &StatusCodeRecorderResponseWriter{ResponseWriter: w, Status: 200}
 }
+
+func (a *AnnotatorApp) authenticationMiddleware(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if ok {
+			var item *ConfigAuth
+			item, ok = a.Config.Authentication[username]
+			if ok {
+				// SECURITY: Use bcrypt to compare the provided password with the stored hash.
+				if CheckPasswordHash(password, item.Password) {
+					a.Logger.Info("auth for user: success", "username", username)
+					handler.ServeHTTP(w, r)
+					return
+				}
+				a.Logger.Warn("auth for user: bad password", "username", username)
+			} else {
+				a.Logger.Warn("auth for user: no such user", "username", username)
+			}
+		} else {
+			a.Logger.Warn("auth: no credentials provided")
+		}
+		a.Logger.Warn("auth: not ok")
+		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	})
+}
