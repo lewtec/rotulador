@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"github.com/google/uuid"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -12,6 +11,8 @@ import (
 	"io"
 	"os"
 	"path"
+
+	"github.com/google/uuid"
 )
 
 func DecodeImage(filepath string) (image.Image, error) {
