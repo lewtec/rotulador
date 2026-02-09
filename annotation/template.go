@@ -53,6 +53,11 @@ func RenderPageWithContext(ctx context.Context, w io.Writer, pageName string, da
 	}
 	data["CSS"] = template.CSS(cssContent)
 
+	// Inject CSRF token if available
+	if token := GetCSRFToken(ctx); token != "" {
+		data["CSRFToken"] = token
+	}
+
 	// Set goroutine-local localizer for the i18n function in templates
 	localizer := GetLocalizerFromContext(ctx)
 	gid := getGoroutineID()
