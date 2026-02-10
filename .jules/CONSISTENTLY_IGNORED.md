@@ -12,7 +12,7 @@ This file lists patterns of changes that have been consistently rejected by huma
 
 ## IGNORE: Ad-hoc Error Handling
 
-**- Pattern:** Replacing standard logging (`log.Printf`) with direct logger calls (`slog.Error`) for error handling, instead of using the centralized `ReportError` function.
+**- Pattern:** Using direct logger calls (e.g., `slog.Error`) for error handling, instead of the centralized `annotation.ReportError` function.
 **- Justification:** The project mandates a centralized error reporting function (e.g., `annotation.ReportError`) to ensure consistent error handling, stack trace capture, and observability integration (Sentry).
 **- Files Affected:** `*.go`
 
