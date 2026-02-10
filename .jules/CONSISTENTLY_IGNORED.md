@@ -12,7 +12,7 @@ This file lists patterns of changes that have been consistently rejected by huma
 
 ## IGNORE: Ad-hoc Error Handling
 
-**- Pattern:** Replacing standard logging (`log.Printf`) with direct logger calls (`slog.Error`) for error handling, instead of using the centralized `ReportError` function.
+**- Pattern:** Using direct logger calls (e.g., `slog.Error`) for error handling, instead of the centralized `annotation.ReportError` function.
 **- Justification:** The project mandates a centralized error reporting function (e.g., `annotation.ReportError`) to ensure consistent error handling, stack trace capture, and observability integration (Sentry).
 **- Files Affected:** `*.go`
 
@@ -27,3 +27,9 @@ This file lists patterns of changes that have been consistently rejected by huma
 **- Pattern:** Using `filepath.Clean` or `path.Join` for validating file paths against a base directory without resolving to an absolute path (`filepath.Abs`).
 **- Justification:** `filepath.Abs` provides a stronger guarantee against traversal attacks by anchoring the path to the filesystem root, whereas `Clean` alone may not resolve all relative path ambiguities.
 **- Files Affected:** `*.go`
+
+## IGNORE: Manual Modification of Generated Files
+
+**- Pattern:** Manually editing generated files such as `active.*.json` or SQLc output.
+**- Justification:** Generated files should only be updated by running the appropriate generation task (e.g., `mise run codegen:i18n`). Manual edits will be overwritten and can lead to inconsistencies.
+**- Files Affected:** `annotation/locales/active.*.json`, `internal/sqlc/*.go`
