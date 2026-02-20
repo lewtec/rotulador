@@ -33,3 +33,9 @@ This file lists patterns of changes that have been consistently rejected by huma
 **- Pattern:** Manually editing generated files such as `active.*.json` or SQLc output.
 **- Justification:** Generated files should only be updated by running the appropriate generation task (e.g., `mise run codegen:i18n`). Manual edits will be overwritten and can lead to inconsistencies.
 **- Files Affected:** `annotation/locales/active.*.json`, `internal/sqlc/*.go`
+
+## IGNORE: Renaming 'Description' i18n key
+
+**- Pattern:** Renaming the `Description` localization key to `ProjectDescription` or similar.
+**- Justification:** The codebase uses "Description" and attempts to rename it have been rejected (PR #139).
+**- Files Affected:** `annotation/locales/*.json`, `annotation/templates/**/*.html`
