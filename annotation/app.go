@@ -790,6 +790,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 
 	var handler http.Handler = mux
 	loggerMiddleware := NewHTTPLogger(a.Logger)
+	handler = CSRFMiddleware(handler)
 	handler = i18nMiddleware(handler)
 	handler = loggerMiddleware.Middleware(handler)
 	handler = a.authenticationMiddleware(handler)

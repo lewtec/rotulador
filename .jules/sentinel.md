@@ -7,3 +7,5 @@
 **Vulnerability:** The `/asset/` handler used `path.Join` with user-supplied input (SHA256 hash/filename) to construct file paths, which allows path traversal attacks if the filename in the database contains `../`. `path.Join` is also not OS-agnostic for file systems.
 **Learning:** Even if input comes from a database, it should be treated as untrusted, especially when performing file system operations. `path.Join` should not be used for file system paths; `filepath.Join` is correct. Explicitly verifying that the resolved path is within the expected directory is a necessary defense-in-depth measure.
 **Prevention:** Use `filepath.Join` and verify that the resulting path starts with the expected base directory (resolved to absolute path) before accessing the file.
+
+- 2025-05-18: Missing CSRF protection; always verify state-changing endpoints implement token validation.
