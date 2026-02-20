@@ -3,6 +3,7 @@ package annotation
 import (
 	"context"
 	"database/sql"
+
 	_ "modernc.org/sqlite"
 )
 

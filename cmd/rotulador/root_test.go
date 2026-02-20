@@ -95,9 +95,9 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 	t.Run("when argument is a file, assumes it's a config and tries to run", func(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "test-config.yaml")
-		dbPath := filepath.Join(tempDir, "annotations.db") // Expected default path
+		dbPath := filepath.Join(tempDir, "annotations.db")              // Expected default path
 		imagesPath := filepath.Join(filepath.Dir(configPath), "images") // Expected default path
-		
+
 		// Create a valid config file
 		validConfig := `
 meta:
