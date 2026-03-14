@@ -1,6 +1,6 @@
 module github.com/lewtec/rotulador
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/abiosoft/mold v0.0.0-20250328135240-0a4c28cb836a
@@ -10,7 +10,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/crypto v0.47.0
-	golang.org/x/text v0.33.0
+	golang.org/x/text v0.35.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.44.0
 )
