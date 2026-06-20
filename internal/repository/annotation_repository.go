@@ -8,26 +8,30 @@ import (
 	"github.com/lewtec/rotulador/internal/sqlc"
 )
 
-// AnnotationRepository implements domain.AnnotationRepository using SQLC
+// AnnotationRepository implements domain.AnnotationRepository using SQLC.
+// It wraps generated SQLC queries to map them to the domain model and handle persistence.
 type AnnotationRepository struct {
 	queries *sqlc.Queries
 }
 
-// NewAnnotationRepository creates a new AnnotationRepository
+// NewAnnotationRepository creates a new AnnotationRepository using a standard database connection.
 func NewAnnotationRepository(db *sql.DB) *AnnotationRepository {
 	return &AnnotationRepository{
 		queries: sqlc.New(db),
 	}
 }
 
-// NewAnnotationRepositoryWithTx creates a new AnnotationRepository with a transaction
+// NewAnnotationRepositoryWithTx creates a new AnnotationRepository bound to an active transaction.
 func NewAnnotationRepositoryWithTx(tx *sql.Tx) *AnnotationRepository {
 	return &AnnotationRepository{
 		queries: sqlc.New(tx),
 	}
 }
 
-// Create creates or updates an annotation (upsert)
+// Create creates or updates an annotation.
+// If an annotation already exists for the combination of (ImageSha256, Username, StageIndex),
+// the underlying SQL executes an ON CONFLICT DO UPDATE clause to overwrite the OptionValue
+// and reset the AnnotatedAt timestamp. This guarantees idempotency.
 func (r *AnnotationRepository) Create(ctx context.Context, imageSHA256 string, username string, stageIndex int, optionValue string) (*domain.Annotation, error) {
 	params := sqlc.CreateAnnotationParams{
 		ImageSha256: imageSHA256,
@@ -44,7 +48,9 @@ func (r *AnnotationRepository) Create(ctx context.Context, imageSHA256 string, u
 	return toDomainAnnotation(ann), nil
 }
 
-// Get retrieves a specific annotation
+// Get retrieves a specific annotation for an image, user, and stage.
+// It intercepts sql.ErrNoRows to return (nil, nil), representing an expected missing state
+// without bubbling up a database error.
 func (r *AnnotationRepository) Get(ctx context.Context, imageSHA256 string, username string, stageIndex int) (*domain.Annotation, error) {
 	params := sqlc.GetAnnotationParams{
 		ImageSha256: imageSHA256,
@@ -63,7 +69,7 @@ func (r *AnnotationRepository) Get(ctx context.Context, imageSHA256 string, user
 	return toDomainAnnotation(ann), nil
 }
 
-// GetForImage retrieves all annotations for a specific image
+// GetForImage retrieves all annotations made by any user for a specific image.
 func (r *AnnotationRepository) GetForImage(ctx context.Context, imageSHA256 string) ([]*domain.Annotation, error) {
 	anns, err := r.queries.GetAnnotationsForImage(ctx, imageSHA256)
 	if err != nil {
@@ -78,7 +84,10 @@ func (r *AnnotationRepository) GetForImage(ctx context.Context, imageSHA256 stri
 	return result, nil
 }
 
-// GetByUser retrieves annotations by a specific user (paginated)
+// GetByUser retrieves annotations submitted by a specific user, ordered by most recent first.
+// It performs a SQL JOIN to include the associated image filename in the result.
+// Because a user might generate a massive number of annotations, this method requires
+// limit and offset parameters for pagination.
 func (r *AnnotationRepository) GetByUser(ctx context.Context, username string, limit, offset int) ([]*domain.AnnotationWithImage, error) {
 	params := sqlc.GetAnnotationsByUserParams{
 		Username: username,
