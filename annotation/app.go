@@ -489,7 +489,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 
 		err := RenderPageWithRequest(r, w, "home.html", data)
 		if err != nil {
-			a.Logger.Error("error rendering home template", "err", err)
+			ReportError(r.Context(), err, "msg", "error rendering home template")
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	})
@@ -499,7 +499,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		w.Header().Set("Content-Type", "image/svg+xml")
 		w.Header().Set("Cache-Control", "public, max-age=31536000")
 		if _, err := w.Write([]byte(GetFavicon())); err != nil {
-			a.Logger.Error("error writing favicon response", "err", err)
+			ReportError(r.Context(), err, "msg", "error writing favicon response")
 		}
 	})
 
@@ -518,13 +518,13 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			for _, task := range a.Config.Tasks {
 				availableCount, err := a.CountAvailableImages(r.Context(), task.ID)
 				if err != nil {
-					a.Logger.Error("error counting available images", "task", task.ID, "err", err)
+					ReportError(r.Context(), err, "msg", "error counting available images", "task", task.ID)
 					availableCount = 0
 				}
 
 				totalEligible, err := a.CountEligibleImages(r.Context(), task.ID)
 				if err != nil {
-					a.Logger.Error("error counting eligible images", "task", task.ID, "err", err)
+					ReportError(r.Context(), err, "msg", "error counting eligible images", "task", task.ID)
 					totalEligible = availableCount // fallback to available
 				}
 
@@ -536,7 +536,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				// Get comprehensive phase progress stats
 				phaseProgress, err := a.GetPhaseProgressStats(r.Context(), task.ID)
 				if err != nil {
-					a.Logger.Error("error getting phase progress", "task", task.ID, "err", err)
+					ReportError(r.Context(), err, "msg", "error getting phase progress", "task", task.ID)
 					phaseProgress = &PhaseProgress{}
 				}
 
@@ -560,14 +560,14 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			// Get progress stats for this specific task
 			phaseProgress, err := a.GetPhaseProgressStats(r.Context(), helpTask)
 			if err != nil {
-				a.Logger.Error("error getting phase progress", "task", helpTask, "err", err)
+				ReportError(r.Context(), err, "msg", "error getting phase progress", "task", helpTask)
 				phaseProgress = &PhaseProgress{}
 			}
 
 			// Get available count to check if there are images to annotate
 			availableCount, err := a.CountAvailableImages(r.Context(), helpTask)
 			if err != nil {
-				a.Logger.Error("error counting available images", "task", helpTask, "err", err)
+				ReportError(r.Context(), err, "msg", "error counting available images", "task", helpTask)
 				availableCount = 0
 			}
 
@@ -594,7 +594,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 
 		err := RenderPageWithRequest(r, w, "help.html", data)
 		if err != nil {
-			a.Logger.Error("error rendering help template", "err", err)
+			ReportError(r.Context(), err, "msg", "error rendering help template")
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	})
@@ -607,7 +607,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			taskID := r.URL.Query().Get("task")
 			step, err := a.NextAnnotationStep(r.Context(), taskID)
 			if err != nil {
-				a.Logger.Error("error in annotate when getting next step from scratch", "err", err)
+				ReportError(r.Context(), err, "msg", "error in annotate when getting next step from scratch")
 				w.WriteHeader(500)
 				return
 			}
@@ -617,7 +617,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				}
 				err := RenderPageWithRequest(r, w, "complete.html", data)
 				if err != nil {
-					a.Logger.Error("error rendering complete template", "err", err)
+					ReportError(r.Context(), err, "msg", "error rendering complete template")
 				}
 				return
 			}
@@ -637,7 +637,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		if r.Method == http.MethodPost {
 			a.Logger.Debug("POST")
 			if err := r.ParseForm(); err != nil {
-				a.Logger.Error("failed to parse form", "err", err)
+				ReportError(r.Context(), err, "msg", "failed to parse form")
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -659,20 +659,20 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				Sure:    sure,
 			})
 			if err != nil {
-				a.Logger.Error("error while submitting annotation", "err", err)
+				ReportError(r.Context(), err, "msg", "error while submitting annotation")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			step, err := a.NextAnnotationStep(r.Context(), taskID)
 			if err != nil {
-				a.Logger.Error("error while getting next step", "err", err)
+				ReportError(r.Context(), err, "msg", "error while getting next step")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			if step == nil {
 				step, err = a.NextAnnotationStep(r.Context(), "")
 				if err != nil {
-					a.Logger.Error("error while getting next step at the end of task", "err", err)
+					ReportError(r.Context(), err, "msg", "error while getting next step at the end of task")
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
@@ -713,7 +713,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		// Get comprehensive progress information
 		phaseProgress, err := a.GetPhaseProgressStats(r.Context(), taskID)
 		if err != nil {
-			a.Logger.Error("error getting phase progress", "err", err)
+			ReportError(r.Context(), err, "msg", "error getting phase progress")
 			// Fallback to empty progress
 			phaseProgress = &PhaseProgress{}
 		}
@@ -736,7 +736,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 
 		err = RenderPageWithRequest(r, w, "annotate.html", data)
 		if err != nil {
-			a.Logger.Error("error rendering annotate template", "err", err)
+			ReportError(r.Context(), err, "msg", "error rendering annotate template")
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	})
@@ -773,7 +773,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		}
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			a.Logger.Error("error: http: while serving image asset", "err", err)
+			ReportError(r.Context(), err, "msg", "error: http: while serving image asset")
 			return
 		}
 		defer func() {
@@ -782,7 +782,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			}
 		}()
 		if _, err := io.Copy(w, f); err != nil {
-			a.Logger.Error("error: http: while copying image asset", "err", err)
+			ReportError(r.Context(), err, "msg", "error: http: while copying image asset")
 		}
 	})
 

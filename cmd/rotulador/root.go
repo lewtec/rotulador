@@ -150,7 +150,7 @@ With a set of trivial choices scale the classification of a set of images to man
 		// Start image ingestion in background (non-blocking)
 		go func() {
 			if err := app.IngestImages(context.Background()); err != nil {
-				logger.Error("Error during background image ingestion", "err", err)
+				annotation.ReportError(context.Background(), err, "msg", "Error during background image ingestion")
 			}
 		}()
 
@@ -177,7 +177,7 @@ func main() {
 	}
 	ctx := context.WithValue(context.Background(), loggerKey, logger)
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		logger.Error("Error executing command", "err", err)
+		annotation.ReportError(ctx, err, "msg", "Error executing command")
 		os.Exit(1)
 	}
 }

@@ -53,7 +53,7 @@ var ingestCmd = &cobra.Command{
 			for image := range queue {
 				err := annotation.IngestImage(image, output)
 				if err != nil {
-					logger.Error("Ingesting image error", "err", err)
+					annotation.ReportError(cmd.Context(), err, "msg", "Ingesting image error")
 				}
 			}
 		}
