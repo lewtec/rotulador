@@ -14,3 +14,4 @@
 **Root Cause:** As the application grew, the logic for handling task dependencies (the `If` field in tasks) was copy-pasted into every method that needed to filter images based on previous annotations.
 **Solution:** Extracted `findTaskIndex` and `getDependencyImageHashes` into a new `annotation/helpers.go` file. Refactored `CountEligibleImages`, `CountAvailableImages`, `GetPhaseProgressStats`, and `NextAnnotationStep` to use these helpers.
 **Pattern:** Complex configuration traversal and dependency resolution logic should be centralized in helper methods, especially when used in loops or multiple contexts. This reduces the risk of inconsistent behavior when logic changes.
+- 2026-06-30: Fixed technical debt by replacing context.TODO() with context.Background() in ReportError calls for background/cleanup functions that do not receive context parameters.

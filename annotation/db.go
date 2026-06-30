@@ -16,7 +16,7 @@ func GetDatabase(filename string) (*sql.DB, error) {
 	_, err = db.Exec("PRAGMA journal_mode=WAL")
 	if err != nil {
 		if closeErr := db.Close(); closeErr != nil {
-			ReportError(context.TODO(), closeErr, "msg", "failed to close database after WAL setup failure")
+			ReportError(context.Background(), closeErr, "msg", "failed to close database after WAL setup failure")
 		}
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func GetDatabase(filename string) (*sql.DB, error) {
 	_, err = db.Exec("PRAGMA busy_timeout=5000")
 	if err != nil {
 		if closeErr := db.Close(); closeErr != nil {
-			ReportError(context.TODO(), closeErr, "msg", "failed to close database after busy_timeout setup failure")
+			ReportError(context.Background(), closeErr, "msg", "failed to close database after busy_timeout setup failure")
 		}
 		return nil, err
 	}
