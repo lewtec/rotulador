@@ -4,7 +4,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"runtime"
 	"strconv"
@@ -47,13 +47,13 @@ func init() {
 	for _, locale := range locales {
 		data, err := localesFS.ReadFile("locales/" + locale + ".json")
 		if err != nil {
-			log.Printf("i18n: WARNING - failed to read locale file %s: %v", locale, err)
+			slog.Warn("i18n: WARNING - failed to read locale file", "locale", locale, "err", err)
 			continue
 		}
 
 		_, err = bundle.ParseMessageFileBytes(data, locale+".json")
 		if err != nil {
-			log.Printf("i18n: failed to parse locale file %s: %v", locale, err)
+			slog.Warn("i18n: failed to parse locale file", "locale", locale, "err", err)
 			continue
 		}
 	}
