@@ -15,3 +15,10 @@
 **Solution:** Extracted `findTaskIndex` and `getDependencyImageHashes` into a new `annotation/helpers.go` file. Refactored `CountEligibleImages`, `CountAvailableImages`, `GetPhaseProgressStats`, and `NextAnnotationStep` to use these helpers.
 **Pattern:** Complex configuration traversal and dependency resolution logic should be centralized in helper methods, especially when used in loops or multiple contexts. This reduces the risk of inconsistent behavior when logic changes.
 - 2026-07-01: Replaced `log` with `slog` in `annotation/i18n.go` to comply with centralized logging rules.
+
+## 2026-07-03 - Replace context.TODO() with context.Background() in Error Reporting
+
+**Issue:** Functions `LoadConfig`, `GetDatabase`, and `DecodeImage` used `context.TODO()` when calling the centralized `ReportError` function for I/O and setup errors during defer blocks.
+**Root Cause:** Early implementation or copy-pasted error handling boilerplate often relies on `context.TODO()` as a placeholder when the correct context isn't immediately obvious.
+**Solution:** Replaced `context.TODO()` with `context.Background()` in `annotation/config.go`, `annotation/db.go`, and `annotation/image.go`. Since these functions do not receive a context parameter and represent top-level or background operations, `context.Background()` is the semantically correct choice for an empty context.
+**Pattern:** When calling `annotation.ReportError(ctx, err, args...)` in functions that do not receive a context parameter, use `context.Background()` rather than `context.TODO()`.

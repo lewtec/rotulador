@@ -21,7 +21,7 @@ func DecodeImage(filepath string) (image.Image, error) {
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			ReportError(context.TODO(), err, "msg", "failed to close image file", "path", filepath)
+			ReportError(context.Background(), err, "msg", "failed to close image file", "path", filepath)
 		}
 	}()
 	m, _, err := image.Decode(f)
@@ -50,7 +50,7 @@ func IngestImage(img image.Image, outputDir string) error {
 	err = os.Rename(tempFile, path.Join(outputDir, fmt.Sprintf("%x.png", hasher.Sum(nil))))
 	if err != nil {
 		if removeErr := os.Remove(tempFile); removeErr != nil {
-			ReportError(context.TODO(), removeErr, "msg", "failed to remove temp file", "path", tempFile)
+			ReportError(context.Background(), removeErr, "msg", "failed to remove temp file", "path", tempFile)
 		}
 		return err
 	}
