@@ -14,14 +14,14 @@ import (
 	"path"
 )
 
-func DecodeImage(filepath string) (image.Image, error) {
+func DecodeImage(ctx context.Context, filepath string) (image.Image, error) {
 	f, err := os.Open(filepath)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			ReportError(context.Background(), err, "msg", "failed to close image file", "path", filepath)
+			ReportError(ctx, err, "msg", "failed to close image file", "path", filepath)
 		}
 	}()
 	m, _, err := image.Decode(f)
@@ -31,7 +31,7 @@ func DecodeImage(filepath string) (image.Image, error) {
 	return m, err
 }
 
-func IngestImage(img image.Image, outputDir string) error {
+func IngestImage(ctx context.Context, img image.Image, outputDir string) error {
 	tempFile := path.Join(outputDir, fmt.Sprintf("%s.png", uuid.New()))
 	f, err := os.Create(tempFile)
 	if err != nil {
@@ -50,7 +50,7 @@ func IngestImage(img image.Image, outputDir string) error {
 	err = os.Rename(tempFile, path.Join(outputDir, fmt.Sprintf("%x.png", hasher.Sum(nil))))
 	if err != nil {
 		if removeErr := os.Remove(tempFile); removeErr != nil {
-			ReportError(context.Background(), removeErr, "msg", "failed to remove temp file", "path", tempFile)
+			ReportError(ctx, removeErr, "msg", "failed to remove temp file", "path", tempFile)
 		}
 		return err
 	}

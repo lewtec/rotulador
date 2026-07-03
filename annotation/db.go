@@ -6,7 +6,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func GetDatabase(filename string) (*sql.DB, error) {
+func GetDatabase(ctx context.Context, filename string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", filename)
 	if err != nil {
 		return nil, err
@@ -16,7 +16,7 @@ func GetDatabase(filename string) (*sql.DB, error) {
 	_, err = db.Exec("PRAGMA journal_mode=WAL")
 	if err != nil {
 		if closeErr := db.Close(); closeErr != nil {
-			ReportError(context.Background(), closeErr, "msg", "failed to close database after WAL setup failure")
+			ReportError(ctx, closeErr, "msg", "failed to close database after WAL setup failure")
 		}
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func GetDatabase(filename string) (*sql.DB, error) {
 	_, err = db.Exec("PRAGMA busy_timeout=5000")
 	if err != nil {
 		if closeErr := db.Close(); closeErr != nil {
-			ReportError(context.Background(), closeErr, "msg", "failed to close database after busy_timeout setup failure")
+			ReportError(ctx, closeErr, "msg", "failed to close database after busy_timeout setup failure")
 		}
 		return nil, err
 	}

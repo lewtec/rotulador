@@ -108,12 +108,12 @@ With a set of trivial choices scale the classification of a set of images to man
 		// 5. Server startup logic
 		logger.Info("Initializing project...")
 
-		config, err := annotation.LoadConfig(configFile)
+		config, err := annotation.LoadConfig(cmd.Context(), configFile)
 		if err != nil {
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 
-		db, err := annotation.GetDatabase(databaseFile)
+		db, err := annotation.GetDatabase(cmd.Context(), databaseFile)
 		if err != nil {
 			return fmt.Errorf("failed to open database: %w", err)
 		}

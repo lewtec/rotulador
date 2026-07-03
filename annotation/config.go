@@ -43,7 +43,7 @@ type ConfigClass struct {
 	Examples    []string `yaml:"examples"`
 }
 
-func LoadConfig(filename string) (*Config, error) {
+func LoadConfig(ctx context.Context, filename string) (*Config, error) {
 	var ret Config
 	f, err := os.Open(filename)
 	if err != nil {
@@ -51,7 +51,7 @@ func LoadConfig(filename string) (*Config, error) {
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			ReportError(context.Background(), err, "msg", "failed to close config file")
+			ReportError(ctx, err, "msg", "failed to close config file")
 		}
 	}()
 	data, err := io.ReadAll(f)

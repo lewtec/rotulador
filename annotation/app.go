@@ -879,7 +879,7 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 		a.Logger.Debug("IngestImages: processing image", "path", fullPath)
 
 		// Verify it's an image
-		_, err = DecodeImage(fullPath)
+		_, err = DecodeImage(ctx, fullPath)
 		if err != nil {
 			return fmt.Errorf("while checking if item '%s' is an image: %w", fullPath, err)
 		}

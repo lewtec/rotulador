@@ -51,7 +51,7 @@ var ingestCmd = &cobra.Command{
 		ingestWorker := func(queue chan image.Image) {
 			defer wg.Done()
 			for image := range queue {
-				err := annotation.IngestImage(image, output)
+				err := annotation.IngestImage(cmd.Context(), image, output)
 				if err != nil {
 					logger.Error("Ingesting image error", "err", err)
 				}
@@ -71,7 +71,7 @@ var ingestCmd = &cobra.Command{
 				if info.IsDir() {
 					return nil
 				}
-				img, err := annotation.DecodeImage(path)
+				img, err := annotation.DecodeImage(cmd.Context(), path)
 				if err != nil {
 					return nil
 				}

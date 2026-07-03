@@ -42,14 +42,14 @@ Example:
 		}
 
 		// Load config
-		config, err := annotation.LoadConfig(configFile)
+		config, err := annotation.LoadConfig(cmd.Context(), configFile)
 		if err != nil {
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 
 		// Create database
 		logger.Info("Creating database", "databaseFile", databaseFile)
-		db, err := annotation.GetDatabase(databaseFile)
+		db, err := annotation.GetDatabase(cmd.Context(), databaseFile)
 		if err != nil {
 			return fmt.Errorf("failed to create database: %w", err)
 		}

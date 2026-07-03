@@ -82,7 +82,7 @@ Examples:
 		if len(args) < 1 {
 			return cmd.Help()
 		}
-		db, err := annotation.GetDatabase(args[0])
+		db, err := annotation.GetDatabase(cmd.Context(), args[0])
 		if err != nil {
 			return err
 		}
