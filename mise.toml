@@ -20,6 +20,8 @@ run = "sqlc generate"
 [tasks."gen:i18n"]
 description = "Extract and merge i18n strings"
 run = """
+echo "→ Cleaning up stale active files..."
+rm -f annotation/locales/active.*.json
 echo "→ Extracting translatable strings..."
 goi18n extract -format json -outdir .
 echo "→ Merging with existing translations..."
