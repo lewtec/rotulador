@@ -171,7 +171,7 @@ func (r *AnnotationRepository) Exists(ctx context.Context, imageSHA256 string, u
 	if err != nil {
 		return false, err
 	}
-	return exists > 0, nil
+	return exists, nil
 }
 
 // Delete removes an annotation by ID
@@ -248,7 +248,7 @@ func (r *AnnotationRepository) CheckAnnotationExists(ctx context.Context, imageS
 		if err != nil {
 			return false, err
 		}
-		return exists > 0, nil
+		return exists, nil
 	}
 	// Otherwise use the specific user check
 	return r.Exists(ctx, imageSHA256, username, int(stageIndex))
