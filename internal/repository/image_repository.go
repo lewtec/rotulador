@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/lewtec/rotulador/internal/domain"
 	"github.com/lewtec/rotulador/internal/sqlc"
@@ -46,7 +47,7 @@ func (r *ImageRepository) Create(ctx context.Context, sha256, filename string) (
 func (r *ImageRepository) GetBySHA256(ctx context.Context, sha256 string) (*domain.Image, error) {
 	img, err := r.queries.GetImage(ctx, sha256)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
@@ -59,7 +60,7 @@ func (r *ImageRepository) GetBySHA256(ctx context.Context, sha256 string) (*doma
 func (r *ImageRepository) GetByFilename(ctx context.Context, filename string) (*domain.Image, error) {
 	img, err := r.queries.GetImageByFilename(ctx, filename)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err

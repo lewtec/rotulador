@@ -421,7 +421,7 @@ func (a *AnnotatorApp) GetImageFilename(ctx context.Context, sha256 string) (fil
 	// Get image from repository using SHA256 hash
 	img, err := a.imageRepo.GetBySHA256(ctx, sha256)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return "", fmt.Errorf("image not found: %s", sha256)
 		}
 		return "", err

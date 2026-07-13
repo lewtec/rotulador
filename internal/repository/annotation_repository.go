@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/lewtec/rotulador/internal/domain"
 	"github.com/lewtec/rotulador/internal/sqlc"
@@ -54,7 +55,7 @@ func (r *AnnotationRepository) Get(ctx context.Context, imageSHA256 string, user
 
 	ann, err := r.queries.GetAnnotation(ctx, params)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
