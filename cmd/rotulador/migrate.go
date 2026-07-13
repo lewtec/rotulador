@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -128,7 +129,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 		return fmt.Errorf("failed to start transaction: %w", err)
 	}
 	defer func() {
-		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
 			annotation.ReportError(ctx, err, "msg", "failed to rollback transaction")
 		}
 	}()

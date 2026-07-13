@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -98,7 +99,7 @@ func TestQueryAgainstCurrentSchema(t *testing.T) {
 		t.Fatalf("begin: %v", err)
 	}
 	defer func() {
-		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
 			t.Errorf("rollback: %v", err)
 		}
 	}()
