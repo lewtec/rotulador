@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/lewtec/rotulador/annotation"
 	"github.com/spf13/cobra"
@@ -150,14 +152,26 @@ With a set of trivial choices scale the classification of a set of images to man
 		// Start image ingestion in background (non-blocking)
 		go func() {
 			if err := app.IngestImages(context.Background()); err != nil {
-				logger.Error("Error during background image ingestion", "err", err)
+				annotation.ReportError(context.Background(), err, "msg", "background image ingestion failed")
 			}
 		}()
 
 		logger.Info("Server is ready and listening", "addr", addr)
 		logger.Info("Images are being loaded in the background...")
 
-		return http.ListenAndServe(addr, app.GetHTTPHandler())
+		// Bound request lifetimes to mitigate slowloris / stuck clients.
+		server := &http.Server{
+			Addr:              addr,
+			Handler:           app.GetHTTPHandler(),
+			ReadHeaderTimeout: 10 * time.Second,
+			ReadTimeout:       30 * time.Second,
+			WriteTimeout:      60 * time.Second,
+			IdleTimeout:       120 * time.Second,
+			BaseContext: func(_ net.Listener) context.Context {
+				return cmd.Context()
+			},
+		}
+		return server.ListenAndServe()
 	},
 }
 
