@@ -150,10 +150,9 @@ With a set of trivial choices scale the classification of a set of images to man
 		}
 
 		// Start image ingestion in background (non-blocking)
-		ingestCtx := cmd.Context()
 		go func() {
-			if err := app.IngestImages(ingestCtx); err != nil {
-				annotation.ReportError(ingestCtx, err, "msg", "background image ingestion failed")
+			if err := app.IngestImages(cmd.Context()); err != nil {
+				annotation.ReportError(cmd.Context(), err, "msg", "background image ingestion failed")
 			}
 		}()
 
