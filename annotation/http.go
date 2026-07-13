@@ -46,16 +46,35 @@ func (l *HTTPLogger) Middleware(handler http.Handler) http.Handler {
 	})
 }
 
+// StatusCodeRecorderResponseWriter records the HTTP status code written by a handler.
+// It defaults to 200 and captures the implicit 200 from Write when WriteHeader was not called.
 type StatusCodeRecorderResponseWriter struct {
 	http.ResponseWriter
-	Status int
+	Status      int
+	wroteHeader bool
 }
 
 func (r *StatusCodeRecorderResponseWriter) WriteHeader(status int) {
+	if r.wroteHeader {
+		return
+	}
+	r.wroteHeader = true
 	r.Status = status
 	r.ResponseWriter.WriteHeader(status)
 }
 
+func (r *StatusCodeRecorderResponseWriter) Write(b []byte) (int, error) {
+	if !r.wroteHeader {
+		r.WriteHeader(http.StatusOK)
+	}
+	return r.ResponseWriter.Write(b)
+}
+
+// Unwrap exposes the underlying ResponseWriter for http.ResponseController and friends.
+func (r *StatusCodeRecorderResponseWriter) Unwrap() http.ResponseWriter {
+	return r.ResponseWriter
+}
+
 func NewStatusCodeRecorderResponseWriter(w http.ResponseWriter) *StatusCodeRecorderResponseWriter {
-	return &StatusCodeRecorderResponseWriter{ResponseWriter: w, Status: 200}
+	return &StatusCodeRecorderResponseWriter{ResponseWriter: w, Status: http.StatusOK}
 }
