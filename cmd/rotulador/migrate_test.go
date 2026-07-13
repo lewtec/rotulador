@@ -53,7 +53,11 @@ tasks:
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer newDB.Close()
+	defer func() {
+		if err := newDB.Close(); err != nil {
+			t.Errorf("close new db: %v", err)
+		}
+	}()
 
 	var filename string
 	if err := newDB.QueryRow(`SELECT filename FROM images WHERE sha256 = ?`, "abc").Scan(&filename); err != nil {
