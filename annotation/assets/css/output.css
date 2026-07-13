@@ -1,4 +1,4 @@
-/*! tailwindcss v4.2.0 | MIT License | https://tailwindcss.com */
+/*! tailwindcss v4.2.1 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
@@ -1522,6 +1522,76 @@
   .end {
     inset-inline-end: var(--spacing);
   }
+  .join {
+    display: inline-flex;
+    align-items: stretch;
+    --join-ss: 0;
+    --join-se: 0;
+    --join-es: 0;
+    --join-ee: 0;
+    :where(.join-item) {
+      border-start-start-radius: var(--join-ss, 0);
+      border-start-end-radius: var(--join-se, 0);
+      border-end-start-radius: var(--join-es, 0);
+      border-end-end-radius: var(--join-ee, 0);
+      * {
+        --join-ss: var(--radius-field);
+        --join-se: var(--radius-field);
+        --join-es: var(--radius-field);
+        --join-ee: var(--radius-field);
+      }
+    }
+    > .join-item:where(:first-child) {
+      --join-ss: var(--radius-field);
+      --join-se: 0;
+      --join-es: var(--radius-field);
+      --join-ee: 0;
+    }
+    :first-child:not(:last-child) {
+      :where(.join-item) {
+        --join-ss: var(--radius-field);
+        --join-se: 0;
+        --join-es: var(--radius-field);
+        --join-ee: 0;
+      }
+    }
+    > .join-item:where(:last-child) {
+      --join-ss: 0;
+      --join-se: var(--radius-field);
+      --join-es: 0;
+      --join-ee: var(--radius-field);
+    }
+    :last-child:not(:first-child) {
+      :where(.join-item) {
+        --join-ss: 0;
+        --join-se: var(--radius-field);
+        --join-es: 0;
+        --join-ee: var(--radius-field);
+      }
+    }
+    > .join-item:where(:only-child) {
+      --join-ss: var(--radius-field);
+      --join-se: var(--radius-field);
+      --join-es: var(--radius-field);
+      --join-ee: var(--radius-field);
+    }
+    :only-child {
+      :where(.join-item) {
+        --join-ss: var(--radius-field);
+        --join-se: var(--radius-field);
+        --join-es: var(--radius-field);
+        --join-ee: var(--radius-field);
+      }
+    }
+    > :where(:focus, :has(:focus)) {
+      z-index: 1;
+    }
+    @media (hover: hover) {
+      > :where(.btn:hover, :has(.btn:hover)) {
+        isolation: isolate;
+      }
+    }
+  }
   .hero-content {
     @layer daisyui.l1.l2.l3 {
       isolation: isolate;
@@ -1698,6 +1768,62 @@
   }
   .my-6 {
     margin-block: calc(var(--spacing) * 6);
+  }
+  .breadcrumbs {
+    @layer daisyui.l1.l2.l3 {
+      max-width: 100%;
+      overflow-x: auto;
+      padding-block: calc(0.25rem * 2);
+      > menu, > ul, > ol {
+        display: flex;
+        min-height: min-content;
+        align-items: center;
+        white-space: nowrap;
+        > li {
+          display: flex;
+          align-items: center;
+          > * {
+            display: flex;
+            cursor: pointer;
+            align-items: center;
+            gap: calc(0.25rem * 2);
+            &:hover {
+              @media (hover: hover) {
+                text-decoration-line: underline;
+              }
+            }
+            &:focus {
+              --tw-outline-style: none;
+              outline-style: none;
+              @media (forced-colors: active) {
+                outline: 2px solid transparent;
+                outline-offset: 2px;
+              }
+            }
+            &:focus-visible {
+              outline: 2px solid currentColor;
+              outline-offset: 2px;
+            }
+          }
+          & + *:before {
+            content: "";
+            margin-inline-start: calc(0.25rem * 2);
+            margin-inline-end: calc(0.25rem * 3);
+            display: block;
+            height: calc(0.25rem * 1.5);
+            width: calc(0.25rem * 1.5);
+            opacity: 40%;
+            rotate: 45deg;
+            border-top: 1px solid;
+            border-right: 1px solid;
+            background-color: #0000;
+          }
+          [dir="rtl"] & + *:before {
+            rotate: -135deg;
+          }
+        }
+      }
+    }
   }
   .prose {
     color: var(--tw-prose-body);
@@ -2125,62 +2251,6 @@
   }
   .mt-8 {
     margin-top: calc(var(--spacing) * 8);
-  }
-  .breadcrumbs {
-    @layer daisyui.l1.l2.l3 {
-      max-width: 100%;
-      overflow-x: auto;
-      padding-block: calc(0.25rem * 2);
-      > menu, > ul, > ol {
-        display: flex;
-        min-height: min-content;
-        align-items: center;
-        white-space: nowrap;
-        > li {
-          display: flex;
-          align-items: center;
-          > * {
-            display: flex;
-            cursor: pointer;
-            align-items: center;
-            gap: calc(0.25rem * 2);
-            &:hover {
-              @media (hover: hover) {
-                text-decoration-line: underline;
-              }
-            }
-            &:focus {
-              --tw-outline-style: none;
-              outline-style: none;
-              @media (forced-colors: active) {
-                outline: 2px solid transparent;
-                outline-offset: 2px;
-              }
-            }
-            &:focus-visible {
-              outline: 2px solid currentColor;
-              outline-offset: 2px;
-            }
-          }
-          & + *:before {
-            content: "";
-            margin-right: calc(0.25rem * 3);
-            margin-left: calc(0.25rem * 2);
-            display: block;
-            height: calc(0.25rem * 1.5);
-            width: calc(0.25rem * 1.5);
-            opacity: 40%;
-            rotate: 45deg;
-            border-top: 1px solid;
-            border-right: 1px solid;
-            background-color: #0000;
-          }
-          [dir="rtl"] & + *:before {
-            rotate: -135deg;
-          }
-        }
-      }
-    }
   }
   .mr-2 {
     margin-right: calc(var(--spacing) * 2);
