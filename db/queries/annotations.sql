@@ -45,11 +45,11 @@ ORDER BY i.filename ASC
 LIMIT ?;
 
 -- name: CheckAnnotationExists :one
-SELECT EXISTS (
+SELECT CAST(EXISTS (
     SELECT 1
     FROM annotations
     WHERE image_sha256 = ? AND username = ? AND stage_index = ?
-);
+) AS INTEGER);
 
 -- name: DeleteAnnotation :exec
 DELETE FROM annotations
@@ -81,11 +81,11 @@ FROM annotations
 WHERE stage_index = ? AND option_value = ?;
 
 -- name: CheckAnnotationExistsForImageStage :one
-SELECT EXISTS (
+SELECT CAST(EXISTS (
     SELECT 1
     FROM annotations
     WHERE image_sha256 = ? AND stage_index = ?
-);
+) AS INTEGER);
 
 -- name: CountImagesWithoutAnnotationForStage :one
 WITH annotated_images AS (

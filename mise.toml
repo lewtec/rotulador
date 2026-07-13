@@ -23,7 +23,10 @@ run = """
 echo "→ Extracting translatable strings..."
 goi18n extract -format json -outdir .
 echo "→ Merging with existing translations..."
-goi18n merge -format json -outdir annotation/locales active.en.json annotation/locales/*.json
+# Merge only message catalogs (en/pt-BR). Do not pass active.*.json as sources —
+# they are merge outputs and also use flat keys that can collide with goi18n
+# reserved field names (e.g. Description).
+goi18n merge -format json -outdir annotation/locales active.en.json annotation/locales/en.json annotation/locales/pt-BR.json
 rm -f active.en.json
 echo "✓ i18n files updated. Check annotation/locales/translate.*.json for new strings to translate."
 """
