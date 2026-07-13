@@ -6,10 +6,10 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
-	// "github.com/davecgh/go-spew/spew"
 	"github.com/lewtec/rotulador/annotation"
 	"github.com/spf13/cobra"
 )
@@ -53,14 +53,18 @@ func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...interface
 		}
 		fmt.Println(strings.Join(container, "\t"))
 	}
+	if err := result.Err(); err != nil {
+		return err
+	}
 	return nil
 }
 
 // queryCmd represents the query command
 var queryCmd = &cobra.Command{
-	Use:   "query [flags] database [stage_index] [option_value] [image_path]",
-	Short: "Queries the annotation database (new schema)",
-	Long: `Query annotations from the database using the new unified schema.
+	Use:   "query [flags] database [stage_index] [option_value] [image_ref]",
+	Short: "Queries the annotation database",
+	Long: `Query annotations from the database using the current schema
+(images keyed by sha256, annotations joined on image_sha256).
 
 Examples:
   # List all distinct stage indexes (phases)
@@ -72,7 +76,7 @@ Examples:
   # List images annotated with value "landscape" for stage 0
   rotulador query annotations.db 0 landscape
 
-  # Query specific image
+  # Filter to a specific image by SHA256 or filename
   rotulador query annotations.db 0 landscape image.jpg`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		showIDs, err := cmd.Flags().GetBool("show-ids")
@@ -99,13 +103,10 @@ Examples:
 			return err
 		}
 		defer func() {
-			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
 				annotation.ReportError(cmd.Context(), err, "msg", "failed to rollback transaction")
 			}
 		}()
-
-		queryArgs := []interface{}{}
-		query := ""
 
 		// No stage index provided - list all stages
 		if len(args) < 2 {
@@ -117,26 +118,27 @@ Examples:
 			return PrintQuery(cmd.Context(), tx, "SELECT DISTINCT option_value FROM annotations WHERE stage_index = ?", args[1])
 		}
 
-		// Build query to find images with specific annotations
+		// Build query to find images with specific annotations (current schema)
+		var query string
 		if showIDs {
-			query += "SELECT images.id "
+			query = "SELECT images.sha256 "
 		} else {
-			query += "SELECT images.path "
+			query = "SELECT images.filename "
 		}
 		query += "FROM annotations "
-		query += "JOIN images ON annotations.image_id = images.id "
+		query += "JOIN images ON annotations.image_sha256 = images.sha256 "
 		query += "WHERE annotations.stage_index = ? "
-		queryArgs = append(queryArgs, args[1])
+		queryArgs := []interface{}{args[1]}
 
-		if len(args) >= 3 {
-			query += "AND annotations.option_value = ? "
-			queryArgs = append(queryArgs, args[2])
-		}
+		query += "AND annotations.option_value = ? "
+		queryArgs = append(queryArgs, args[2])
 
 		if len(args) >= 4 {
-			query += "AND (CAST(images.id AS TEXT) = ? OR images.path = ? OR images.original_filename = ?) "
-			queryArgs = append(queryArgs, args[3], args[3], args[3])
+			query += "AND (images.sha256 = ? OR images.filename = ?) "
+			queryArgs = append(queryArgs, args[3], args[3])
 		}
+
+		query += "ORDER BY images.filename"
 
 		return PrintQuery(cmd.Context(), tx, query, queryArgs...)
 	},
@@ -145,8 +147,5 @@ Examples:
 func init() {
 	rootCmd.AddCommand(queryCmd)
 
-	queryCmd.Flags().BoolP("show-ids", "i", false, "Show image IDs instead of paths")
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// annotatorCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	queryCmd.Flags().BoolP("show-ids", "i", false, "Show image SHA256 hashes instead of filenames")
 }
