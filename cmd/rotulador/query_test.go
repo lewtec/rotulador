@@ -87,13 +87,21 @@ func TestQueryAgainstCurrentSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetDatabase: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Errorf("close db: %v", err)
+		}
+	}()
 
 	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
 	if err != nil {
 		t.Fatalf("begin: %v", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			t.Errorf("rollback: %v", err)
+		}
+	}()
 
 	t.Run("list stages", func(t *testing.T) {
 		out, err := captureStdout(t, func() error {

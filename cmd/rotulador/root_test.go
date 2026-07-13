@@ -3,8 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
-	"log"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,24 +11,34 @@ import (
 	"time"
 )
 
-// executeCommand is a helper to run a cobra command and capture its output
+// executeCommand runs a cobra command and captures stdout plus process stderr
+// (slog writes to os.Stderr, not the legacy log package).
 func executeCommand(args ...string) (string, string, error) {
-	// Redirect log output for capture
 	var out, errOut bytes.Buffer
-	log.SetOutput(&errOut)
-	defer log.SetOutput(os.Stderr) // Restore default logger
 
 	rootCmd.SetOut(&out)
 	rootCmd.SetErr(&errOut)
 	rootCmd.SetArgs(args)
 
-	// Create a context with a timeout
+	oldStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		return "", "", err
+	}
+	os.Stderr = w
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := rootCmd.ExecuteContext(ctx) // Use ExecuteContext
+	cmdErr := rootCmd.ExecuteContext(ctx)
 
-	return out.String(), errOut.String(), err
+	_ = w.Close()
+	os.Stderr = oldStderr
+	stderrBytes, _ := io.ReadAll(r)
+	_ = r.Close()
+	errOut.Write(stderrBytes)
+
+	return out.String(), errOut.String(), cmdErr
 }
 
 func TestRootCmd_SingleArgument(t *testing.T) {
@@ -73,7 +82,7 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 
 		if err := os.WriteFile(configPath, []byte(""), 0644); err != nil {
 			t.Fatal(err)
-		} // Create dummy config
+		}
 
 		_, errOut, err := executeCommand(tempDir)
 		if err != nil {
@@ -83,7 +92,6 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 		if !strings.Contains(errOut, "Config file already exists") {
 			t.Errorf("expected log output to contain 'Config file already exists', but got: %s", errOut)
 		}
-		// Check that db and images dir are still created if they don't exist
 		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 			t.Errorf("expected database file to be created at %s, but it wasn't", dbPath)
 		}
@@ -92,13 +100,14 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 		}
 	})
 
-	t.Run("when argument is a file, assumes it's a config and tries to run", func(t *testing.T) {
+	t.Run("when argument is a file, defaults database and images beside config", func(t *testing.T) {
+		// ListenAndServe ignores ExecuteContext cancellation; use an invalid addr
+		// so bind fails immediately after path defaults are logged.
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "test-config.yaml")
-		dbPath := filepath.Join(tempDir, "annotations.db") // Expected default path
-		imagesPath := filepath.Join(filepath.Dir(configPath), "images") // Expected default path
-		
-		// Create a valid config file
+		dbPath := filepath.Join(tempDir, "annotations.db")
+		imagesPath := filepath.Join(tempDir, "images")
+
 		validConfig := `
 meta:
   description: "Sample annotation project."
@@ -119,45 +128,29 @@ tasks:
 			t.Fatal(err)
 		}
 
-		// Note: --database and --images flags are omitted to test the new default logic
-		_, errOut, err := executeCommand(configPath, "--addr", ":8082")
-
-		// We expect an error because the server will be interrupted or fail to bind in test.
-		// The key is that it shouldn't be a "config file not found" or "images flag required" error.
+		_, errOut, err := executeCommand(configPath, "--addr", "not-a-valid-address")
 		if err == nil {
-			t.Log("command did not return an error, which is unexpected but could be ok if it timed out")
+			t.Fatalf("expected bind/address error, got nil; logs: %s", errOut)
 		}
-
 		if strings.Contains(errOut, "images flag is required") {
 			t.Errorf("should not have prompted for images flag, got: %s", errOut)
 		}
-
-		// The error might be a bind error if another test is running, which is fine.
-		// The main thing is to check that it *tried* to start.
-		if !strings.Contains(errOut, "Starting server on: :8082") && !strings.Contains(errOut, "bind: address already in use") {
-			t.Errorf("expected log to show server starting, but it didn't. Got: %s", errOut)
+		if !strings.Contains(errOut, dbPath) {
+			t.Errorf("expected logs to mention default database path %q, got: %s", dbPath, errOut)
 		}
-
-		expectedDbLog := fmt.Sprintf("Database: %s", dbPath)
-		if !strings.Contains(errOut, expectedDbLog) {
-			t.Errorf("expected log to show default database path '%s', but it didn't. Got: %s", expectedDbLog, errOut)
-		}
-
-		expectedImagesLog := fmt.Sprintf("Images: %s", imagesPath)
-		if !strings.Contains(errOut, expectedImagesLog) {
-			t.Errorf("expected log to show default images path '%s', but it didn't. Got: %s", expectedImagesLog, errOut)
+		if !strings.Contains(errOut, imagesPath) {
+			t.Errorf("expected logs to mention default images path %q, got: %s", imagesPath, errOut)
 		}
 	})
 
 	t.Run("when argument is an invalid path, returns an error", func(t *testing.T) {
 		invalidPath := "/path/to/some/nonexistent/dir"
-		_, _, err := executeCommand(invalidPath) // No flags needed, it will fail on config load
+		_, _, err := executeCommand(invalidPath)
 
 		if err == nil {
 			t.Fatal("expected an error for invalid path, but got none")
 		}
 
-		// The error should be about the config file, since it assumes the arg is a config file
 		if !strings.Contains(err.Error(), "failed to load config") {
 			t.Errorf("expected error to be about loading config, but got: %v", err)
 		}
