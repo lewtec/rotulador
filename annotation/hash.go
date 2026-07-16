@@ -16,6 +16,14 @@ func HashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
+// IsBcryptHash reports whether s is a bcrypt hash bcrypt can parse (cost extractable).
+// Prefer this over prefix heuristics like strings.HasPrefix(s, "$2"), which mis-detect
+// plaintexts such as "$2secret" and leave users unable to log in.
+func IsBcryptHash(s string) bool {
+	_, err := bcrypt.Cost([]byte(s))
+	return err == nil
+}
+
 // CheckPasswordHash compares a plaintext password with a hashed password.
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))

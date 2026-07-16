@@ -33,3 +33,43 @@ func TestHashFileMissing(t *testing.T) {
 		t.Fatal("expected error for missing file")
 	}
 }
+
+func TestIsBcryptHash(t *testing.T) {
+	hash, err := HashPassword("correct-horse")
+	if err != nil {
+		t.Fatalf("HashPassword: %v", err)
+	}
+
+	tests := []struct {
+		name string
+		in   string
+		want bool
+	}{
+		{name: "valid bcrypt", in: hash, want: true},
+		{name: "plain password", in: "changeme", want: false},
+		{name: "dollar-two prefix plaintext", in: "$2secret", want: false},
+		{name: "short string", in: "ab", want: false},
+		{name: "empty", in: "", want: false},
+		{name: "truncated fake bcrypt", in: "$2a$10$notavalidbcrypthashvaluehere!!!", want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsBcryptHash(tt.in); got != tt.want {
+				t.Fatalf("IsBcryptHash(%q) = %v, want %v", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCheckPasswordHash(t *testing.T) {
+	hash, err := HashPassword("s3cret")
+	if err != nil {
+		t.Fatalf("HashPassword: %v", err)
+	}
+	if !CheckPasswordHash("s3cret", hash) {
+		t.Fatal("expected password to match hash")
+	}
+	if CheckPasswordHash("wrong", hash) {
+		t.Fatal("expected wrong password to fail")
+	}
+}
