@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"testing"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -16,7 +17,9 @@ import (
 func SetupTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	db, err := sql.Open("sqlite", ":memory:")
+	// Apply foreign_keys on every pooled connection (Exec-only PRAGMA would not).
+	// Matches production GetDatabase; avoid importing annotation (import cycle).
+	db, err := sql.Open("sqlite", "file::memory:?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)")
 	if err != nil {
 		t.Fatalf("failed to open test database: %v", err)
 	}
@@ -37,7 +40,7 @@ func SetupTestDB(t *testing.T) *sql.DB {
 		t.Fatalf("failed to create migrate instance: %v", err)
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
