@@ -1,6 +1,7 @@
 package annotation
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -21,16 +22,21 @@ func CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func HashFile(filepath string) (string, error) {
-	f, err := os.Open(filepath)
+// HashFile returns the SHA-256 hex digest of the file at path.
+func HashFile(path string) (string, error) {
+	f, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			ReportError(context.Background(), closeErr, "msg", "failed to close file after hashing", "path", path)
+		}
+	}()
+
 	hasher := sha256.New()
-	_, err = io.Copy(hasher, f)
-	if err != nil {
+	if _, err = io.Copy(hasher, f); err != nil {
 		return "", err
 	}
-	hash := fmt.Sprintf("%x", hasher.Sum(nil))
-	return hash, nil
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
