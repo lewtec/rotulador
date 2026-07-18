@@ -470,3 +470,14 @@ func BenchmarkAnnotationRepository_GetForImage(b *testing.B) {
 		}
 	}
 }
+
+func TestAnnotationRepository_CreateRequiresExistingImage(t *testing.T) {
+	_, annRepo, ctx := setupTestRepositories(t)
+
+	// Schema declares FK(image_sha256) → images(sha256). With foreign_keys ON,
+	// inserting an annotation for a missing image must fail.
+	_, err := annRepo.Create(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "user", 0, "good")
+	if err == nil {
+		t.Fatal("Create() without parent image succeeded; foreign_keys not enforced?")
+	}
+}
