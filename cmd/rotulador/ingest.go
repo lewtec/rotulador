@@ -42,6 +42,12 @@ var ingestCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		// --jobs 0 starts no workers. WalkDir then either drops every decoded
+		// image (buffer never drained) or deadlocks once the channel buffer
+		// fills. Reject it early instead of hanging or silently no-op'ing.
+		if jobs < 1 {
+			return fmt.Errorf("--jobs must be at least 1, got %d", jobs)
+		}
 		inputs := args[0 : len(args)-1]
 		output := args[len(args)-1]
 
@@ -73,6 +79,8 @@ var ingestCmd = &cobra.Command{
 				}
 				img, err := annotation.DecodeImage(path)
 				if err != nil {
+					// Mixed input folders commonly contain non-images; skip them.
+					logger.Debug("skipping non-image file", "path", path, "err", err)
 					return nil
 				}
 				logger.Info("found image", "path", path)
@@ -93,15 +101,5 @@ var (
 
 func init() {
 	rootCmd.AddCommand(ingestCmd)
-	ingestCmd.PersistentFlags().UintVarP(&jobs, "jobs", "j", 1, "Amount of concurrent ingestors")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// ingestCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// ingestCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	ingestCmd.PersistentFlags().UintVarP(&jobs, "jobs", "j", 1, "Amount of concurrent ingestors (must be >= 1)")
 }
