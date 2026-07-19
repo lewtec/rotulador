@@ -35,13 +35,15 @@ func (a *AnnotatorApp) getDependencyImageHashes(ctx context.Context, task *Confi
 		// Find the stage index for the dependency task
 		depStageIndex := a.findTaskIndex(depTaskID)
 		if depStageIndex == -1 {
-			continue
+			// Previously this skipped silently, which made every image fail the
+			// dependency check and look like an empty task with no error signal.
+			return nil, fmt.Errorf("task %q depends on unknown task %q", task.ID, depTaskID)
 		}
 
 		// Fetch all image hashes for this dependency ONCE
 		imageHashes, err := a.annotationRepo.GetImageHashesWithAnnotation(ctx, int64(depStageIndex), requiredValue)
 		if err != nil {
-			return nil, fmt.Errorf("while checking dependency: %w", err)
+			return nil, fmt.Errorf("while checking dependency %q: %w", depTaskID, err)
 		}
 
 		// Convert to map for O(1) lookup
