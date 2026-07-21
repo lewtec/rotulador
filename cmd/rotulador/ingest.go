@@ -63,12 +63,15 @@ var ingestCmd = &cobra.Command{
 				}
 			}
 		}
-		defer wg.Wait()
 		for i := uint(0); i < jobs; i++ {
 			wg.Add(1)
 			go ingestWorker(crawledFilepaths)
 		}
 
+		// Always close the channel and wait for workers before returning.
+		// Returning on WalkDir failure without close left workers blocked on
+		// range and hung forever on Wait.
+		var walkErr error
 		for _, input := range inputs {
 			if err := filepath.WalkDir(input, func(path string, info fs.DirEntry, err error) error {
 				if err != nil {
@@ -87,11 +90,13 @@ var ingestCmd = &cobra.Command{
 				crawledFilepaths <- img
 				return nil
 			}); err != nil {
-				return fmt.Errorf("walking input directory %s: %w", input, err)
+				walkErr = fmt.Errorf("walking input directory %s: %w", input, err)
+				break
 			}
 		}
 		close(crawledFilepaths)
-		return nil
+		wg.Wait()
+		return walkErr
 	},
 }
 
