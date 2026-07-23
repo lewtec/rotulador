@@ -106,9 +106,9 @@ func LoadConfig(filename string) (*Config, error) {
 		if auth.Password == "" {
 			return nil, fmt.Errorf("user %s has a null password", user)
 		}
-		// Check if the password is already a bcrypt hash.
-		// A simple heuristic is to check if it starts with '$2'.
-		if len(auth.Password) < 4 || auth.Password[0:2] != "$2" {
+		// Hash plaintext passwords. Detect existing bcrypt hashes via bcrypt.Cost
+		// rather than a "$2" prefix so values like "$2secret" still get hashed.
+		if !IsBcryptHash(auth.Password) {
 			slog.Warn("password for user is in plaintext. Hashing it automatically.", "user", user)
 			hashedPassword, err := HashPassword(auth.Password)
 			if err != nil {
