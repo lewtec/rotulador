@@ -162,7 +162,10 @@ func verifyLegacySchema(ctx context.Context, db *sql.DB, tasks []ConfigTask, log
 	}
 
 	for _, task := range tasks {
-		tableName := fmt.Sprintf("task_%s", task.ID)
+		if err := validateTaskIDForLegacyTable(task.ID); err != nil {
+			return err
+		}
+		tableName := legacyTaskTableName(task.ID)
 		err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", tableName).Scan(&count)
 		if err != nil || count == 0 {
 			logger.Warn("task table not found, skipping", "tableName", tableName)
@@ -170,6 +173,27 @@ func verifyLegacySchema(ctx context.Context, db *sql.DB, tasks []ConfigTask, log
 	}
 
 	return nil
+}
+
+// validateTaskIDForLegacyTable ensures task IDs are safe to embed in unquoted SQL
+// identifiers. migrateTaskAnnotations builds `SELECT … FROM task_<id>` via
+// fmt.Sprintf; loadConfigForMigration never validated IDs despite an old #nosec claim.
+func validateTaskIDForLegacyTable(taskID string) error {
+	if taskID == "" {
+		return fmt.Errorf("task id is empty")
+	}
+	for i := 0; i < len(taskID); i++ {
+		c := taskID[i]
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' {
+			continue
+		}
+		return fmt.Errorf("task id %q is not a safe SQL identifier (use letters, digits, underscore only)", taskID)
+	}
+	return nil
+}
+
+func legacyTaskTableName(taskID string) string {
+	return "task_" + taskID
 }
 
 func runMigrations(db *sql.DB) error {
@@ -221,7 +245,10 @@ func migrateImages(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx) (map[strin
 }
 
 func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, taskID string, stageIndex int, knownImages map[string]struct{}, logger *slog.Logger) (int, error) {
-	tableName := fmt.Sprintf("task_%s", taskID)
+	if err := validateTaskIDForLegacyTable(taskID); err != nil {
+		return 0, err
+	}
+	tableName := legacyTaskTableName(taskID)
 
 	var count int
 	err := oldDB.QueryRowContext(ctx, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", tableName).Scan(&count)
@@ -229,7 +256,7 @@ func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, t
 		return 0, nil
 	}
 
-	// #nosec G201 -- tableName is derived from config task IDs validated earlier
+	// tableName is built only after validateTaskIDForLegacyTable (alnum + underscore).
 	query := fmt.Sprintf("SELECT image, user, value FROM %s WHERE value IS NOT NULL", tableName)
 	rows, err := oldDB.QueryContext(ctx, query)
 	if err != nil {
