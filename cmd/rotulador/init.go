@@ -93,11 +93,23 @@ Example:
 		logger.Info("\nNext steps:")
 		logger.Info("  1. Review and customize your config file:", "configFile", configFile)
 		logger.Info("  2. Start the annotation server:")
-		logger.Info(fmt.Sprintf("     rotulador annotator -c %s -d %s -i %s", configFile, databaseFile, imagesDir))
+		// The old `annotator` subcommand was folded into the root command
+		// (see annotator.go / root.go). Point users at the live invocation.
+		logger.Info("     " + serverStartCommand(configFile, databaseFile, imagesDir))
 		logger.Info("\nThen open http://localhost:8080 in your browser")
 
 		return nil
 	},
+}
+
+// serverStartCommand returns the CLI line to start the annotation HTTP server
+// after `rotulador init`. ImagesDir defaults to "images" when empty so the
+// printed command is always runnable once assets exist.
+func serverStartCommand(configFile, databaseFile, imagesDir string) string {
+	if imagesDir == "" {
+		imagesDir = "images"
+	}
+	return fmt.Sprintf("rotulador -c %s -d %s -i %s", configFile, databaseFile, imagesDir)
 }
 
 func init() {
