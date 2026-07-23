@@ -422,7 +422,7 @@ func (a *AnnotatorApp) GetImageFilename(ctx context.Context, sha256 string) (fil
 	img, err := a.imageRepo.GetBySHA256(ctx, sha256)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", fmt.Errorf("image not found: %s", sha256)
+			return "", fmt.Errorf("image not found: %s: %w", sha256, err)
 		}
 		return "", err
 	}
@@ -632,7 +632,16 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			http.NotFoundHandler().ServeHTTP(w, r)
 			return
 		}
-		imageFilename, _ := a.GetImageFilename(r.Context(), imageID)
+		imageFilename, err := a.GetImageFilename(r.Context(), imageID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				http.NotFoundHandler().ServeHTTP(w, r)
+				return
+			}
+			ReportError(r.Context(), err, "msg", "error getting image filename", "imageID", imageID)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		if r.Method == http.MethodPost {
 			a.Logger.Debug("POST")
@@ -648,10 +657,14 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			selectedClass := r.FormValue("selectedClass")
 			_, isClassValid := task.Classes[selectedClass]
 			a.Logger.Debug("Selected class", "class", selectedClass, "empty", selectedClass == "", "valid", isClassValid)
+			if !isClassValid {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			sure := r.FormValue("sure") == "on"
 			a.Logger.Debug("Sure", "sure", sure)
 			user, _, _ := r.BasicAuth()
-			err := a.SubmitAnnotation(r.Context(), AnnotationResponse{
+			err = a.SubmitAnnotation(r.Context(), AnnotationResponse{
 				ImageID: imageID,
 				TaskID:  taskID,
 				User:    user,
