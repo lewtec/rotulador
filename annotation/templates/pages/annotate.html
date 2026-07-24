@@ -13,7 +13,13 @@
       <div class="flex-1">
         <h2 class="card-title">{{.TaskName}}</h2>
         <div class="flex gap-3 items-center mt-1">
-          <p class="text-xs opacity-70 font-mono cursor-pointer" onclick="navigator.clipboard.writeText('{{.ImageFilename}}'); showToast('{{i "Copied to clipboard!"}}')">
+          {{/* Keep filename out of the JS string literal: HTML-escaping
+               inside onclick='...{{.}}...' is decoded by the browser before
+               the script runs, so a crafted name can break out of the quotes. */}}
+          <p class="text-xs opacity-70 font-mono cursor-pointer"
+            data-filename="{{.ImageFilename}}"
+            data-copied="{{i "Copied to clipboard!"}}"
+            onclick="navigator.clipboard.writeText(this.dataset.filename); showToast(this.dataset.copied)">
             {{.ImageFilename}}
           </p>
           {{if .Progress}}
