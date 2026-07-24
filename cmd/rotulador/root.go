@@ -5,13 +5,16 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/lewtec/rotulador/annotation"
@@ -152,6 +155,11 @@ With a set of trivial choices scale the classification of a set of images to man
 		// Start image ingestion in background (non-blocking)
 		go func() {
 			if err := app.IngestImages(cmd.Context()); err != nil {
+				// Shutdown cancels the command context; treat that as a normal stop.
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					logger.Info("background image ingestion stopped", "err", err)
+					return
+				}
 				annotation.ReportError(cmd.Context(), err, "msg", "background image ingestion failed")
 			}
 		}()
@@ -171,8 +179,42 @@ With a set of trivial choices scale the classification of a set of images to man
 				return cmd.Context()
 			},
 		}
-		return server.ListenAndServe()
+		// Honor SIGINT/SIGTERM (and test timeouts) via command context instead of
+		// blocking forever in ListenAndServe.
+		return serveHTTP(cmd.Context(), server)
 	},
+}
+
+// serveHTTP runs server until it fails to bind/serve or ctx is cancelled.
+// On cancel it shuts the server down gracefully and returns nil so the CLI
+// exits cleanly (signal stop is not an error).
+func serveHTTP(ctx context.Context, server *http.Server) error {
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- server.ListenAndServe()
+	}()
+
+	select {
+	case err := <-errCh:
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
+		return err
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			annotation.ReportError(context.Background(), err, "msg", "HTTP server shutdown failed")
+			// Drain ListenAndServe so we do not leak the goroutine on return.
+			<-errCh
+			return fmt.Errorf("http server shutdown: %w", err)
+		}
+		err := <-errCh
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
+	}
 }
 
 func main() {
@@ -190,6 +232,9 @@ func main() {
 		logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
 	}
 	ctx := context.WithValue(context.Background(), loggerKey, logger)
+	// Cancel the command context on SIGINT/SIGTERM so the HTTP server can shut down.
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		logger.Error("Error executing command", "err", err)
 		os.Exit(1)

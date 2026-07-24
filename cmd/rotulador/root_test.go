@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,8 +103,7 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 	})
 
 	t.Run("when argument is a file, defaults database and images beside config", func(t *testing.T) {
-		// ListenAndServe ignores ExecuteContext cancellation; use an invalid addr
-		// so bind fails immediately after path defaults are logged.
+		// Use an invalid addr so bind fails immediately after path defaults are logged.
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "test-config.yaml")
 		dbPath := filepath.Join(tempDir, "annotations.db")
@@ -155,4 +156,69 @@ tasks:
 			t.Errorf("expected error to be about loading config, but got: %v", err)
 		}
 	})
+}
+
+// TestServeHTTP_StopsOnContextCancel ensures the HTTP server shuts down when the
+// command context is cancelled (SIGINT/SIGTERM / test timeout path).
+func TestServeHTTP_StopsOnContextCancel(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	addr := ln.Addr().String()
+	if err := ln.Close(); err != nil {
+		t.Fatalf("close probe listener: %v", err)
+	}
+
+	server := &http.Server{
+		Addr: addr,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}),
+		ReadHeaderTimeout: time.Second,
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- serveHTTP(ctx, server)
+	}()
+
+	// Wait until the server accepts connections.
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		resp, getErr := http.Get("http://" + addr + "/")
+		if getErr == nil {
+			_ = resp.Body.Close()
+			break
+		}
+		if time.Now().After(deadline) {
+			cancel()
+			t.Fatalf("server never became ready: %v", getErr)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	cancel()
+	select {
+	case serveErr := <-errCh:
+		if serveErr != nil {
+			t.Fatalf("serveHTTP after cancel: %v", serveErr)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("serveHTTP did not return after context cancel")
+	}
+}
+
+func TestServeHTTP_BindError(t *testing.T) {
+	server := &http.Server{
+		Addr: "not-a-valid-address",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		}),
+		ReadHeaderTimeout: time.Second,
+	}
+	err := serveHTTP(context.Background(), server)
+	if err == nil {
+		t.Fatal("expected bind error, got nil")
+	}
 }
