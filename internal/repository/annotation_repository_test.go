@@ -10,7 +10,7 @@ func setupTestRepositories(t *testing.T) (*ImageRepository, *AnnotationRepositor
 	db := SetupTestDB(t)
 	t.Cleanup(func() { CleanupTestDB(t, db) })
 
-	return NewImageRepository(db), NewAnnotationRepository(db), context.Background()
+	return NewImageRepository(db), NewAnnotationRepository(db), t.Context()
 }
 
 func TestAnnotationRepository_Create(t *testing.T) {
@@ -430,7 +430,7 @@ func BenchmarkAnnotationRepository_Create(b *testing.B) {
 
 	imgRepo := NewImageRepository(db)
 	annRepo := NewAnnotationRepository(db)
-	ctx := t.Context()
+	ctx := b.Context()
 
 	// Create test image
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
@@ -453,7 +453,7 @@ func BenchmarkAnnotationRepository_GetForImage(b *testing.B) {
 
 	imgRepo := NewImageRepository(db)
 	annRepo := NewAnnotationRepository(db)
-	ctx := context.Background()
+	ctx := b.Context()
 
 	// Create test data
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")
