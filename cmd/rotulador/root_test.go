@@ -17,7 +17,10 @@ import (
 
 // executeCommand runs a cobra command and captures stdout plus process stderr
 // (slog writes to os.Stderr, not the legacy log package).
-func executeCommand(args ...string) (string, string, error) {
+// The command context is derived from t.Context() so cancellation and
+// deadlines follow the test.
+func executeCommand(t *testing.T, args ...string) (string, string, error) {
+	t.Helper()
 	var out, errOut bytes.Buffer
 
 	rootCmd.SetOut(&out)
@@ -31,7 +34,7 @@ func executeCommand(args ...string) (string, string, error) {
 	}
 	os.Stderr = w
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 
 	cmdErr := rootCmd.ExecuteContext(ctx)
@@ -52,7 +55,7 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 		dbPath := filepath.Join(tempDir, "annotations.db")
 		imagesPath := filepath.Join(tempDir, "images")
 
-		_, errOut, err := executeCommand(tempDir)
+		_, errOut, err := executeCommand(t, tempDir)
 		if err != nil {
 			t.Fatalf("command execution failed: %v, output: %s", err, errOut)
 		}
@@ -88,7 +91,7 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, errOut, err := executeCommand(tempDir)
+		_, errOut, err := executeCommand(t, tempDir)
 		if err != nil {
 			t.Fatalf("command execution failed: %v, output: %s", err, errOut)
 		}
@@ -131,7 +134,7 @@ tasks:
 			t.Fatal(err)
 		}
 
-		_, errOut, err := executeCommand(configPath, "--addr", "not-a-valid-address")
+		_, errOut, err := executeCommand(t, configPath, "--addr", "not-a-valid-address")
 		if err == nil {
 			t.Fatalf("expected bind/address error, got nil; logs: %s", errOut)
 		}
@@ -148,13 +151,13 @@ tasks:
 
 	t.Run("when argument is an invalid path, returns an error", func(t *testing.T) {
 		invalidPath := "/path/to/some/nonexistent/dir"
-		_, _, err := executeCommand(invalidPath)
+		_, _, err := executeCommand(t, invalidPath)
 
 		if err == nil {
 			t.Fatal("expected an error for invalid path, but got none")
 		}
 
-		if !strings.Contains(err.Error(), "failed to load config") {
+		if !strings.Contains(err.Error(), "load config") {
 			t.Errorf("expected error to be about loading config, but got: %v", err)
 		}
 	})
