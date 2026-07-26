@@ -21,7 +21,7 @@ type BlockData struct {
 	Title   string
 	Content any
 	Data    any
-	Blocks  map[string]interface{}
+	Blocks  map[string]any
 }
 
 // NewTemplateManager creates a new template manager using mold
@@ -77,7 +77,7 @@ func (tm *TemplateManager) Render(w io.Writer, pageName string, data any) error 
 }
 
 // RenderWithBlocks renders a template with explicit block definitions
-func (tm *TemplateManager) RenderWithBlocks(w io.Writer, templateName string, blocks map[string]interface{}) error {
+func (tm *TemplateManager) RenderWithBlocks(w io.Writer, templateName string, blocks map[string]any) error {
 	return tm.Render(w, templateName, blocks)
 }
 
