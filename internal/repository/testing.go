@@ -53,7 +53,7 @@ func CleanupTestDB(t *testing.T, db *sql.DB) {
 }
 
 // MustExec executes a SQL statement and fails the test if it errors
-func MustExec(t *testing.T, db *sql.DB, query string, args ...interface{}) {
+func MustExec(t *testing.T, db *sql.DB, query string, args ...any) {
 	t.Helper()
 	_, err := db.ExecContext(context.Background(), query, args...)
 	if err != nil {

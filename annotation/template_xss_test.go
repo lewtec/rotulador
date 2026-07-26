@@ -2,7 +2,6 @@ package annotation
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 )
@@ -15,7 +14,7 @@ func TestAnnotateTemplateKeepsFilenameOutOfJSString(t *testing.T) {
 	const evil = `x');alert(1);//`
 
 	var buf bytes.Buffer
-	err := RenderPageWithContext(context.Background(), &buf, "annotate.html", map[string]any{
+	err := RenderPageWithContext(t.Context(), &buf, "annotate.html", map[string]any{
 		"Title":         "Annotate",
 		"TaskID":        "phase1",
 		"TaskName":      "Phase 1",

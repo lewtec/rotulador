@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"errors"
 	"io"
@@ -82,7 +81,7 @@ func captureStdout(t *testing.T, fn func() error) (string, error) {
 
 func TestQueryAgainstCurrentSchema(t *testing.T) {
 	dbPath, _ := setupQueryTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	db, err := annotation.GetDatabase(dbPath)
 	if err != nil {

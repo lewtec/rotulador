@@ -7,6 +7,8 @@ import (
 
 	"github.com/lewtec/rotulador/annotation"
 	"github.com/spf13/cobra"
+	"errors"
+	"io/fs"
 )
 
 // initCmd represents the init command
@@ -31,10 +33,10 @@ Example:
 		databaseFile, _ := cmd.Flags().GetString("database")
 
 		// Create sample config if it doesn't exist
-		if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		if _, err := os.Stat(configFile); errors.Is(err, fs.ErrNotExist) {
 			logger.Info("Creating sample configuration file", "configFile", configFile)
 			if err := createSampleConfig(configFile, imagesDir); err != nil {
-				return fmt.Errorf("failed to create config file: %w", err)
+				return fmt.Errorf("create config file: %w", err)
 			}
 			logger.Info("✓ Configuration file created successfully")
 		} else {
@@ -44,14 +46,14 @@ Example:
 		// Load config
 		config, err := annotation.LoadConfig(configFile)
 		if err != nil {
-			return fmt.Errorf("failed to load config: %w", err)
+			return fmt.Errorf("load config: %w", err)
 		}
 
 		// Create database
 		logger.Info("Creating database", "databaseFile", databaseFile)
 		db, err := annotation.GetDatabase(databaseFile)
 		if err != nil {
-			return fmt.Errorf("failed to create database: %w", err)
+			return fmt.Errorf("create database: %w", err)
 		}
 		defer func() {
 			if err := db.Close(); err != nil {
@@ -63,10 +65,10 @@ Example:
 		if imagesDir != "" {
 			absPath, err := filepath.Abs(imagesDir)
 			if err != nil {
-				return fmt.Errorf("failed to resolve images path: %w", err)
+				return fmt.Errorf("resolve images path: %w", err)
 			}
 
-			if _, err := os.Stat(absPath); os.IsNotExist(err) {
+			if _, err := os.Stat(absPath); errors.Is(err, fs.ErrNotExist) {
 				return fmt.Errorf("images directory does not exist: %s", absPath)
 			}
 
@@ -79,7 +81,7 @@ Example:
 			}
 
 			if err := app.PrepareDatabase(cmd.Context()); err != nil {
-				return fmt.Errorf("failed to prepare database: %w", err)
+				return fmt.Errorf("prepare database: %w", err)
 			}
 			logger.Info("✓ Database initialized with images", "from", absPath)
 		} else {

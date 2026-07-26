@@ -19,8 +19,8 @@ type TemplateManager struct {
 // BlockData represents data that can be passed to templates
 type BlockData struct {
 	Title   string
-	Content interface{}
-	Data    interface{}
+	Content any
+	Data    any
 	Blocks  map[string]interface{}
 }
 
@@ -69,7 +69,7 @@ func NewTemplateManagerWithFS(fsys fs.FS, options ...mold.Option) (*TemplateMana
 }
 
 // Render renders a page template (mold will automatically handle layout inheritance)
-func (tm *TemplateManager) Render(w io.Writer, pageName string, data interface{}) error {
+func (tm *TemplateManager) Render(w io.Writer, pageName string, data any) error {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 

@@ -19,6 +19,7 @@ import (
 
 	"github.com/lewtec/rotulador/annotation"
 	"github.com/spf13/cobra"
+	"io/fs"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -44,10 +45,10 @@ With a set of trivial choices scale the classification of a set of images to man
 				databaseFile := filepath.Join(arg, "annotations.db")
 				imagesDir := filepath.Join(arg, "images")
 
-				if _, err := os.Stat(configFile); os.IsNotExist(err) {
+				if _, err := os.Stat(configFile); errors.Is(err, fs.ErrNotExist) {
 					logger.Info("Creating default config", "configFile", configFile)
 					if err := createSampleConfig(configFile, arg); err != nil {
-						return fmt.Errorf("failed to create config: %w", err)
+						return fmt.Errorf("create config: %w", err)
 					}
 					logger.Info("✓ Config file created.")
 				} else {
@@ -55,11 +56,11 @@ With a set of trivial choices scale the classification of a set of images to man
 				}
 
 				// Create empty database file
-				if _, err := os.Stat(databaseFile); os.IsNotExist(err) {
+				if _, err := os.Stat(databaseFile); errors.Is(err, fs.ErrNotExist) {
 					logger.Info("Creating empty database", "databaseFile", databaseFile)
 					file, err := os.Create(databaseFile)
 					if err != nil {
-						return fmt.Errorf("failed to create database file: %w", err)
+						return fmt.Errorf("create database file: %w", err)
 					}
 					if err := file.Close(); err != nil {
 						annotation.ReportError(cmd.Context(), err, "msg", "failed to close database file", "path", databaseFile)
@@ -70,10 +71,10 @@ With a set of trivial choices scale the classification of a set of images to man
 				}
 
 				// Create images directory
-				if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
+				if _, err := os.Stat(imagesDir); errors.Is(err, fs.ErrNotExist) {
 					logger.Info("Creating images directory", "imagesDir", imagesDir)
 					if err := os.MkdirAll(imagesDir, 0755); err != nil {
-						return fmt.Errorf("failed to create images directory: %w", err)
+						return fmt.Errorf("create images directory: %w", err)
 					}
 					logger.Info("✓ Images directory created.")
 				} else {
@@ -115,12 +116,12 @@ With a set of trivial choices scale the classification of a set of images to man
 
 		config, err := annotation.LoadConfig(configFile)
 		if err != nil {
-			return fmt.Errorf("failed to load config: %w", err)
+			return fmt.Errorf("load config: %w", err)
 		}
 
 		db, err := annotation.GetDatabase(databaseFile)
 		if err != nil {
-			return fmt.Errorf("failed to open database: %w", err)
+			return fmt.Errorf("open database: %w", err)
 		}
 		defer func() {
 			if err := db.Close(); err != nil {
@@ -137,7 +138,7 @@ With a set of trivial choices scale the classification of a set of images to man
 
 		// Run database migrations synchronously before starting the server
 		if err := app.PrepareDatabaseMigrations(cmd.Context()); err != nil {
-			return fmt.Errorf("failed to prepare database: %w", err)
+			return fmt.Errorf("prepare database: %w", err)
 		}
 
 		addr, _ := cmd.Flags().GetString("addr")
@@ -254,7 +255,7 @@ func getLogger(cmd *cobra.Command) (*slog.Logger, error) {
 	// 2. Get from --json flag
 	useJSON, err := cmd.Flags().GetBool("json")
 	if err != nil {
-		return nil, fmt.Errorf("failed to read 'json' flag: %w", err)
+		return nil, fmt.Errorf("read 'json' flag: %w", err)
 	}
 	if useJSON {
 		return slog.New(slog.NewJSONHandler(os.Stderr, nil)), nil

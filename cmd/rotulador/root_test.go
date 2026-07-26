@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"errors"
+	"io/fs"
 )
 
 // executeCommand runs a cobra command and captures stdout plus process stderr
@@ -55,13 +57,13 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 			t.Fatalf("command execution failed: %v, output: %s", err, errOut)
 		}
 
-		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		if _, err := os.Stat(configPath); errors.Is(err, fs.ErrNotExist) {
 			t.Errorf("expected config file to be created at %s, but it wasn't", configPath)
 		}
-		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		if _, err := os.Stat(dbPath); errors.Is(err, fs.ErrNotExist) {
 			t.Errorf("expected database file to be created at %s, but it wasn't", dbPath)
 		}
-		if stat, err := os.Stat(imagesPath); os.IsNotExist(err) || !stat.IsDir() {
+		if stat, err := os.Stat(imagesPath); errors.Is(err, fs.ErrNotExist) || !stat.IsDir() {
 			t.Errorf("expected images directory to be created at %s, but it wasn't", imagesPath)
 		}
 
@@ -94,10 +96,10 @@ func TestRootCmd_SingleArgument(t *testing.T) {
 		if !strings.Contains(errOut, "Config file already exists") {
 			t.Errorf("expected log output to contain 'Config file already exists', but got: %s", errOut)
 		}
-		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		if _, err := os.Stat(dbPath); errors.Is(err, fs.ErrNotExist) {
 			t.Errorf("expected database file to be created at %s, but it wasn't", dbPath)
 		}
-		if stat, err := os.Stat(imagesPath); os.IsNotExist(err) || !stat.IsDir() {
+		if stat, err := os.Stat(imagesPath); errors.Is(err, fs.ErrNotExist) || !stat.IsDir() {
 			t.Errorf("expected images directory to be created at %s, but it wasn't", imagesPath)
 		}
 	})
@@ -178,7 +180,7 @@ func TestServeHTTP_StopsOnContextCancel(t *testing.T) {
 		ReadHeaderTimeout: time.Second,
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- serveHTTP(ctx, server)
@@ -217,7 +219,7 @@ func TestServeHTTP_BindError(t *testing.T) {
 		}),
 		ReadHeaderTimeout: time.Second,
 	}
-	err := serveHTTP(context.Background(), server)
+	err := serveHTTP(t.Context(), server)
 	if err == nil {
 		t.Fatal("expected bind error, got nil")
 	}

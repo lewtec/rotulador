@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"log/slog"
 	"os"
@@ -45,7 +44,7 @@ tasks:
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	if err := migrateLegacyDatabase(context.Background(), oldPath, newPath, configPath, logger); err != nil {
+	if err := migrateLegacyDatabase(t.Context(), oldPath, newPath, configPath, logger); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 

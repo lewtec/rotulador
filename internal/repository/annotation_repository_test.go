@@ -430,7 +430,7 @@ func BenchmarkAnnotationRepository_Create(b *testing.B) {
 
 	imgRepo := NewImageRepository(db)
 	annRepo := NewAnnotationRepository(db)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Create test image
 	img, _ := imgRepo.Create(ctx, "/test/image.jpg", "test.jpg")

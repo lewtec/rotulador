@@ -19,6 +19,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	_ "modernc.org/sqlite"
+	"io/fs"
 )
 
 // migrateCmd represents the migrate-legacy-db command
@@ -46,10 +47,10 @@ Example: rotulador migrate-legacy-db old.db new.db config.yaml`,
 		newDBPath := args[1]
 		configPath := args[2]
 
-		if _, err := os.Stat(oldDBPath); os.IsNotExist(err) {
+		if _, err := os.Stat(oldDBPath); errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("old database not found: %s", oldDBPath)
 		}
-		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		if _, err := os.Stat(configPath); errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("config file not found: %s", configPath)
 		}
 		if _, err := os.Stat(newDBPath); err == nil {
@@ -84,12 +85,12 @@ type LegacyAnnotation struct {
 func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath string, logger *slog.Logger) error {
 	config, err := loadConfigForMigration(configPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	oldDB, err := sql.Open("sqlite", oldDBPath)
 	if err != nil {
-		return fmt.Errorf("failed to open old database: %w", err)
+		return fmt.Errorf("open old database: %w", err)
 	}
 	defer func() {
 		if err := oldDB.Close(); err != nil {
@@ -103,7 +104,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 
 	newDB, err := annotation.GetDatabase(newDBPath)
 	if err != nil {
-		return fmt.Errorf("failed to create new database: %w", err)
+		return fmt.Errorf("create new database: %w", err)
 	}
 	defer func() {
 		if err := newDB.Close(); err != nil {
@@ -112,12 +113,12 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	}()
 
 	if err := runMigrations(newDB); err != nil {
-		return fmt.Errorf("failed to run migrations: %w", err)
+		return fmt.Errorf("run migrations: %w", err)
 	}
 
 	tx, err := newDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to start transaction: %w", err)
+		return fmt.Errorf("start transaction: %w", err)
 	}
 	defer func() {
 		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
@@ -128,7 +129,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	logger.Info("Migrating images...")
 	knownImages, err := migrateImages(ctx, oldDB, tx)
 	if err != nil {
-		return fmt.Errorf("failed to migrate images: %w", err)
+		return fmt.Errorf("migrate images: %w", err)
 	}
 	logger.Info("Migrated images", "count", len(knownImages))
 
@@ -142,7 +143,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return fmt.Errorf("commit transaction: %w", err)
 	}
 
 	logger.Info("Migration completed successfully!", "newDB", newDBPath)
@@ -258,7 +259,7 @@ func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, t
 			 DO UPDATE SET option_value = excluded.option_value`,
 			ann.Image, ann.User, stageIndex, ann.Value)
 		if err != nil {
-			return 0, fmt.Errorf("failed to insert annotation: %w", err)
+			return 0, fmt.Errorf("insert annotation: %w", err)
 		}
 		annotationCount++
 	}
@@ -287,7 +288,7 @@ func loadConfigForMigration(path string) (*Config, error) {
 	}
 	var config Config
 	if err := yaml.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse config: %w", err)
+		return nil, fmt.Errorf("parse config: %w", err)
 	}
 	return &config, nil
 }

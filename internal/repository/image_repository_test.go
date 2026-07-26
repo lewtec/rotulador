@@ -10,7 +10,7 @@ func TestImageRepository_Create(t *testing.T) {
 	defer CleanupTestDB(t, db)
 
 	repo := NewImageRepository(db)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("creates image successfully", func(t *testing.T) {
 		img, err := repo.Create(ctx, "abcdef1234567890", "image.jpg")
@@ -35,7 +35,7 @@ func TestImageRepository_GetBySHA256(t *testing.T) {
 	defer CleanupTestDB(t, db)
 
 	repo := NewImageRepository(db)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Create test image
 	created, err := repo.Create(ctx, "abcdef1234567890", "test.jpg")
@@ -76,7 +76,7 @@ func TestImageRepository_GetByFilename(t *testing.T) {
 	defer CleanupTestDB(t, db)
 
 	repo := NewImageRepository(db)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Create test image
 	created, err := repo.Create(ctx, "abcdef1234567890", "test.jpg")
@@ -114,7 +114,7 @@ func TestImageRepository_List(t *testing.T) {
 	defer CleanupTestDB(t, db)
 
 	repo := NewImageRepository(db)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Create test images
 	_, err := repo.Create(ctx, "hash1", "image1.jpg")
@@ -143,7 +143,7 @@ func TestImageRepository_Count(t *testing.T) {
 	defer CleanupTestDB(t, db)
 
 	repo := NewImageRepository(db)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("counts all images", func(t *testing.T) {
 		// Create test images
@@ -173,7 +173,7 @@ func TestImageRepository_Delete(t *testing.T) {
 	defer CleanupTestDB(t, db)
 
 	repo := NewImageRepository(db)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Create test image
 	img, _ := repo.Create(ctx, "hash1", "test.jpg")

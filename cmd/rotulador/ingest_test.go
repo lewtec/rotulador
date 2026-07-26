@@ -26,7 +26,7 @@ func TestIngestCmd_RejectsZeroJobs(t *testing.T) {
 	t.Cleanup(func() { jobs = prevJobs })
 
 	rootCmd.SetArgs([]string{"ingest", "--jobs", "0", in, out})
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
 	defer cancel()
 
 	err := rootCmd.ExecuteContext(ctx)
@@ -61,7 +61,7 @@ func TestIngestCmd_WalkErrorDoesNotHang(t *testing.T) {
 	t.Cleanup(func() { jobs = prevJobs })
 
 	rootCmd.SetArgs([]string{"ingest", "--jobs", "1", in, out})
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
 	defer cancel()
 
 	err := rootCmd.ExecuteContext(ctx)

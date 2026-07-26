@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...interface{}) error {
+func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...any) error {
 	stmt, err := db.PrepareContext(ctx, query)
 	if err != nil {
 		return err
