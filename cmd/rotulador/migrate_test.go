@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"errors"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -69,7 +71,7 @@ tasks:
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	err = migrateLegacyDatabase(context.Background(), oldPath, newPath, configPath, logger)
+	err = migrateLegacyDatabase(t.Context(), oldPath, newPath, configPath, logger)
 	if err == nil {
 		t.Fatal("expected error for unsafe task id, got nil")
 	}
@@ -77,7 +79,7 @@ tasks:
 		t.Fatalf("error = %v, want mention of safe SQL identifier", err)
 	}
 	// Validation runs before the new DB is opened, so the target path must stay absent.
-	if _, statErr := os.Stat(newPath); !os.IsNotExist(statErr) {
+	if _, statErr := os.Stat(newPath); !errors.Is(statErr, fs.ErrNotExist) {
 		t.Fatalf("new database should not be created on validation failure, stat err=%v", statErr)
 	}
 }
