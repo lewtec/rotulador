@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"net/url"
 	"testing"
@@ -69,7 +68,7 @@ func CleanupTestDB(t *testing.T, db *sql.DB) {
 // MustExec executes a SQL statement and fails the test if it errors
 func MustExec(t *testing.T, db *sql.DB, query string, args ...any) {
 	t.Helper()
-	_, err := db.ExecContext(context.Background(), query, args...)
+	_, err := db.ExecContext(t.Context(), query, args...)
 	if err != nil {
 		t.Fatalf("failed to exec query: %v", err)
 	}
