@@ -202,10 +202,12 @@ func serveHTTP(ctx context.Context, server *http.Server) error {
 		}
 		return err
 	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		// Parent ctx is already cancelled; WithoutCancel keeps values (e.g. logger)
+		// while WithTimeout still bounds Shutdown independently of the signal.
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 15*time.Second)
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			annotation.ReportError(context.Background(), err, "msg", "HTTP server shutdown failed")
+			annotation.ReportError(shutdownCtx, err, "msg", "HTTP server shutdown failed")
 			// Drain ListenAndServe so we do not leak the goroutine on return.
 			<-errCh
 			return fmt.Errorf("http server shutdown: %w", err)
