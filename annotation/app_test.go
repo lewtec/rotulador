@@ -1,7 +1,6 @@
 package annotation
 
 import (
-	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -10,7 +9,7 @@ import (
 
 func TestErrTaskNotFoundSentinel(t *testing.T) {
 	a := &AnnotatorApp{Config: &Config{}}
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := a.CountEligibleImages(ctx, "missing-task")
 	if !errors.Is(err, ErrTaskNotFound) {
