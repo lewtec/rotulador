@@ -24,6 +24,20 @@ import (
 	"github.com/lewtec/rotulador/internal/repository"
 )
 
+// appError is a stable app-level sentinel. Prefer these (or fmt.Errorf %w
+// wrapping them) over bare fmt.Errorf so callers can errors.Is.
+type appError string
+
+func (e appError) Error() string { return string(e) }
+
+// App-level error table. Dynamic detail is attached with fmt.Errorf %w.
+const (
+	ErrTaskNotFound   appError = "task not found"
+	ErrImageNotFound  appError = "image not found"
+	ErrDatasetNotFlat appError = "datasets must be organized in a flat folder structure (hint: use the 'ingest' subcommand)"
+	ErrPathTraversal  appError = "path traversal detected"
+)
+
 type AnnotatorApp struct {
 	ImagesDir      string
 	Database       *sql.DB
@@ -100,7 +114,7 @@ func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (
 	// Find stage index for this task
 	stageIndex := a.findTaskIndex(taskID)
 	if stageIndex == -1 {
-		return 0, fmt.Errorf("task not found: %s", taskID)
+		return 0, fmt.Errorf("%w: %s", ErrTaskNotFound, taskID)
 	}
 
 	task := a.Config.Tasks[stageIndex]
@@ -146,7 +160,7 @@ func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) 
 	// Find stage index for this task
 	stageIndex := a.findTaskIndex(taskID)
 	if stageIndex == -1 {
-		return 0, fmt.Errorf("task not found: %s", taskID)
+		return 0, fmt.Errorf("%w: %s", ErrTaskNotFound, taskID)
 	}
 
 	task := a.Config.Tasks[stageIndex]
@@ -343,7 +357,7 @@ func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*
 	// Find stage index for this task
 	stageIndex := a.findTaskIndex(taskID)
 	if stageIndex == -1 {
-		return nil, fmt.Errorf("task not found: %s", taskID)
+		return nil, fmt.Errorf("%w: %s", ErrTaskNotFound, taskID)
 	}
 
 	task := a.Config.Tasks[stageIndex]
@@ -422,7 +436,7 @@ func (a *AnnotatorApp) GetImageFilename(ctx context.Context, sha256 string) (fil
 	img, err := a.imageRepo.GetBySHA256(ctx, sha256)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", fmt.Errorf("image not found: %s", sha256)
+			return "", fmt.Errorf("%w: %s", ErrImageNotFound, sha256)
 		}
 		return "", err
 	}
@@ -442,7 +456,7 @@ func (a *AnnotatorApp) SubmitAnnotation(ctx context.Context, annotation Annotati
 	// Find stage index for this task
 	stageIndex := a.findTaskIndex(annotation.TaskID)
 	if stageIndex == -1 {
-		return fmt.Errorf("no such task: %s", annotation.TaskID)
+		return fmt.Errorf("%w: %s", ErrTaskNotFound, annotation.TaskID)
 	}
 
 	// ImageID is already the SHA256 hash, use it directly
@@ -873,7 +887,7 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 			return nil
 		}
 		if info.IsDir() {
-			return fmt.Errorf("while checking if item '%s' is a file: datasets must be organized in a flat folder structure (hint: use the 'ingest' subcommand)", fullPath)
+			return fmt.Errorf("while checking if item '%s' is a file: %w", fullPath, ErrDatasetNotFlat)
 		}
 
 		a.Logger.Debug("IngestImages: processing image", "path", fullPath)
@@ -920,7 +934,7 @@ func secureJoin(baseDir, filename string) (string, error) {
 	fullPath := filepath.Join(absBase, filename)
 
 	if !strings.HasPrefix(fullPath, absBase+string(os.PathSeparator)) {
-		return "", fmt.Errorf("path traversal detected: %s", filename)
+		return "", fmt.Errorf("%w: %s", ErrPathTraversal, filename)
 	}
 
 	return fullPath, nil

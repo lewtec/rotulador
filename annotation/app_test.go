@@ -1,0 +1,56 @@
+package annotation
+
+import (
+	"context"
+	"errors"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestErrTaskNotFoundSentinel(t *testing.T) {
+	a := &AnnotatorApp{Config: &Config{}}
+	ctx := context.Background()
+
+	_, err := a.CountEligibleImages(ctx, "missing-task")
+	if !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("CountEligibleImages: got %v, want ErrTaskNotFound", err)
+	}
+
+	_, err = a.CountAvailableImages(ctx, "missing-task")
+	if !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("CountAvailableImages: got %v, want ErrTaskNotFound", err)
+	}
+
+	_, err = a.NextAnnotationStep(ctx, "missing-task")
+	if !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("NextAnnotationStep: got %v, want ErrTaskNotFound", err)
+	}
+
+	err = a.SubmitAnnotation(ctx, AnnotationResponse{TaskID: "missing-task"})
+	if !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("SubmitAnnotation: got %v, want ErrTaskNotFound", err)
+	}
+}
+
+func TestSecureJoinPathTraversalSentinel(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "securejoin_sentinel")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("cleanup: %v", err)
+		}
+	})
+
+	absBase, err := filepath.Abs(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = secureJoin(absBase, "../secret.txt")
+	if !errors.Is(err, ErrPathTraversal) {
+		t.Fatalf("secureJoin: got %v, want ErrPathTraversal", err)
+	}
+}
