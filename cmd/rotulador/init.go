@@ -1,14 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/lewtec/rotulador/annotation"
 	"github.com/spf13/cobra"
-	"errors"
-	"io/fs"
 )
 
 // initCmd represents the init command
@@ -28,12 +28,25 @@ Example:
 		if err != nil {
 			return err
 		}
-		imagesDir, _ := cmd.Flags().GetString("images-dir")
-		configFile, _ := cmd.Flags().GetString("config")
-		databaseFile, _ := cmd.Flags().GetString("database")
+		imagesDir, err := cmd.Flags().GetString("images-dir")
+		if err != nil {
+			return fmt.Errorf("read images-dir flag: %w", err)
+		}
+		configFile, err := cmd.Flags().GetString("config")
+		if err != nil {
+			return fmt.Errorf("read config flag: %w", err)
+		}
+		databaseFile, err := cmd.Flags().GetString("database")
+		if err != nil {
+			return fmt.Errorf("read database flag: %w", err)
+		}
 
-		// Create sample config if it doesn't exist
-		if _, err := os.Stat(configFile); errors.Is(err, fs.ErrNotExist) {
+		// Create sample config if it doesn't exist. Other Stat failures (e.g.
+		// permission denied) must not be treated as "already exists".
+		if _, err := os.Stat(configFile); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return fmt.Errorf("stat config file: %w", err)
+			}
 			logger.Info("Creating sample configuration file", "configFile", configFile)
 			if err := createSampleConfig(configFile, imagesDir); err != nil {
 				return fmt.Errorf("create config file: %w", err)
@@ -68,8 +81,11 @@ Example:
 				return fmt.Errorf("resolve images path: %w", err)
 			}
 
-			if _, err := os.Stat(absPath); errors.Is(err, fs.ErrNotExist) {
-				return fmt.Errorf("images directory does not exist: %s", absPath)
+			if _, err := os.Stat(absPath); err != nil {
+				if errors.Is(err, fs.ErrNotExist) {
+					return fmt.Errorf("images directory does not exist: %s: %w", absPath, err)
+				}
+				return fmt.Errorf("stat images directory: %w", err)
 			}
 
 			logger.Info("Scanning images directory", "absPath", absPath)
