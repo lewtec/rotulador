@@ -138,7 +138,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 		logger.Info("Migrating task", "taskID", task.ID, "stage", stageIndex)
 		count, err := migrateTaskAnnotations(ctx, oldDB, tx, task.ID, stageIndex, knownImages, logger)
 		if err != nil {
-			return fmt.Errorf("failed to migrate task %s: %w", task.ID, err)
+			return fmt.Errorf("migrate task %s: %w", task.ID, err)
 		}
 		logger.Info("Migrated annotations", "count", count)
 	}
@@ -239,7 +239,7 @@ func migrateImages(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx) (map[strin
 			"INSERT INTO images (sha256, filename) VALUES (?, ?) ON CONFLICT(sha256) DO UPDATE SET filename = excluded.filename",
 			img.SHA256, img.Filename)
 		if err != nil {
-			return nil, fmt.Errorf("failed to insert image %s: %w", img.SHA256, err)
+			return nil, fmt.Errorf("insert image %s: %w", img.SHA256, err)
 		}
 		known[img.SHA256] = struct{}{}
 	}
