@@ -163,6 +163,14 @@ tasks:
 	})
 }
 
+func TestRootCmd_MissingConfigRequired(t *testing.T) {
+	// No positional config and empty --config must return the sentinel.
+	_, _, err := executeCommand(t)
+	if !errors.Is(err, errConfigRequired) {
+		t.Fatalf("got %v, want errConfigRequired", err)
+	}
+}
+
 // TestServeHTTP_StopsOnContextCancel ensures the HTTP server shuts down when the
 // command context is cancelled (SIGINT/SIGTERM / test timeout path).
 func TestServeHTTP_StopsOnContextCancel(t *testing.T) {
