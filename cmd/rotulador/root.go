@@ -45,7 +45,12 @@ With a set of trivial choices scale the classification of a set of images to man
 				databaseFile := filepath.Join(arg, "annotations.db")
 				imagesDir := filepath.Join(arg, "images")
 
-				if _, err := os.Stat(configFile); errors.Is(err, fs.ErrNotExist) {
+				// Create only on ErrNotExist. Other Stat failures (e.g. permission
+				// denied) must not be treated as "already exists".
+				if _, err := os.Stat(configFile); err != nil {
+					if !errors.Is(err, fs.ErrNotExist) {
+						return fmt.Errorf("stat config file: %w", err)
+					}
 					logger.Info("Creating default config", "configFile", configFile)
 					if err := createSampleConfig(configFile, arg); err != nil {
 						return fmt.Errorf("create config: %w", err)
@@ -56,7 +61,10 @@ With a set of trivial choices scale the classification of a set of images to man
 				}
 
 				// Create empty database file
-				if _, err := os.Stat(databaseFile); errors.Is(err, fs.ErrNotExist) {
+				if _, err := os.Stat(databaseFile); err != nil {
+					if !errors.Is(err, fs.ErrNotExist) {
+						return fmt.Errorf("stat database file: %w", err)
+					}
 					logger.Info("Creating empty database", "databaseFile", databaseFile)
 					file, err := os.Create(databaseFile)
 					if err != nil {
@@ -71,7 +79,10 @@ With a set of trivial choices scale the classification of a set of images to man
 				}
 
 				// Create images directory
-				if _, err := os.Stat(imagesDir); errors.Is(err, fs.ErrNotExist) {
+				if _, err := os.Stat(imagesDir); err != nil {
+					if !errors.Is(err, fs.ErrNotExist) {
+						return fmt.Errorf("stat images directory: %w", err)
+					}
 					logger.Info("Creating images directory", "imagesDir", imagesDir)
 					if err := os.MkdirAll(imagesDir, 0755); err != nil {
 						return fmt.Errorf("create images directory: %w", err)
@@ -92,7 +103,10 @@ With a set of trivial choices scale the classification of a set of images to man
 			// This runs only if the arg was not a directory.
 			configFile = args[0]
 		} else {
-			c, _ := cmd.Flags().GetString("config")
+			c, err := cmd.Flags().GetString("config")
+			if err != nil {
+				return fmt.Errorf("read config flag: %w", err)
+			}
 			if c == "" {
 				return fmt.Errorf("config file must be provided via argument or --config flag")
 			}
@@ -100,13 +114,19 @@ With a set of trivial choices scale the classification of a set of images to man
 		}
 
 		// 3. Determine databaseFile
-		databaseFile, _ := cmd.Flags().GetString("database")
+		databaseFile, err := cmd.Flags().GetString("database")
+		if err != nil {
+			return fmt.Errorf("read database flag: %w", err)
+		}
 		if databaseFile == "" {
 			databaseFile = filepath.Join(filepath.Dir(configFile), "annotations.db")
 		}
 
 		// 4. Determine imagesDir
-		imagesDir, _ := cmd.Flags().GetString("images")
+		imagesDir, err := cmd.Flags().GetString("images")
+		if err != nil {
+			return fmt.Errorf("read images flag: %w", err)
+		}
 		if imagesDir == "" {
 			imagesDir = filepath.Join(filepath.Dir(configFile), "images")
 		}
@@ -141,7 +161,10 @@ With a set of trivial choices scale the classification of a set of images to man
 			return fmt.Errorf("prepare database: %w", err)
 		}
 
-		addr, _ := cmd.Flags().GetString("addr")
+		addr, err := cmd.Flags().GetString("addr")
+		if err != nil {
+			return fmt.Errorf("read addr flag: %w", err)
+		}
 
 		logger.Info("Configuration",
 			"configFile", configFile,
