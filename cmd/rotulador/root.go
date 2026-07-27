@@ -22,6 +22,18 @@ import (
 	"io/fs"
 )
 
+// cliError is a stable CLI-level sentinel. Prefer these (or fmt.Errorf %w
+// wrapping them) over bare fmt.Errorf so callers can errors.Is.
+type cliError string
+
+func (e cliError) Error() string { return string(e) }
+
+// CLI error table for root command validation (go/fmt-errorf-missing-wrap,
+// go/error-prefer-err-tables).
+const (
+	errConfigRequired cliError = "config file must be provided via argument or --config flag"
+)
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "rotulador [folder|config.yaml]",
@@ -108,7 +120,7 @@ With a set of trivial choices scale the classification of a set of images to man
 				return fmt.Errorf("read config flag: %w", err)
 			}
 			if c == "" {
-				return fmt.Errorf("config file must be provided via argument or --config flag")
+				return errConfigRequired
 			}
 			configFile = c
 		}
