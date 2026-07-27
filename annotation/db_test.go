@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	appdb "github.com/lewtec/rotulador/db"
 )
 
 func TestGetDatabaseAppliesForeignKeys(t *testing.T) {
@@ -74,13 +76,23 @@ func TestGetDatabaseEnforcesForeignKeysOnNewConnections(t *testing.T) {
 }
 
 func TestSqliteOpenDSNIncludesPragmas(t *testing.T) {
-	dsn := sqliteOpenDSN("/tmp/x.db")
+	dsn := appdb.SQLiteOpenDSN("/tmp/x.db")
 	if dsn == "/tmp/x.db" {
 		t.Fatal("DSN should include query parameters")
 	}
 	for _, want := range []string{"_pragma", "foreign_keys", "busy_timeout", "journal_mode"} {
 		if !strings.Contains(dsn, want) {
 			t.Errorf("DSN %q missing %q", dsn, want)
+		}
+	}
+	// In-memory DBs skip WAL (same policy as repository SetupTestDB).
+	mem := appdb.SQLiteOpenDSN(":memory:")
+	if strings.Contains(mem, "journal_mode") {
+		t.Errorf("memory DSN %q should omit journal_mode", mem)
+	}
+	for _, want := range []string{"_pragma", "foreign_keys", "busy_timeout"} {
+		if !strings.Contains(mem, want) {
+			t.Errorf("memory DSN %q missing %q", mem, want)
 		}
 	}
 }

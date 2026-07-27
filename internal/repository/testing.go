@@ -2,34 +2,21 @@ package repository
 
 import (
 	"database/sql"
-	"net/url"
 	"testing"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	appdb "github.com/lewtec/rotulador/db"
 	"github.com/lewtec/rotulador/db/migrations"
 	_ "modernc.org/sqlite"
 )
-
-// testSQLiteDSN applies the same connection PRAGMAs as annotation.GetDatabase
-// so repository tests exercise FK enforcement and busy timeout.
-func testSQLiteDSN(filename string) string {
-	q := url.Values{}
-	q.Add("_pragma", "foreign_keys(1)")
-	q.Add("_pragma", "busy_timeout(5000)")
-	// In-memory DBs do not need WAL; skip journal_mode for :memory: speed.
-	if filename != ":memory:" {
-		q.Add("_pragma", "journal_mode(WAL)")
-	}
-	return filename + "?" + q.Encode()
-}
 
 // SetupTestDB creates an in-memory SQLite database for testing
 func SetupTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	db, err := sql.Open("sqlite", testSQLiteDSN(":memory:"))
+	db, err := sql.Open("sqlite", appdb.SQLiteOpenDSN(":memory:"))
 	if err != nil {
 		t.Fatalf("failed to open test database: %v", err)
 	}
