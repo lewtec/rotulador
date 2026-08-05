@@ -24,48 +24,41 @@ type BlockData struct {
 	Blocks  map[string]any
 }
 
-// NewTemplateManager creates a new template manager using mold
-// The fs should be an embed.FS containing your templates
+// NewTemplateManager creates a new template manager using mold.
+// The fs should be an embed.FS containing your templates under "templates/"
+// with layout "layout.html".
 func NewTemplateManager(templateFS embed.FS, options ...mold.Option) (*TemplateManager, error) {
-	opts := options
-	opts = append(opts, mold.WithRoot("templates"))
-	opts = append(opts, mold.WithLayout("layout.html"))
-	engine, err := mold.New(templateFS, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return &TemplateManager{
-		engine: engine,
-	}, nil
+	return newTemplateManager(templateFS, withDefaultLayout(options)...)
 }
 
-// NewTemplateManagerWithFuncMap creates a new template manager with custom template functions
+// NewTemplateManagerWithFuncMap creates a template manager with custom template
+// functions. Same defaults as NewTemplateManager.
 func NewTemplateManagerWithFuncMap(templateFS embed.FS, funcMap template.FuncMap, options ...mold.Option) (*TemplateManager, error) {
-	opts := options
-	opts = append(opts, mold.WithRoot("templates"))
-	opts = append(opts, mold.WithLayout("layout.html"))
+	opts := make([]mold.Option, 0, len(options)+1)
+	opts = append(opts, options...)
 	opts = append(opts, mold.WithFuncMap(funcMap))
-	engine, err := mold.New(templateFS, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return &TemplateManager{
-		engine: engine,
-	}, nil
+	return NewTemplateManager(templateFS, opts...)
 }
 
 // NewTemplateManagerWithFS creates a template manager from a plain fs.FS
+// without the embed root/layout defaults.
 func NewTemplateManagerWithFS(fsys fs.FS, options ...mold.Option) (*TemplateManager, error) {
+	return newTemplateManager(fsys, options...)
+}
+
+func withDefaultLayout(options []mold.Option) []mold.Option {
+	opts := make([]mold.Option, 0, len(options)+2)
+	opts = append(opts, options...)
+	opts = append(opts, mold.WithRoot("templates"), mold.WithLayout("layout.html"))
+	return opts
+}
+
+func newTemplateManager(fsys fs.FS, options ...mold.Option) (*TemplateManager, error) {
 	engine, err := mold.New(fsys, options...)
 	if err != nil {
 		return nil, err
 	}
-
-	return &TemplateManager{
-		engine: engine,
-	}, nil
+	return &TemplateManager{engine: engine}, nil
 }
 
 // Render renders a page template (mold will automatically handle layout inheritance)
