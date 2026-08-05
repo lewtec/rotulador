@@ -100,8 +100,7 @@ func GetLocalizerFromRequest(r *http.Request) *i18n.Localizer {
 	// Format: "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7"
 	var langs []string
 	if acceptLang != "" {
-		parts := strings.Split(acceptLang, ",")
-		for _, part := range parts {
+		for part := range strings.SplitSeq(acceptLang, ",") {
 			// Remove quality values (;q=0.9)
 			lang := strings.TrimSpace(strings.Split(part, ";")[0])
 			if lang != "" {
