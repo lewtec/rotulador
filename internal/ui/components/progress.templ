@@ -8,7 +8,7 @@ import (
 
 templ ProgressBar(p *Progress) {
 	if p != nil && p.Total > 0 {
-		<div class="flex w-full h-8 rounded-lg overflow-hidden shadow-sm mb-4">
+		<div class="flex h-7 w-full overflow-hidden rounded-md">
 			for _, seg := range p.Segments {
 				if seg.Count > 0 {
 					<div

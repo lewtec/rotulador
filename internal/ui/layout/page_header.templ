@@ -1,0 +1,86 @@
+package layout
+
+// PageHeader: title row with optional actions, breadcrumbs, lead.
+// Annotate uses Compact=true for multi-hour density.
+templ PageHeader(h PageHeaderProps) {
+	if h.Compact {
+		<header class="mb-2 w-full space-y-1">
+			<div class="flex flex-row items-start justify-between gap-2">
+				<div class="flex min-w-0 flex-wrap items-center gap-2">
+					<h1 class="min-w-0 text-lg font-semibold tracking-tight leading-tight">{ h.Title }</h1>
+					if h.TitleAfter != nil {
+						@h.TitleAfter
+					}
+					if h.HasActions && h.ActionsAfterTitle {
+						{ children... }
+					}
+				</div>
+				if h.HasActions && !h.ActionsAfterTitle {
+					<div class="flex shrink-0 flex-wrap items-center gap-1.5">
+						{ children... }
+					</div>
+				}
+			</div>
+			if len(h.Crumbs) > 0 {
+				@crumbs(h.Crumbs)
+			}
+			if h.Lead != "" {
+				<p class="text-sm text-base-content/70">{ h.Lead }</p>
+			}
+		</header>
+	} else {
+		<header class="mb-5 w-full space-y-2">
+			<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div class="flex min-w-0 flex-wrap items-center gap-2">
+					<h1 class="min-w-0 text-2xl font-semibold tracking-tight sm:text-3xl">{ h.Title }</h1>
+					if h.TitleAfter != nil {
+						@h.TitleAfter
+					}
+					if h.HasActions && h.ActionsAfterTitle {
+						{ children... }
+					}
+				</div>
+				if h.HasActions && !h.ActionsAfterTitle {
+					<div class="flex shrink-0 flex-wrap items-center gap-2">
+						{ children... }
+					</div>
+				}
+			</div>
+			if len(h.Crumbs) > 0 {
+				@crumbs(h.Crumbs)
+			}
+			if h.Lead != "" {
+				<p class="text-base-content/70">{ h.Lead }</p>
+			}
+		</header>
+	}
+}
+
+templ crumbs(items []Crumb) {
+	<nav class="text-sm text-base-content/50" aria-label="Breadcrumb">
+		for i, c := range items {
+			if i > 0 {
+				<span class="text-base-content/40"> / </span>
+			}
+			if c.Href != "" {
+				<a class="link link-hover" href={ c.Href }>{ c.Label }</a>
+			} else {
+				<span class="text-base-content/70">{ c.Label }</span>
+			}
+		}
+	</nav>
+}
+
+// PageBody is the default full-width content stack under PageHeader.
+templ PageBody() {
+	<div class="w-full space-y-6">
+		{ children... }
+	</div>
+}
+
+// PageBodyNarrow centers form-like content under a full-width header.
+templ PageBodyNarrow() {
+	<div class="mx-auto w-full max-w-lg space-y-6">
+		{ children... }
+	</div>
+}
