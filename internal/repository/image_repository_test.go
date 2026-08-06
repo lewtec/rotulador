@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"testing"
 )
 
@@ -60,13 +62,13 @@ func TestImageRepository_GetBySHA256(t *testing.T) {
 		}
 	})
 
-	t.Run("returns nil for non-existent image", func(t *testing.T) {
+	t.Run("returns sql.ErrNoRows for non-existent image", func(t *testing.T) {
 		img, err := repo.GetBySHA256(ctx, "nonexistent")
-		if err != nil {
-			t.Fatalf("GetBySHA256() error = %v", err)
+		if !errors.Is(err, sql.ErrNoRows) {
+			t.Fatalf("GetBySHA256() error = %v, want sql.ErrNoRows", err)
 		}
 		if img != nil {
-			t.Error("Expected nil for non-existent image")
+			t.Error("Expected nil image for non-existent hash")
 		}
 	})
 }
@@ -98,13 +100,13 @@ func TestImageRepository_GetByFilename(t *testing.T) {
 		}
 	})
 
-	t.Run("returns nil for non-existent filename", func(t *testing.T) {
+	t.Run("returns sql.ErrNoRows for non-existent filename", func(t *testing.T) {
 		img, err := repo.GetByFilename(ctx, "nonexistent.jpg")
-		if err != nil {
-			t.Fatalf("GetByFilename() error = %v", err)
+		if !errors.Is(err, sql.ErrNoRows) {
+			t.Fatalf("GetByFilename() error = %v, want sql.ErrNoRows", err)
 		}
 		if img != nil {
-			t.Error("Expected nil for non-existent filename")
+			t.Error("Expected nil image for non-existent filename")
 		}
 	})
 }
@@ -186,8 +188,8 @@ func TestImageRepository_Delete(t *testing.T) {
 
 		// Verify deletion
 		deleted, err := repo.GetBySHA256(ctx, img.SHA256)
-		if err != nil {
-			t.Fatalf("GetBySHA256() error = %v", err)
+		if !errors.Is(err, sql.ErrNoRows) {
+			t.Fatalf("GetBySHA256() after delete error = %v, want sql.ErrNoRows", err)
 		}
 		if deleted != nil {
 			t.Error("Image should be deleted")
