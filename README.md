@@ -99,7 +99,16 @@ rotulador/
 ### Prerequisites
 - Mise
 
-See mise.toml for details on commands
+See `mise.toml` for tasks (`mise ci`, `mise run gen`, …).
+
+### Release
+Multi-platform binaries are published with [GoReleaser](https://goreleaser.com) (no Docker).
+
+```bash
+mise run release -- patch   # or minor | major | next
+```
+
+Tags are unprefixed (`0.2.4`), matching existing releases. CI runs `goreleaser` on tags and `workflow_dispatch`.
 
 ### Progress Tracking
 The system automatically tracks:

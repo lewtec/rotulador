@@ -1,0 +1,4 @@
+# Tags are unprefixed (0.2.3), matching existing GitHub releases.
+tag.prefix: ""
+always: true
+v0: true
