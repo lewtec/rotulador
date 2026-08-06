@@ -24,6 +24,7 @@ import (
 	"github.com/lewtec/rotulador/internal/repository"
 	"github.com/lewtec/rotulador/internal/ui/layout"
 	"github.com/lewtec/rotulador/internal/ui/pages"
+	moderncsqlite "modernc.org/sqlite"
 )
 
 // appError is a stable app-level sentinel. Prefer these (or fmt.Errorf %w
@@ -654,7 +655,16 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			http.NotFoundHandler().ServeHTTP(w, r)
 			return
 		}
-		imageFilename, _ := a.GetImageFilename(r.Context(), imageID)
+		imageFilename, err := a.GetImageFilename(r.Context(), imageID)
+		if err != nil {
+			if errors.Is(err, ErrImageNotFound) {
+				http.NotFoundHandler().ServeHTTP(w, r)
+				return
+			}
+			ReportError(r.Context(), err, "msg", "error looking up image filename", "sha256", imageID)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		if r.Method == http.MethodPost {
 			a.Logger.Debug("POST")
@@ -672,7 +682,12 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			a.Logger.Debug("Selected class", "class", selectedClass, "empty", selectedClass == "", "valid", isClassValid)
 			sure := r.FormValue("sure") == "on"
 			a.Logger.Debug("Sure", "sure", sure)
-			user, _, _ := r.BasicAuth()
+			user, _, ok := r.BasicAuth()
+			if !ok {
+				w.Header().Set("WWW-Authenticate", `Basic realm="rotulador"`)
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
 			err := a.SubmitAnnotation(r.Context(), AnnotationResponse{
 				ImageID: imageID,
 				TaskID:  taskID,
@@ -911,11 +926,8 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 
 		// Use repository to create image (with upsert behavior via ON CONFLICT)
 		_, err = a.imageRepo.Create(ctx, fileHash, info.Name())
-		if err != nil {
-			// Ignore duplicate errors (hash already exists)
-			if !strings.Contains(err.Error(), "UNIQUE constraint") {
-				return fmt.Errorf("while inserting image '%s': %w", fullPath, err)
-			}
+		if err != nil && !isSQLiteConstraint(err) {
+			return fmt.Errorf("while inserting image '%s': %w", fullPath, err)
 		}
 
 		return nil
@@ -926,6 +938,16 @@ func (a *AnnotatorApp) IngestImages(ctx context.Context) error {
 
 	a.Logger.Info("IngestImages: completed successfully!")
 	return nil
+}
+
+// isSQLiteConstraint reports whether err is a SQLite constraint violation
+// (including UNIQUE). Low 8 bits of the modernc code are SQLITE_CONSTRAINT (19).
+func isSQLiteConstraint(err error) bool {
+	var se *moderncsqlite.Error
+	if !errors.As(err, &se) {
+		return false
+	}
+	return se.Code()&0xff == 19
 }
 
 // secureJoin joins baseDir and filename and ensures the result is within baseDir.
