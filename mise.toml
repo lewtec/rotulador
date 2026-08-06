@@ -63,13 +63,8 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   echo "Tag $TAG already exists" >&2
   exit 1
 fi
-# Keep version.txt in sync for humans / older scripts
-printf '%s' "$TAG" > version.txt
-git add version.txt
-if ! git diff --cached --quiet; then
-  git commit -m "chore: release $TAG"
-fi
+# Version is stamped into the binary via GoReleaser ldflags (-X main.version).
 git tag "$TAG"
-git push origin HEAD "refs/tags/$TAG"
+git push origin "refs/tags/$TAG"
 goreleaser release --clean
 '''

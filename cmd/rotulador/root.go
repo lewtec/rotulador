@@ -35,10 +35,15 @@ const (
 	errConfigRequired cliError = "config file must be provided via argument or --config flag"
 )
 
+// version is set at link time via -ldflags (GoReleaser / mise release).
+// Local builds default to "dev".
+var version = "dev"
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "rotulador [folder|config.yaml]",
-	Short: "Quickly make image annotations",
+	Use:     "rotulador [folder|config.yaml]",
+	Short:   "Quickly make image annotations",
+	Version: version,
 	Long: strings.TrimSpace(`
 With a set of trivial choices scale the classification of a set of images to many people to build datasets to train classifiers.
     `),
