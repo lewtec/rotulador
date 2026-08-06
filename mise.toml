@@ -2,6 +2,8 @@
 go = "1.25.5"
 golangci-lint = "2.8.0"
 node = "24"
+goreleaser = "2.17.0"
+svu = "3.3.0"
 
 [tasks.gen]
 description = "go generate ./... (CSS, sqlc, templ, goi18n)"
@@ -37,6 +39,37 @@ run = "go build -v -o rotulador ./cmd/rotulador"
 [tasks.clean]
 description = "Clean build artifacts"
 run = """
-rm -f rotulador coverage.out coverage.html
+rm -rf rotulador coverage.out coverage.html dist/
 echo "✓ Cleaned"
 """
+
+[tasks."release:check"]
+description = "Validate .goreleaser.yaml"
+run = "goreleaser check"
+
+[tasks.release]
+description = "Tag with svu and publish binaries via GoReleaser (no Docker)"
+depends = ["ci"]
+usage = '''
+arg "<version>" help="New version" {
+  choices "next" "major" "minor" "patch"
+  default "next"
+}
+'''
+run = '''
+TAG="$(svu ${usage_version})"
+echo "Releasing tag: $TAG (svu current=$(svu current 2>/dev/null || echo none))"
+if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+  echo "Tag $TAG already exists" >&2
+  exit 1
+fi
+# Keep version.txt in sync for humans / older scripts
+printf '%s' "$TAG" > version.txt
+git add version.txt
+if ! git diff --cached --quiet; then
+  git commit -m "chore: release $TAG"
+fi
+git tag "$TAG"
+git push origin HEAD "refs/tags/$TAG"
+goreleaser release --clean
+'''
