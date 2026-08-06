@@ -50,16 +50,43 @@ templ Shell(p ShellProps) {
 	}
 }
 
-// ShellColumn is header + free column body (page supplies main + dock).
-// Uses a 3-row grid (nav | main | dock) so the middle row always gets free height
-// on Chromium mobile — nested flex free-space often collapses there.
+// ShellColumn is the annotate frame: fixed to the visual viewport so the dock
+// stays on the bottom on mobile Chromium (Vivaldi) and the image row gets free height.
+// Page supplies main + dock as the 2nd and 3rd grid rows.
 templ ShellColumn(p ShellProps) {
 	@Document(p.Title) {
-		<body class="app-frame overflow-hidden bg-base-200 text-base-content">
-			<div class="app-shell-stack">
+		<body class="overflow-hidden bg-base-200 text-base-content">
+			<div class="annotate-page-root" id="annotate-page-root">
 				@appNavbar()
 				{ children... }
 			</div>
+			<script>
+				(function () {
+					function syncAppVvh() {
+						try {
+							var h = window.visualViewport
+								? window.visualViewport.height
+								: window.innerHeight;
+							document.documentElement.style.setProperty("--app-vvh", h + "px");
+							// Keep the fixed root aligned when the visual viewport shifts.
+							var root = document.getElementById("annotate-page-root");
+							if (root && window.visualViewport) {
+								root.style.top = window.visualViewport.offsetTop + "px";
+								root.style.left = window.visualViewport.offsetLeft + "px";
+								root.style.width = window.visualViewport.width + "px";
+							}
+						} catch (e) {
+							reportError(e, "syncAppVvh");
+						}
+					}
+					syncAppVvh();
+					window.addEventListener("resize", syncAppVvh);
+					if (window.visualViewport) {
+						window.visualViewport.addEventListener("resize", syncAppVvh);
+						window.visualViewport.addEventListener("scroll", syncAppVvh);
+					}
+				})();
+			</script>
 		</body>
 	}
 }
