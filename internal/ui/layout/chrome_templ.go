@@ -126,7 +126,7 @@ func Shell(p ShellProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<body class=\"h-screen min-h-screen overflow-hidden bg-base-200 text-base-content\"><div class=\"flex h-full min-h-0 flex-col\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " <body class=\"h-dvh max-h-dvh overflow-hidden bg-base-200 text-base-content\"><div class=\"flex h-full min-h-0 flex-col\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -191,7 +191,7 @@ func ShellColumn(p ShellProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<body class=\"h-screen min-h-screen overflow-hidden bg-base-200 text-base-content\"><div class=\"flex h-full min-h-0 flex-col\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<body class=\"h-dvh max-h-dvh overflow-hidden bg-base-200 text-base-content\"><div class=\"flex h-full min-h-0 flex-col\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

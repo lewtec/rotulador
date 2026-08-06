@@ -22,3 +22,12 @@
     @apply text-xs opacity-70 ml-1;
   }
 }
+
+/* Ensure dvh utilities exist even if content scan misses a path. */
+@utility h-dvh {
+  height: 100dvh;
+}
+@utility max-h-dvh {
+  max-height: 100dvh;
+}
+

@@ -2,10 +2,11 @@ package layout
 
 templ Document(title string) {
 	<!DOCTYPE html>
-	<html lang="en" data-theme="light" class="h-full">
+	<html lang="en" data-theme="light" class="h-dvh">
 		<head>
 			<meta charset="UTF-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			// viewport-fit=cover so env(safe-area-inset-*) works; dvh tracks mobile URL chrome.
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 			if title != "" {
 				<title>{ title }</title>
 			} else {

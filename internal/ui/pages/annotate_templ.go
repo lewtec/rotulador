@@ -277,7 +277,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div></div></div></main><div id=\"app-dock\" class=\"shrink-0 border-t border-base-300 bg-base-100\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div></div></div></main><div id=\"app-dock\" class=\"shrink-0 border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
