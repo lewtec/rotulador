@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/lewtec/rotulador/annotation"
+	"github.com/lewtec/rotulador/internal/web"
 	"github.com/spf13/cobra"
 )
 
@@ -57,9 +57,9 @@ var ingestCmd = &cobra.Command{
 		ingestWorker := func(queue chan image.Image) {
 			defer wg.Done()
 			for image := range queue {
-				err := annotation.IngestImage(image, output)
+				err := web.IngestImage(image, output)
 				if err != nil {
-					annotation.ReportError(cmd.Context(), err, "msg", "ingesting image failed")
+					web.ReportError(cmd.Context(), err, "msg", "ingesting image failed")
 				}
 			}
 		}
@@ -80,7 +80,7 @@ var ingestCmd = &cobra.Command{
 				if info.IsDir() {
 					return nil
 				}
-				img, err := annotation.DecodeImage(path)
+				img, err := web.DecodeImage(path)
 				if err != nil {
 					// Mixed input folders commonly contain non-images; skip them.
 					logger.Debug("skipping non-image file", "path", path, "err", err)

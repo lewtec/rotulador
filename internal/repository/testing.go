@@ -7,8 +7,8 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	appdb "github.com/lewtec/rotulador/db"
-	"github.com/lewtec/rotulador/db/migrations"
+	appdb "github.com/lewtec/rotulador/internal/db"
+	"github.com/lewtec/rotulador/internal/db/migrations"
 	_ "modernc.org/sqlite"
 )
 

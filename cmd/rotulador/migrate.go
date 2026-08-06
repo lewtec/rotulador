@@ -11,15 +11,16 @@ import (
 	"log/slog"
 	"os"
 
+	"io/fs"
+
 	"github.com/golang-migrate/migrate/v4"
 	migrateSqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/lewtec/rotulador/annotation"
-	"github.com/lewtec/rotulador/db/migrations"
+	"github.com/lewtec/rotulador/internal/db/migrations"
+	"github.com/lewtec/rotulador/internal/web"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	_ "modernc.org/sqlite"
-	"io/fs"
 )
 
 // migrateCmd represents the migrate-legacy-db command
@@ -94,7 +95,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	}
 	defer func() {
 		if err := oldDB.Close(); err != nil {
-			annotation.ReportError(ctx, err, "msg", "failed to close old database")
+			web.ReportError(ctx, err, "msg", "failed to close old database")
 		}
 	}()
 
@@ -102,13 +103,13 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 		return fmt.Errorf("old database schema validation failed: %w", err)
 	}
 
-	newDB, err := annotation.GetDatabase(newDBPath)
+	newDB, err := web.GetDatabase(newDBPath)
 	if err != nil {
 		return fmt.Errorf("create new database: %w", err)
 	}
 	defer func() {
 		if err := newDB.Close(); err != nil {
-			annotation.ReportError(ctx, err, "msg", "failed to close new database")
+			web.ReportError(ctx, err, "msg", "failed to close new database")
 		}
 	}()
 
@@ -122,7 +123,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	}
 	defer func() {
 		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
-			annotation.ReportError(ctx, err, "msg", "failed to rollback transaction")
+			web.ReportError(ctx, err, "msg", "failed to rollback transaction")
 		}
 	}()
 
@@ -224,7 +225,7 @@ func migrateImages(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx) (map[strin
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			annotation.ReportError(ctx, err, "msg", "failed to close rows")
+			web.ReportError(ctx, err, "msg", "failed to close rows")
 		}
 	}()
 
@@ -265,7 +266,7 @@ func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, t
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			annotation.ReportError(ctx, err, "msg", "failed to close rows")
+			web.ReportError(ctx, err, "msg", "failed to close rows")
 		}
 	}()
 

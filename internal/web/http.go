@@ -1,16 +1,18 @@
-package annotation
+package web
 
 import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/lewtec/rotulador/internal/i18n"
 )
 
 // i18nMiddleware adds the appropriate localizer to the request context
 func i18nMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		localizer := GetLocalizerFromRequest(r)
-		ctx := WithLocalizer(r.Context(), localizer)
+		localizer := i18n.GetLocalizerFromRequest(r)
+		ctx := i18n.WithLocalizer(r.Context(), localizer)
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

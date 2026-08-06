@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lewtec/rotulador/annotation"
-	"github.com/lewtec/rotulador/db/migrations"
 	"github.com/golang-migrate/migrate/v4"
 	migrateSqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/lewtec/rotulador/internal/db/migrations"
+	"github.com/lewtec/rotulador/internal/web"
 	_ "modernc.org/sqlite"
 )
 
@@ -56,7 +56,7 @@ func setupQueryTestDB(t *testing.T) (dbPath string, cleanup func()) {
 		t.Fatalf("seed: %v", err)
 	}
 	if err := db.Close(); err != nil {
-		t.Fatalf("close seed db: %v", err)
+		t.Fatalf("close seed internal/db: %v", err)
 	}
 
 	return dbPath, func() {}
@@ -83,13 +83,13 @@ func TestQueryAgainstCurrentSchema(t *testing.T) {
 	dbPath, _ := setupQueryTestDB(t)
 	ctx := t.Context()
 
-	db, err := annotation.GetDatabase(dbPath)
+	db, err := web.GetDatabase(dbPath)
 	if err != nil {
 		t.Fatalf("GetDatabase: %v", err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			t.Errorf("close db: %v", err)
+			t.Errorf("close internal/db: %v", err)
 		}
 	}()
 

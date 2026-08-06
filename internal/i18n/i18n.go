@@ -1,4 +1,4 @@
-package annotation
+package i18n
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nicksnyder/go-i18n/v2/i18n"
+	goi18n "github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 )
 
@@ -19,12 +19,12 @@ import (
 var localesFS embed.FS
 
 var (
-	bundle        *i18n.Bundle
-	defaultLocal  *i18n.Localizer
+	bundle        *goi18n.Bundle
+	defaultLocal  *goi18n.Localizer
 	currentLocale string = "en"
 
-	// Goroutine-local storage for localizers
-	goroutineLocalizers sync.Map // map[uint64]*i18n.Localizer
+	// Goroutine-local storage for localizers (mold template bridge; removed in templ PR)
+	goroutineLocalizers sync.Map // map[uint64]*goi18n.Localizer
 )
 
 type localizerKey struct{}
@@ -39,7 +39,7 @@ func getGoroutineID() uint64 {
 }
 
 func init() {
-	bundle = i18n.NewBundle(language.English)
+	bundle = goi18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 
 	// Load all locale files
@@ -58,42 +58,42 @@ func init() {
 		}
 	}
 
-	defaultLocal = i18n.NewLocalizer(bundle, currentLocale)
+	defaultLocal = goi18n.NewLocalizer(bundle, currentLocale)
 }
 
 // SetLanguage sets the current language for translations
 func SetLanguage(lang string) {
 	currentLocale = lang
-	defaultLocal = i18n.NewLocalizer(bundle, currentLocale)
+	defaultLocal = goi18n.NewLocalizer(bundle, currentLocale)
 }
 
 // AddMessage adds a message to the bundle dynamically (useful for YAML config)
 func AddMessage(lang, messageID, translation string) error {
-	return bundle.AddMessages(language.MustParse(lang), &i18n.Message{
+	return bundle.AddMessages(language.MustParse(lang), &goi18n.Message{
 		ID:    messageID,
 		Other: translation,
 	})
 }
 
 // GetLocalizerFromContext retrieves the localizer from context, or returns default
-func GetLocalizerFromContext(ctx context.Context) *i18n.Localizer {
+func GetLocalizerFromContext(ctx context.Context) *goi18n.Localizer {
 	if ctx == nil {
 		return defaultLocal
 	}
 
-	if localizer, ok := ctx.Value(localizerKey{}).(*i18n.Localizer); ok {
+	if localizer, ok := ctx.Value(localizerKey{}).(*goi18n.Localizer); ok {
 		return localizer
 	}
 	return defaultLocal
 }
 
 // WithLocalizer adds a localizer to the context
-func WithLocalizer(ctx context.Context, localizer *i18n.Localizer) context.Context {
+func WithLocalizer(ctx context.Context, localizer *goi18n.Localizer) context.Context {
 	return context.WithValue(ctx, localizerKey{}, localizer)
 }
 
 // GetLocalizerFromRequest creates a localizer based on the Accept-Language header
-func GetLocalizerFromRequest(r *http.Request) *i18n.Localizer {
+func GetLocalizerFromRequest(r *http.Request) *goi18n.Localizer {
 	acceptLang := r.Header.Get("Accept-Language")
 
 	// Parse Accept-Language header to get preferred languages
@@ -115,17 +115,26 @@ func GetLocalizerFromRequest(r *http.Request) *i18n.Localizer {
 		langs = []string{currentLocale}
 	}
 
-	return i18n.NewLocalizer(bundle, langs...)
+	return goi18n.NewLocalizer(bundle, langs...)
 }
 
-// i translates a message ID using the goroutine-local localizer if available,
+// BindLocalizer stores loc for the current goroutine so T works inside mold templates.
+// Call the returned function to clear the binding when rendering finishes.
+func BindLocalizer(loc *goi18n.Localizer) func() {
+	gid := getGoroutineID()
+	goroutineLocalizers.Store(gid, loc)
+	return func() {
+		goroutineLocalizers.Delete(gid)
+	}
+}
+
+// T translates a message ID using the goroutine-local localizer if available,
 // otherwise uses the default localizer
-func i(messageID string) string {
-	// Try to get goroutine-local localizer first
+func T(messageID string) string {
 	gid := getGoroutineID()
 	if loc, ok := goroutineLocalizers.Load(gid); ok {
-		if localizer, ok := loc.(*i18n.Localizer); ok {
-			msg, err := localizer.Localize(&i18n.LocalizeConfig{
+		if localizer, ok := loc.(*goi18n.Localizer); ok {
+			msg, err := localizer.Localize(&goi18n.LocalizeConfig{
 				MessageID: messageID,
 			})
 			if err != nil {
@@ -135,8 +144,7 @@ func i(messageID string) string {
 		}
 	}
 
-	// Fallback to default localizer
-	msg, err := defaultLocal.Localize(&i18n.LocalizeConfig{
+	msg, err := defaultLocal.Localize(&goi18n.LocalizeConfig{
 		MessageID: messageID,
 	})
 	if err != nil {
@@ -145,14 +153,9 @@ func i(messageID string) string {
 	return msg
 }
 
-// T is an alias for i (for backward compatibility and convenience)
-func T(messageID string) string {
-	return i(messageID)
-}
-
 // LocalizeWithData translates a message with template data
 func LocalizeWithData(messageID string, data map[string]interface{}) string {
-	msg, err := defaultLocal.Localize(&i18n.LocalizeConfig{
+	msg, err := defaultLocal.Localize(&goi18n.LocalizeConfig{
 		MessageID:    messageID,
 		TemplateData: data,
 	})
@@ -165,7 +168,7 @@ func LocalizeWithData(messageID string, data map[string]interface{}) string {
 // LocalizeWithContext translates a message using the localizer from context
 func LocalizeWithContext(ctx context.Context, messageID string) string {
 	localizer := GetLocalizerFromContext(ctx)
-	msg, err := localizer.Localize(&i18n.LocalizeConfig{
+	msg, err := localizer.Localize(&goi18n.LocalizeConfig{
 		MessageID: messageID,
 	})
 	if err != nil {
@@ -177,7 +180,7 @@ func LocalizeWithContext(ctx context.Context, messageID string) string {
 // LocalizeWithContextAndData translates a message with template data using context
 func LocalizeWithContextAndData(ctx context.Context, messageID string, data map[string]interface{}) string {
 	localizer := GetLocalizerFromContext(ctx)
-	msg, err := localizer.Localize(&i18n.LocalizeConfig{
+	msg, err := localizer.Localize(&goi18n.LocalizeConfig{
 		MessageID:    messageID,
 		TemplateData: data,
 	})

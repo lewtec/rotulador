@@ -1,21 +1,12 @@
 [tools]
-"github:sqlc-dev/sqlc" = "1.31.1"
 go = "1.25.5"
 "go:github.com/nicksnyder/go-i18n/v2/goi18n" = "2.6.1"
 golangci-lint = "2.8.0"
 node = "24"
 
 [tasks.gen]
-description = "Generate all assets"
-depends = ["gen:*"]
-
-[tasks."gen:css"]
-description = "Generate CSS from Tailwind"
-run = "npm run build:css"
-
-[tasks."gen:sqlc"]
-description = "Generate Go code from SQL queries using sqlc"
-run = "sqlc generate"
+description = "go generate ./... (CSS via npm, sqlc via go tool)"
+run = "go generate ./..."
 
 [tasks."gen:i18n"]
 description = "Extract and merge i18n strings"
@@ -26,9 +17,9 @@ echo "→ Merging with existing translations..."
 # Merge only message catalogs (en/pt-BR). Do not pass active.*.json as sources —
 # they are merge outputs and also use flat keys that can collide with goi18n
 # reserved field names (e.g. Description).
-goi18n merge -format json -outdir annotation/locales active.en.json annotation/locales/en.json annotation/locales/pt-BR.json
+goi18n merge -format json -outdir internal/i18n/locales active.en.json internal/i18n/locales/en.json internal/i18n/locales/pt-BR.json
 rm -f active.en.json
-echo "✓ i18n files updated. Check annotation/locales/translate.*.json for new strings to translate."
+echo "✓ i18n files updated. Check internal/i18n/locales/translate.*.json for new strings to translate."
 """
 
 [tasks.lint]

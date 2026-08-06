@@ -1,11 +1,11 @@
-package annotation
+package web
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 
-	appdb "github.com/lewtec/rotulador/db"
+	appdb "github.com/lewtec/rotulador/internal/db"
 	_ "modernc.org/sqlite"
 )
 

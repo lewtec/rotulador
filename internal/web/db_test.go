@@ -1,11 +1,11 @@
-package annotation
+package web
 
 import (
 	"path/filepath"
 	"strings"
 	"testing"
 
-	appdb "github.com/lewtec/rotulador/db"
+	appdb "github.com/lewtec/rotulador/internal/db"
 )
 
 func TestGetDatabaseAppliesForeignKeys(t *testing.T) {

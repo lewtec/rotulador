@@ -11,11 +11,11 @@
 - **No silent failures:** Every `catch` block, every `.catch()`, every error callback that is not an expected/recoverable condition MUST call the centralized error-reporting function.
 
 ## Code Generation
-- Test tasks typically require code generation tasks (`codegen:sqlc`, `codegen:i18n`) to be run first.
-- Do not modify the database schema defined in `db/migrations` or rename columns.
+- Prefer `mise run gen` / `go generate ./...` (CSS + sqlc). i18n extract is `mise run gen:i18n`.
+- Do not modify the database schema defined in `internal/db/migrations` or rename columns.
 
 ## Database
-- Database schema changes must be defined in `db/migrations` using `golang-migrate`.
+- Database schema changes must be defined in `internal/db/migrations` using `golang-migrate`.
 - The test database in `internal/repository/testing.go` automatically applies these migrations.
 
 ## Frontend

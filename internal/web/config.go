@@ -1,4 +1,4 @@
-package annotation
+package web
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/lewtec/rotulador/internal/i18n"
 	"gopkg.in/yaml.v3"
 )
 
@@ -96,7 +97,7 @@ func LoadConfig(filename string) (*Config, error) {
 				return nil, fmt.Errorf("one i18n item is invalid: does not provide the value attribute")
 			}
 			// Add to bundle as English messages
-			if err := AddMessage("en", term.Name, term.Value); err != nil {
+			if err := i18n.AddMessage("en", term.Name, term.Value); err != nil {
 				slog.Warn("failed to add i18n message", "name", term.Name, "err", err)
 			}
 		}

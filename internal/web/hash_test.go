@@ -1,4 +1,4 @@
-package annotation
+package web
 
 import (
 	"crypto/sha256"

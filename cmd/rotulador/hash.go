@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/lewtec/rotulador/annotation"
+	"github.com/lewtec/rotulador/internal/web"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +13,7 @@ var hashPasswordCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		password := args[0]
-		hash, err := annotation.HashPassword(password)
+		hash, err := web.HashPassword(password)
 		if err != nil {
 			return err
 		}
