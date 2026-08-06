@@ -22,7 +22,6 @@ import (
 	"github.com/lewtec/rotulador/internal/db/migrations"
 	"github.com/lewtec/rotulador/internal/domain"
 	"github.com/lewtec/rotulador/internal/repository"
-	"github.com/lewtec/rotulador/internal/ui/layout"
 	"github.com/lewtec/rotulador/internal/ui/pages"
 	moderncsqlite "modernc.org/sqlite"
 )
@@ -480,6 +479,60 @@ func (a *AnnotatorApp) GetTask(taskID string) *ConfigTask {
 	return nil
 }
 
+// buildHelpTask loads progress stats for a help list or detail view.
+// When detail is true, totals come from phase progress and class metadata is included.
+func (a *AnnotatorApp) buildHelpTask(ctx context.Context, task *ConfigTask, detail bool) pages.HelpTask {
+	availableCount, err := a.CountAvailableImages(ctx, task.ID)
+	if err != nil {
+		ReportError(ctx, err, "msg", "error counting available images", "task", task.ID)
+		availableCount = 0
+	}
+
+	phaseProgress, err := a.GetPhaseProgressStats(ctx, task.ID)
+	if err != nil {
+		ReportError(ctx, err, "msg", "error getting phase progress", "task", task.ID)
+		phaseProgress = &PhaseProgress{}
+	}
+
+	ht := pages.HelpTask{
+		ID:             task.ID,
+		Name:           task.Name,
+		ShortName:      task.ShortName,
+		AvailableCount: availableCount,
+		PhaseProgress:  ProgressUI(phaseProgress),
+		If:             task.If,
+	}
+
+	if detail {
+		ht.TotalCount = phaseProgress.Completed + phaseProgress.Pending
+		ht.CompletedCount = phaseProgress.Completed
+		ht.Classes = make([]pages.HelpClass, 0, len(task.Classes))
+		for classID, class := range task.Classes {
+			hc := pages.HelpClass{ID: classID}
+			if class != nil {
+				hc.Name = class.Name
+				hc.Description = class.Description
+				hc.Examples = class.Examples
+			}
+			ht.Classes = append(ht.Classes, hc)
+		}
+		return ht
+	}
+
+	totalEligible, err := a.CountEligibleImages(ctx, task.ID)
+	if err != nil {
+		ReportError(ctx, err, "msg", "error counting eligible images", "task", task.ID)
+		totalEligible = availableCount
+	}
+	completedCount := totalEligible - availableCount
+	if completedCount < 0 {
+		completedCount = 0
+	}
+	ht.TotalCount = totalEligible
+	ht.CompletedCount = completedCount
+	return ht
+}
+
 func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 	a.init()
 	mux := http.NewServeMux()
@@ -491,7 +544,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			return
 		}
 
-		err := Render(r.Context(), w, pages.Home(layout.ShellProps{Title: "Welcome to Rotulador", Stylesheet: StylesheetHref()}, pages.HomeData{
+		err := Render(r.Context(), w, pages.Home(PageShell("Welcome to Rotulador"), pages.HomeData{
 			Description: a.Config.Meta.Description,
 		}))
 		if err != nil {
@@ -531,39 +584,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		if len(itemPath) == 1 {
 			helpTasks = make([]pages.HelpTask, 0, len(a.Config.Tasks))
 			for _, task := range a.Config.Tasks {
-				availableCount, err := a.CountAvailableImages(r.Context(), task.ID)
-				if err != nil {
-					ReportError(r.Context(), err, "msg", "error counting available images", "task", task.ID)
-					availableCount = 0
-				}
-
-				totalEligible, err := a.CountEligibleImages(r.Context(), task.ID)
-				if err != nil {
-					ReportError(r.Context(), err, "msg", "error counting eligible images", "task", task.ID)
-					totalEligible = availableCount
-				}
-
-				completedCount := totalEligible - availableCount
-				if completedCount < 0 {
-					completedCount = 0
-				}
-
-				phaseProgress, err := a.GetPhaseProgressStats(r.Context(), task.ID)
-				if err != nil {
-					ReportError(r.Context(), err, "msg", "error getting phase progress", "task", task.ID)
-					phaseProgress = &PhaseProgress{}
-				}
-
-				helpTasks = append(helpTasks, pages.HelpTask{
-					ID:             task.ID,
-					Name:           task.Name,
-					ShortName:      task.ShortName,
-					AvailableCount: availableCount,
-					TotalCount:     totalEligible,
-					CompletedCount: completedCount,
-					PhaseProgress:  ProgressUI(phaseProgress),
-					If:             task.If,
-				})
+				helpTasks = append(helpTasks, a.buildHelpTask(r.Context(), task, false))
 			}
 		} else if len(itemPath) == 2 {
 			helpTaskID := itemPath[1]
@@ -572,41 +593,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				http.NotFoundHandler().ServeHTTP(w, r)
 				return
 			}
-
-			phaseProgress, err := a.GetPhaseProgressStats(r.Context(), helpTaskID)
-			if err != nil {
-				ReportError(r.Context(), err, "msg", "error getting phase progress", "task", helpTaskID)
-				phaseProgress = &PhaseProgress{}
-			}
-
-			availableCount, err := a.CountAvailableImages(r.Context(), helpTaskID)
-			if err != nil {
-				ReportError(r.Context(), err, "msg", "error counting available images", "task", helpTaskID)
-				availableCount = 0
-			}
-
-			classes := make([]pages.HelpClass, 0, len(task.Classes))
-			for classID, class := range task.Classes {
-				hc := pages.HelpClass{ID: classID}
-				if class != nil {
-					hc.Name = class.Name
-					hc.Description = class.Description
-					hc.Examples = class.Examples
-				}
-				classes = append(classes, hc)
-			}
-
-			ht := pages.HelpTask{
-				ID:             task.ID,
-				Name:           task.Name,
-				ShortName:      task.ShortName,
-				AvailableCount: availableCount,
-				TotalCount:     phaseProgress.Completed + phaseProgress.Pending,
-				CompletedCount: phaseProgress.Completed,
-				PhaseProgress:  ProgressUI(phaseProgress),
-				If:             task.If,
-				Classes:        classes,
-			}
+			ht := a.buildHelpTask(r.Context(), task, true)
 			helpTasks = []pages.HelpTask{ht}
 			detail = &ht
 		} else {
@@ -614,7 +601,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			return
 		}
 
-		err := Render(r.Context(), w, pages.Help(layout.ShellProps{Title: title, Stylesheet: StylesheetHref()}, pages.HelpData{
+		err := Render(r.Context(), w, pages.Help(PageShell(title), pages.HelpData{
 			Description: a.Config.Meta.Description,
 			Detail:      detail,
 			Tasks:       helpTasks,
@@ -638,7 +625,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				return
 			}
 			if step == nil {
-				err := Render(r.Context(), w, pages.Complete(layout.ShellProps{Title: "All annotations are done!", Stylesheet: StylesheetHref()}))
+				err := Render(r.Context(), w, pages.Complete(PageShell("All annotations are done!")))
 				if err != nil {
 					ReportError(r.Context(), err, "msg", "error rendering complete template")
 				}
@@ -757,7 +744,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			phaseProgress = &PhaseProgress{}
 		}
 
-		err = Render(r.Context(), w, pages.Annotate(layout.ShellProps{Title: "annotation", Stylesheet: StylesheetHref()}, pages.AnnotateData{
+		err = Render(r.Context(), w, pages.Annotate(PageShell("annotation"), pages.AnnotateData{
 			TaskID:        taskID,
 			TaskName:      task.Name,
 			ImageID:       imageID,

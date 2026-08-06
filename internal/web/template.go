@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	_ "embed"
 	"fmt"
+
+	"github.com/lewtec/rotulador/internal/ui/layout"
 )
 
 //go:embed assets/css/output.css
@@ -31,6 +33,11 @@ func CSS() string {
 // Cache-Control does not leave clients on a stale layout.
 func StylesheetHref() string {
 	return fmt.Sprintf("/static/style.css?v=%s", cssETag)
+}
+
+// PageShell builds layout.ShellProps with title and the cache-busted stylesheet.
+func PageShell(title string) layout.ShellProps {
+	return layout.ShellProps{Title: title, Stylesheet: StylesheetHref()}
 }
 
 // GetFavicon returns the embedded favicon content.
