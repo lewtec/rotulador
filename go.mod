@@ -20,6 +20,7 @@ require github.com/stretchr/testify v1.11.1 // indirect
 require (
 	cel.dev/expr v0.24.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/cubicdaiya/gonp v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -52,6 +53,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
@@ -67,4 +69,7 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 )
 
-tool github.com/sqlc-dev/sqlc/cmd/sqlc
+tool (
+	github.com/nicksnyder/go-i18n/v2/goi18n
+	github.com/sqlc-dev/sqlc/cmd/sqlc
+)
