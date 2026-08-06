@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-# Deprecated: use `mise run release -- patch|minor|major|next` (GoReleaser + svu).
-set -euo pipefail
-echo "make_release is deprecated. Use: mise run release -- ${1:-patch}" >&2
-exec mise run release -- "${1:-patch}"

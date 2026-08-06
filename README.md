@@ -108,7 +108,8 @@ Multi-platform **binaries** and a **GHCR** image (`ghcr.io/lewtec/rotulador`) vi
 mise run release -- patch   # or minor | major | next
 ```
 
-Tags are unprefixed (`0.2.4`), matching existing releases. CI runs `goreleaser release` on tags / `workflow_dispatch` (binaries + container).
+Tags are unprefixed (`0.2.4`), matching existing releases. The version is stamped into the binary via Go ldflags (`rotulador --version`). CI runs `goreleaser release` on tags / `workflow_dispatch` (binaries + container).
+
 ### Progress Tracking
 The system automatically tracks:
 - Completed annotations
