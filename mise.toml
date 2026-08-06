@@ -48,7 +48,7 @@ description = "Validate .goreleaser.yaml"
 run = "goreleaser check"
 
 [tasks.release]
-description = "Tag with svu and publish binaries via GoReleaser (no Docker)"
+description = "Tag with svu and publish binaries + GHCR image via GoReleaser"
 depends = ["ci"]
 usage = '''
 arg "<version>" help="New version" {

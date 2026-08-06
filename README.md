@@ -102,14 +102,13 @@ rotulador/
 See `mise.toml` for tasks (`mise ci`, `mise run gen`, …).
 
 ### Release
-Multi-platform binaries are published with [GoReleaser](https://goreleaser.com) (no Docker).
+Multi-platform **binaries** and a **GHCR** image (`ghcr.io/lewtec/rotulador`) via [GoReleaser](https://goreleaser.com).
 
 ```bash
 mise run release -- patch   # or minor | major | next
 ```
 
-Tags are unprefixed (`0.2.4`), matching existing releases. CI runs `goreleaser` on tags and `workflow_dispatch`.
-
+Tags are unprefixed (`0.2.4`), matching existing releases. CI runs `goreleaser release` on tags / `workflow_dispatch` (binaries + container).
 ### Progress Tracking
 The system automatically tracks:
 - Completed annotations
