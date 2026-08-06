@@ -21,13 +21,17 @@
   .kbd-hint {
     @apply text-xs opacity-70 ml-1;
   }
-}
 
-/* Ensure dvh utilities exist even if content scan misses a path. */
-@utility h-dvh {
-  height: 100dvh;
-}
-@utility max-h-dvh {
-  max-height: 100dvh;
+  /* Full viewport shell: vh for desktop/fallback, dvh so mobile URL chrome does not cover the dock. */
+  .app-frame {
+    min-height: 100vh;
+    height: 100vh;
+  }
+  @supports (height: 100dvh) {
+    .app-frame {
+      min-height: 100dvh;
+      height: 100dvh;
+    }
+  }
 }
 

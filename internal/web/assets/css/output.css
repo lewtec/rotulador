@@ -3340,17 +3340,8 @@
   .h-12 {
     height: calc(var(--spacing) * 12);
   }
-  .h-dvh {
-    height: 100dvh;
-  }
   .h-full {
     height: 100%;
-  }
-  .h-screen {
-    height: 100vh;
-  }
-  .max-h-dvh {
-    max-height: 100dvh;
   }
   .max-h-full {
     max-height: 100%;
@@ -3829,6 +3820,16 @@
     font-size: var(--text-xs);
     line-height: var(--tw-leading, var(--text-xs--line-height));
     opacity: 70%;
+  }
+  .app-frame {
+    min-height: 100vh;
+    height: 100vh;
+  }
+  @supports (height: 100dvh) {
+    .app-frame {
+      min-height: 100dvh;
+      height: 100dvh;
+    }
   }
 }
 @layer base {

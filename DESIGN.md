@@ -19,13 +19,13 @@ Structure + quiet craft. Not a rebrand. Steal Backstage layout primitives, not f
 Viewport-locked column:
 
 ```
-body: h-dvh max-h-dvh overflow-hidden bg-base-200 text-base-content
+body.app-frame: height 100vh (fallback) / 100dvh when supported
   header: shrink-0  (navbar bg-base-100 border-b border-base-300)
   main#app-main: flex-1 min-h-0  (scroll or flex; toast host lives here)
   dock?: shrink-0   (annotate only: progress + action buttons; safe-area padding)
 ```
 
-- Use **`dvh`**, not `100vh` / `h-screen` — mobile URL bars must not cover the dock.
+- **`.app-frame`**: `100vh` so desktop always fills the window; `100dvh` under `@supports` so mobile URL bars do not cover the dock. No `max-height` cap.
 - Dock bottom padding includes `env(safe-area-inset-bottom)`; viewport meta has `viewport-fit=cover`.
 - **No product footer.**
 - Toast host is **scoped to main** so nothing under main (the dock) is covered.
