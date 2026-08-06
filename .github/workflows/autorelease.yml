@@ -3,98 +3,104 @@ name: Autorelease
 on:
   push:
     branches:
-      - main
+    - main
     tags:
-      - "*"
+    - '*'
   pull_request:
     branches:
-      - main
+    - main
   workflow_dispatch:
     inputs:
       new_version:
-        description: "New tag version (svu)"
-        default: "patch"
+        description: 'New tag version'
+        default: 'patch'
         type: choice
         options:
-          - next
-          - patch
-          - minor
-          - major
+        - next
+        - patch
+        - minor
+        - major
   schedule:
-    - cron: "0 2 * * 6" # saturday 2am
-
+  - cron: '0 2 * * 6'   # saturday 2am
 jobs:
   autorelease:
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
+      USERNAME: ${{ github.actor }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
+      attestations: write
+      id-token: write
       pull-requests: write
-    env:
-      REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-        with:
-          fetch-depth: 0
+    - name: Login to registry
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ env.USERNAME }}
+        password: ${{ github.token }}
 
-      - uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # v3
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      with:
+        fetch-depth: 0
+    - uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # v3
+    - name: Setup git config
+      run: |
+        git config user.name actions-bot
+        git config user.email actions-bot@users.noreply.github.com
+        
+    - name: Install frontend dependencies
+      run: npm install
 
-      - name: Setup git config
-        run: |
-          git config user.name actions-bot
-          git config user.email actions-bot@users.noreply.github.com
+    - name: Generate CSS assets
+      run: npm run build:css
 
-      - name: Login to GHCR
-        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create Pull Request if there is new stuff from updaters
+      uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
+      if: github.event_name != 'pull_request' && github.event_name != 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
+      id: pr_create
+      with:
+        commit-message: Updater script changes
+        branch: updater-bot
+        delete-branch: true
+        title: "Updater: stuff changed"
+        body: |
+          Changes caused from update scripts
 
-      - name: Create Pull Request if there is new stuff from updaters
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
-        if: github.event_name != 'pull_request' && github.event_name != 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
-        id: pr_create
-        with:
-          commit-message: Updater script changes
-          branch: updater-bot
-          delete-branch: true
-          title: "Updater: stuff changed"
-          body: |
-            Changes caused from update scripts
+    - name: Stop if a pull request was created
+      if: github.event_name != 'pull_request' && github.event_name != 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
+      env:
+        PR_NUMBER: ${{ steps.pr_create.outputs.pull-request-number }}
+      run: |
+        if [[ ! -z "$PR_NUMBER" ]]; then
+          echo "The update scripts changed something and a PR was created. Giving up deploy." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
 
-      - name: Stop if a pull request was created
-        if: github.event_name != 'pull_request' && github.event_name != 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
-        env:
-          PR_NUMBER: ${{ steps.pr_create.outputs.pull-request-number }}
-        run: |
-          if [[ -n "$PR_NUMBER" ]]; then
-            echo "The update scripts changed something and a PR was created. Giving up deploy." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+    - name: CI and tests
+      run: mise ci
 
-      - name: CI and tests
-        run: mise ci
+    - name: Validate GoReleaser config
+      run: mise run release:check
 
-      - name: Validate GoReleaser config
-        run: mise run release:check
+    # Binaries only on PR/main (no registry push).
+    - name: Snapshot build (PR / main)
+      if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      run: goreleaser build --snapshot --clean
 
-      # Binaries only on PR/main — no registry push.
-      - name: Snapshot build (PR / main)
-        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-        run: goreleaser build --snapshot --clean
+    # Tag + GitHub Release + GHCR image (login step above).
+    - name: Make release if everything looks right
+      if: github.event_name == 'workflow_dispatch'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NEW_VERSION: ${{ github.event.inputs.new_version }}
+      run: mise run release -- "${NEW_VERSION:-patch}"
 
-      - name: Tag and release (workflow_dispatch)
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEW_VERSION: ${{ github.event.inputs.new_version }}
-        run: mise run release -- "${NEW_VERSION:-patch}"
-
-      - name: Release (tag push)
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: goreleaser release --clean
+    - name: Release on tag
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: goreleaser release --clean
