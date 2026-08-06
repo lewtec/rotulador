@@ -83,17 +83,14 @@ auth:
 ### Project Structure
 ```
 rotulador/
-├── annotation/          # Core annotation logic
-│   ├── templates/      # Mold templates
-│   │   ├── layouts/    # Base layouts
-│   │   └── pages/      # Page templates
-│   └── assets/         # Generated CSS
-├── cmd/                # CLI commands
-│   ├── init.go        # Project initialization
-│   ├── annotator.go   # Web server
-│   ├── ingest.go      # Image import
-│   └── query.go       # Database queries
-└── examples/          # Sample projects
+├── cmd/rotulador/       # CLI entrypoint
+├── internal/
+│   ├── web/             # HTTP annotator app, mold templates, assets
+│   ├── i18n/            # Locale catalogs and helpers
+│   ├── db/              # Migrations, SQL queries, sqlc output
+│   ├── domain/          # Domain types
+│   └── repository/      # Data access
+└── examples/            # Sample projects
 ```
 
 ## Development

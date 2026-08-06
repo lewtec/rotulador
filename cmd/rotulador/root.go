@@ -17,9 +17,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lewtec/rotulador/annotation"
-	"github.com/spf13/cobra"
 	"io/fs"
+
+	"github.com/lewtec/rotulador/internal/web"
+	"github.com/spf13/cobra"
 )
 
 // cliError is a stable CLI-level sentinel. Prefer these (or fmt.Errorf %w
@@ -83,7 +84,7 @@ With a set of trivial choices scale the classification of a set of images to man
 						return fmt.Errorf("create database file: %w", err)
 					}
 					if err := file.Close(); err != nil {
-						annotation.ReportError(cmd.Context(), err, "msg", "failed to close database file", "path", databaseFile)
+						web.ReportError(cmd.Context(), err, "msg", "failed to close database file", "path", databaseFile)
 					}
 					logger.Info("✓ Database file created.")
 				} else {
@@ -146,22 +147,22 @@ With a set of trivial choices scale the classification of a set of images to man
 		// 5. Server startup logic
 		logger.Info("Initializing project...")
 
-		config, err := annotation.LoadConfig(configFile)
+		config, err := web.LoadConfig(configFile)
 		if err != nil {
 			return fmt.Errorf("load config: %w", err)
 		}
 
-		db, err := annotation.GetDatabase(databaseFile)
+		db, err := web.GetDatabase(databaseFile)
 		if err != nil {
 			return fmt.Errorf("open database: %w", err)
 		}
 		defer func() {
 			if err := db.Close(); err != nil {
-				annotation.ReportError(cmd.Context(), err, "msg", "failed to close database")
+				web.ReportError(cmd.Context(), err, "msg", "failed to close database")
 			}
 		}()
 
-		app := &annotation.AnnotatorApp{
+		app := &web.AnnotatorApp{
 			ImagesDir: imagesDir,
 			Database:  db,
 			Config:    config,
@@ -196,7 +197,7 @@ With a set of trivial choices scale the classification of a set of images to man
 					logger.Info("background image ingestion stopped", "err", err)
 					return
 				}
-				annotation.ReportError(cmd.Context(), err, "msg", "background image ingestion failed")
+				web.ReportError(cmd.Context(), err, "msg", "background image ingestion failed")
 			}
 		}()
 
@@ -242,7 +243,7 @@ func serveHTTP(ctx context.Context, server *http.Server) error {
 		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 15*time.Second)
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			annotation.ReportError(shutdownCtx, err, "msg", "HTTP server shutdown failed")
+			web.ReportError(shutdownCtx, err, "msg", "HTTP server shutdown failed")
 			// Drain ListenAndServe so we do not leak the goroutine on return.
 			<-errCh
 			return fmt.Errorf("http server shutdown: %w", err)

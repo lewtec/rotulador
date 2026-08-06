@@ -1,4 +1,4 @@
-package annotation
+package web
 
 import (
 	"context"
@@ -19,8 +19,9 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/lewtec/rotulador/db/migrations"
+	"github.com/lewtec/rotulador/internal/db/migrations"
 	"github.com/lewtec/rotulador/internal/domain"
+	"github.com/lewtec/rotulador/internal/i18n"
 	"github.com/lewtec/rotulador/internal/repository"
 )
 
@@ -719,7 +720,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			}
 			classes = append(classes, ClassButton{
 				ID:   className,
-				Name: i(classMeta.Name),
+				Name: i18n.T(classMeta.Name),
 				Key:  key,
 			})
 		}

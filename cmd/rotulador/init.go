@@ -1,14 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
-	"github.com/lewtec/rotulador/annotation"
+	"github.com/lewtec/rotulador/internal/web"
 	"github.com/spf13/cobra"
-	"errors"
-	"io/fs"
 )
 
 // initCmd represents the init command
@@ -44,20 +44,20 @@ Example:
 		}
 
 		// Load config
-		config, err := annotation.LoadConfig(configFile)
+		config, err := web.LoadConfig(configFile)
 		if err != nil {
 			return fmt.Errorf("load config: %w", err)
 		}
 
 		// Create database
 		logger.Info("Creating database", "databaseFile", databaseFile)
-		db, err := annotation.GetDatabase(databaseFile)
+		db, err := web.GetDatabase(databaseFile)
 		if err != nil {
 			return fmt.Errorf("create database: %w", err)
 		}
 		defer func() {
 			if err := db.Close(); err != nil {
-				annotation.ReportError(cmd.Context(), err, "msg", "failed to close database")
+				web.ReportError(cmd.Context(), err, "msg", "failed to close database")
 			}
 		}()
 
@@ -73,7 +73,7 @@ Example:
 			}
 
 			logger.Info("Scanning images directory", "absPath", absPath)
-			app := &annotation.AnnotatorApp{
+			app := &web.AnnotatorApp{
 				ImagesDir: absPath,
 				Database:  db,
 				Config:    config,

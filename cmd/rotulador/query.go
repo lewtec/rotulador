@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lewtec/rotulador/annotation"
+	"github.com/lewtec/rotulador/internal/web"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +21,7 @@ func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...any) erro
 	}
 	defer func() {
 		if err := stmt.Close(); err != nil {
-			annotation.ReportError(ctx, err, "msg", "failed to close statement")
+			web.ReportError(ctx, err, "msg", "failed to close statement")
 		}
 	}()
 
@@ -31,7 +31,7 @@ func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...any) erro
 	}
 	defer func() {
 		if err := result.Close(); err != nil {
-			annotation.ReportError(ctx, err, "msg", "failed to close rows")
+			web.ReportError(ctx, err, "msg", "failed to close rows")
 		}
 	}()
 
@@ -86,13 +86,13 @@ Examples:
 		if len(args) < 1 {
 			return cmd.Help()
 		}
-		db, err := annotation.GetDatabase(args[0])
+		db, err := web.GetDatabase(args[0])
 		if err != nil {
 			return err
 		}
 		defer func() {
 			if err := db.Close(); err != nil {
-				annotation.ReportError(cmd.Context(), err, "msg", "failed to close database")
+				web.ReportError(cmd.Context(), err, "msg", "failed to close database")
 			}
 		}()
 
@@ -104,7 +104,7 @@ Examples:
 		}
 		defer func() {
 			if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
-				annotation.ReportError(cmd.Context(), err, "msg", "failed to rollback transaction")
+				web.ReportError(cmd.Context(), err, "msg", "failed to rollback transaction")
 			}
 		}()
 

@@ -1,4 +1,4 @@
-package annotation
+package web
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/lewtec/rotulador/internal/i18n"
 	"github.com/russross/blackfriday/v2"
 )
 
@@ -27,7 +28,7 @@ var (
 	TemplateFuncMap = template.FuncMap{
 		"add": func(a, b int) int { return a + b },
 		"sub": func(a, b int) int { return a - b },
-		"i":   i, // Internationalization function (uses goroutine-local localizer)
+		"i":   i18n.T, // Internationalization function (uses goroutine-local localizer)
 		"markdown": func(text string) template.HTML {
 			// Convert markdown to HTML using blackfriday v2
 			return template.HTML(blackfriday.Run([]byte(text)))
@@ -54,10 +55,8 @@ func RenderPageWithContext(ctx context.Context, w io.Writer, pageName string, da
 	data["CSS"] = template.CSS(cssContent)
 
 	// Set goroutine-local localizer for the i18n function in templates
-	localizer := GetLocalizerFromContext(ctx)
-	gid := getGoroutineID()
-	goroutineLocalizers.Store(gid, localizer)
-	defer goroutineLocalizers.Delete(gid) // Clean up after rendering
+	unbind := i18n.BindLocalizer(i18n.GetLocalizerFromContext(ctx))
+	defer unbind()
 
 	return templateManager.Render(w, "pages/"+pageName, data)
 }

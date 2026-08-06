@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/lewtec/rotulador/internal/domain"
-	"github.com/lewtec/rotulador/internal/sqlc"
+	"github.com/lewtec/rotulador/internal/db/sqlc"
 )
 
 // AnnotationRepository implements domain.AnnotationRepository using SQLC
