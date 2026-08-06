@@ -1,14 +1,17 @@
 package components
 
-// Progress is the segmented phase progress bar model.
+// ProgressSegment is one colored slice of the phase progress bar.
+type ProgressSegment struct {
+	Count   int
+	Percent float64
+	// Label is an i18n message id used in the segment title tooltip.
+	Label string
+	// Class is the Tailwind/daisyUI class for the segment fill (e.g. "bg-success ...").
+	Class string
+}
+
+// Progress is a segmented progress bar: zero or more segments summing toward Total.
 type Progress struct {
-	Completed              int
-	Pending                int
-	FilteredWrongClass     int
-	NotYetAnnotated        int
-	Total                  int
-	CompletedPercent       float64
-	PendingPercent         float64
-	FilteredPercent        float64
-	NotYetAnnotatedPercent float64
+	Total    int
+	Segments []ProgressSegment
 }
