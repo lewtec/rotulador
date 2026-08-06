@@ -63,8 +63,11 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   echo "Tag $TAG already exists" >&2
   exit 1
 fi
-# Version is stamped into the binary via GoReleaser ldflags (-X main.version).
+# Local tag only until GoReleaser succeeds; version is stamped via ldflags.
 git tag "$TAG"
+if ! goreleaser release --clean; then
+  git tag -d "$TAG"
+  exit 1
+fi
 git push origin "refs/tags/$TAG"
-goreleaser release --clean
 '''
