@@ -12,8 +12,9 @@ import (
 templ Annotate(shell layout.ShellProps, d AnnotateData) {
 	@layout.ShellColumn(shell) {
 		<main id="app-main" class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-			<div class="flex min-h-0 flex-1 flex-col px-3 pt-2 sm:px-4">
-				<nav class="mb-1 text-xs text-base-content/50" aria-label="Breadcrumb">
+			// Compact meta stays shrink-0; image pane takes every leftover pixel.
+			<div class="shrink-0 space-y-1 px-3 pt-2 sm:px-4">
+				<nav class="text-xs text-base-content/50" aria-label="Breadcrumb">
 					<a class="link link-hover" href="/">{ i18n.T(ctx, "Home") }</a>
 					<span class="text-base-content/40"> / </span>
 					<a class="link link-hover" href={ fmt.Sprintf("/help/%s", d.TaskID) }>{ d.TaskName }</a>
@@ -29,7 +30,7 @@ templ Annotate(shell layout.ShellProps, d AnnotateData) {
 						{ i18n.T(ctx, "Help") }
 					</a>
 				}
-				<div class="mb-2 flex min-w-0 flex-wrap items-center gap-2 text-xs text-base-content/60">
+				<div class="flex min-w-0 flex-wrap items-center gap-2 pb-1 text-xs text-base-content/60">
 					// Filename stays out of JS string literals: data attributes only.
 					<button
 						type="button"
@@ -47,16 +48,17 @@ templ Annotate(shell layout.ShellProps, d AnnotateData) {
 						</span>
 					}
 				</div>
-				<div class="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-base-100">
-					<img
-						src={ fmt.Sprintf("/asset/%s", d.ImageID) }
-						alt="Image to annotate"
-						class="max-h-full max-w-full object-contain"
-					/>
-					<div id="copy-toast" class="toast toast-center toast-bottom pointer-events-none absolute inset-x-0 bottom-2 z-10 hidden">
-						<div class="alert alert-success py-2 text-sm shadow">
-							<span id="copy-toast-message">{ i18n.T(ctx, "Copied to clipboard!") }</span>
-						</div>
+			</div>
+			// Absolute fill + object-contain: max-* alone does not grow into flex free space.
+			<div class="relative min-h-0 w-full flex-1 overflow-hidden bg-base-100">
+				<img
+					src={ fmt.Sprintf("/asset/%s", d.ImageID) }
+					alt="Image to annotate"
+					class="absolute inset-0 h-full w-full object-contain"
+				/>
+				<div id="copy-toast" class="toast toast-center toast-bottom pointer-events-none absolute inset-x-0 bottom-2 z-10 hidden">
+					<div class="alert alert-success py-2 text-sm shadow">
+						<span id="copy-toast-message">{ i18n.T(ctx, "Copied to clipboard!") }</span>
 					</div>
 				</div>
 			</div>
