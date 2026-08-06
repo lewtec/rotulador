@@ -33,5 +33,23 @@
       height: 100dvh;
     }
   }
+
+  /*
+   * Annotate image pane: Chromium mobile (incl. Vivaldi) often leaves flex-1 height
+   * indefinite. basis:0 + min-height:0 forces a real free-space height; the img then
+   * object-contains into that box without cropping.
+   */
+  .annotate-image-pane {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+  }
+  .annotate-image {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
 }
 

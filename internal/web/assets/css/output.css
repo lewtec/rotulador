@@ -2235,9 +2235,6 @@
   .sticky {
     position: sticky;
   }
-  .inset-0 {
-    inset: 0px;
-  }
   .inset-x-0 {
     inset-inline: 0px;
   }
@@ -3388,8 +3385,8 @@
   .shrink-0 {
     flex-shrink: 0;
   }
-  .grow {
-    flex-grow: 1;
+  .basis-0 {
+    flex-basis: 0px;
   }
   @layer daisyui.l1.l2.l3 {
     .link {
@@ -3830,6 +3827,18 @@
       min-height: 100dvh;
       height: 100dvh;
     }
+  }
+  .annotate-image-pane {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+  }
+  .annotate-image {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
   }
 }
 @layer base {

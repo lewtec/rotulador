@@ -11,8 +11,9 @@ import (
 
 templ Annotate(shell layout.ShellProps, d AnnotateData) {
 	@layout.ShellColumn(shell) {
-		<main id="app-main" class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-			// Compact meta stays shrink-0; image pane takes every leftover pixel.
+		// min-h-0 + basis-0 on flex children: Chromium mobile (Vivaldi/Chrome) otherwise
+		// gives the image pane no definite height, so object-contain cannot grow.
+		<main id="app-main" class="relative flex min-h-0 min-w-0 flex-1 basis-0 flex-col overflow-hidden">
 			<div class="shrink-0 space-y-1 px-3 pt-2 sm:px-4">
 				<div class="flex min-w-0 items-center gap-2 text-xs text-base-content/50">
 					<nav class="min-w-0 flex-1 truncate" aria-label="Breadcrumb">
@@ -50,12 +51,11 @@ templ Annotate(shell layout.ShellProps, d AnnotateData) {
 					</a>
 				}
 			</div>
-			// Absolute fill + object-contain: max-* alone does not grow into flex free space.
-			<div class="relative min-h-0 w-full flex-1 overflow-hidden bg-base-100">
+			<div class="annotate-image-pane relative flex min-h-0 min-w-0 flex-1 basis-0 items-center justify-center overflow-hidden bg-base-100">
 				<img
 					src={ fmt.Sprintf("/asset/%s", d.ImageID) }
 					alt="Image to annotate"
-					class="absolute inset-0 h-full w-full object-contain"
+					class="annotate-image max-h-full max-w-full object-contain"
 				/>
 				<div id="copy-toast" class="toast toast-center toast-bottom pointer-events-none absolute inset-x-0 bottom-2 z-10 hidden">
 					<div class="alert alert-success py-2 text-sm shadow">
