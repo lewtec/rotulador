@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lewtec/rotulador/internal/ui/layout"
 	"github.com/lewtec/rotulador/internal/ui/pages"
 )
 
@@ -15,7 +14,7 @@ func TestAnnotateTemplateKeepsFilenameOutOfJSString(t *testing.T) {
 	const evil = `x');alert(1);//`
 
 	var buf bytes.Buffer
-	comp := pages.Annotate(layout.ShellProps{Title: "Annotate", Stylesheet: StylesheetHref()}, pages.AnnotateData{
+	comp := pages.Annotate(PageShell("Annotate"), pages.AnnotateData{
 		TaskID:        "phase1",
 		TaskName:      "Phase 1",
 		ImageID:       "abc123",
