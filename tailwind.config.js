@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./internal/web/templates/**/*.html",
+    "./internal/ui/**/*.{templ,go}",
   ],
   daisyui: {
     themes: ["light", "dark"],

@@ -4,7 +4,7 @@ golangci-lint = "2.8.0"
 node = "24"
 
 [tasks.gen]
-description = "go generate ./... (CSS, sqlc, goi18n)"
+description = "go generate ./... (CSS, sqlc, templ, goi18n)"
 run = "go generate ./..."
 
 [tasks.lint]

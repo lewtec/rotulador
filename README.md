@@ -75,9 +75,9 @@ auth:
 ## Architecture
 
 ### Stack
-- **Backend**: Go templates with HTMX for SPA-like interactions
+- **Backend**: templ components with HTMX for SPA-like interactions
 - **Frontend**: DaisyUI + TailwindCSS with @tailwindcss/typography
-- **Templates**: Mold for layout inheritance
+- **UI**: `internal/ui` (layout / pages / components)
 - **Database**: SQLc + SQLite (modernc.org/sqlite - pure Go, no CGO)
 
 ### Project Structure
@@ -85,7 +85,8 @@ auth:
 rotulador/
 ├── cmd/rotulador/       # CLI entrypoint
 ├── internal/
-│   ├── web/             # HTTP annotator app, mold templates, assets
+│   ├── web/             # HTTP annotator app + embedded assets
+│   ├── ui/              # templ layout, pages, components
 │   ├── i18n/            # Locale catalogs and helpers
 │   ├── db/              # Migrations, SQL queries, sqlc output
 │   ├── domain/          # Domain types

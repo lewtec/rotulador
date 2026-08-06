@@ -11,8 +11,7 @@ import (
 // i18nMiddleware adds the appropriate localizer to the request context
 func i18nMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		localizer := i18n.GetLocalizerFromRequest(r)
-		ctx := i18n.WithLocalizer(r.Context(), localizer)
+		ctx := i18n.With(r.Context(), i18n.FromRequest(r))
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

@@ -1,0 +1,116 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/lewtec/rotulador/internal/i18n"
+	"github.com/lewtec/rotulador/internal/ui/components"
+	"github.com/lewtec/rotulador/internal/ui/layout"
+)
+
+templ Annotate(shell layout.ShellProps, d AnnotateData) {
+	@layout.Shell(shell) {
+		<div class="breadcrumbs text-sm mb-4">
+			<ul>
+				<li><a href="/">{ i18n.T(ctx, "Home") }</a></li>
+				<li><a href={ fmt.Sprintf("/help/%s", d.TaskID) }>{ d.TaskName }</a></li>
+				<li>{ i18n.T(ctx, "Annotate") }</li>
+			</ul>
+		</div>
+		<div class="card bg-base-200 shadow-xl mb-4">
+			<div class="card-body">
+				<div class="flex justify-between items-center mb-2">
+					<div class="flex-1">
+						<h2 class="card-title">{ d.TaskName }</h2>
+						<div class="flex gap-3 items-center mt-1">
+							// Keep filename out of a JS string literal: use data attributes.
+							<p
+								class="text-xs opacity-70 font-mono cursor-pointer"
+								data-filename={ d.ImageFilename }
+								data-copied={ i18n.T(ctx, "Copied to clipboard!") }
+								onclick="navigator.clipboard.writeText(this.dataset.filename); showToast(this.dataset.copied)"
+							>
+								{ d.ImageFilename }
+							</p>
+							if d.Progress != nil {
+								<span class="text-xs opacity-70">
+									{ fmt.Sprintf("%d/%d", d.Progress.CompletedCount, d.Progress.TotalCount) }
+								</span>
+							}
+						</div>
+					</div>
+					<a href={ fmt.Sprintf("/help/%s", d.TaskID) } class="btn btn-sm btn-ghost flex-shrink-0">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						</svg>
+					</a>
+				</div>
+				@components.ProgressBar(d.PhaseProgress)
+			</div>
+		</div>
+		<div class="annotation-buttons mb-6" id="annotation-controls">
+			for _, class := range d.Classes {
+				<button
+					class="btn btn-primary btn-lg flex-1 min-w-[150px]"
+					hx-post={ fmt.Sprintf("/annotate/%s/%s", d.TaskID, d.ImageID) }
+					hx-vals={ hxVals(class.ID, "on") }
+					data-key={ class.Key }
+				>
+					{ i18n.T(ctx, class.Name) }
+					if class.Key != "" {
+						<kbd class="kbd kbd-sm ml-2">{ class.Key }</kbd>
+					}
+				</button>
+			}
+			<button
+				class="btn btn-warning btn-lg flex-1 min-w-[150px]"
+				hx-post={ fmt.Sprintf("/annotate/%s/%s", d.TaskID, d.ImageID) }
+				hx-vals={ hxVals("", "off") }
+				data-key="?"
+			>
+				{ i18n.T(ctx, "Not Sure") } <kbd class="kbd kbd-sm ml-2">?</kbd>
+			</button>
+		</div>
+		<div class="toast toast-center" id="copy-toast" style="display: none;">
+			<div class="alert alert-success">
+				<span id="copy-toast-message">{ i18n.T(ctx, "Copied to clipboard!") }</span>
+			</div>
+		</div>
+		<div class="image-container">
+			<img src={ fmt.Sprintf("/asset/%s", d.ImageID) } alt="Image to annotate" class="rounded-lg shadow-2xl"/>
+		</div>
+		<script>
+			document.addEventListener('keydown', function (e) {
+				const buttons = document.querySelectorAll('#annotation-controls button[data-key]');
+				buttons.forEach(button => {
+					const key = button.getAttribute('data-key');
+					if (key && e.key.toLowerCase() === key.toLowerCase()) {
+						e.preventDefault();
+						button.click();
+					}
+				});
+			});
+			function showToast(message) {
+				const toast = document.getElementById('copy-toast');
+				const toastMessage = document.getElementById('copy-toast-message');
+				toastMessage.innerText = message;
+				toast.style.display = 'block';
+				setTimeout(() => {
+					toast.style.display = 'none';
+				}, 2000);
+			}
+		</script>
+	}
+}
+
+func hxVals(selectedClass, sure string) string {
+	b, err := json.Marshal(map[string]string{
+		"selectedClass": selectedClass,
+		"sure":          sure,
+	})
+	if err != nil {
+		return `{"selectedClass":"","sure":"off"}`
+	}
+	return string(b)
+}
