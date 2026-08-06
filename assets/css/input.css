@@ -35,21 +35,31 @@
   }
 
   /*
-   * Annotate image pane: Chromium mobile (incl. Vivaldi) often leaves flex-1 height
-   * indefinite. basis:0 + min-height:0 forces a real free-space height; the img then
-   * object-contains into that box without cropping.
+   * Annotate layout: CSS grid is more reliable than nested flex for "fill leftover
+   * height" on Chromium mobile (Vivaldi). Image uses a real 100%×100% box with
+   * object-fit:contain so it scales up to the free space without cropping.
    */
-  .annotate-image-pane {
+  .annotate-main {
+    display: grid;
+    grid-template-rows: auto 1fr;
     flex: 1 1 0;
     min-height: 0;
     min-width: 0;
+    overflow: hidden;
+  }
+  .annotate-image-pane {
+    position: relative;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
   }
   .annotate-image {
-    width: auto;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
+    object-position: center;
   }
 }
 

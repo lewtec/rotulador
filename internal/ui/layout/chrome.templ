@@ -55,7 +55,8 @@ templ Shell(p ShellProps) {
 templ ShellColumn(p ShellProps) {
 	@Document(p.Title) {
 		<body class="app-frame overflow-hidden bg-base-200 text-base-content">
-			<div class="flex h-full min-h-0 flex-col">
+			// min-h-0 so flex children (annotate-main) can shrink and assign free height.
+			<div class="flex h-full min-h-0 flex-col overflow-hidden">
 				@appNavbar()
 				{ children... }
 			</div>

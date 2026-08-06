@@ -191,7 +191,7 @@ func ShellColumn(p ShellProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<body class=\"app-frame overflow-hidden bg-base-200 text-base-content\"><div class=\"flex h-full min-h-0 flex-col\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<body class=\"app-frame overflow-hidden bg-base-200 text-base-content\"><div class=\"flex h-full min-h-0 flex-col overflow-hidden\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
