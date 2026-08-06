@@ -2,10 +2,10 @@ package layout
 
 templ Document(title string, stylesheet string) {
 	<!DOCTYPE html>
-	<html lang="en" data-theme="light" class="app-frame">
+	<html lang="en" data-theme="light" class="h-screen min-h-screen supports-[height:100dvh]:h-dvh supports-[height:100dvh]:min-h-dvh">
 		<head>
 			<meta charset="UTF-8"/>
-			// viewport-fit=cover so env(safe-area-inset-*) works; app-frame uses dvh when supported.
+			// viewport-fit=cover so env(safe-area-inset-*) works; dvh utilities when supported.
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 			if title != "" {
 				<title>{ title }</title>

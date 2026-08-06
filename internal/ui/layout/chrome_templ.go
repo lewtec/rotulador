@@ -126,7 +126,7 @@ func Shell(p ShellProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " <body class=\"app-frame overflow-hidden bg-base-200 text-base-content\"><div class=\"flex h-full min-h-0 flex-col\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<body class=\"h-screen min-h-screen overflow-hidden bg-base-200 text-base-content supports-[height:100dvh]:h-dvh supports-[height:100dvh]:min-h-dvh\"><div class=\"flex h-full min-h-0 flex-col\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -192,7 +192,7 @@ func ShellColumn(p ShellProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<body class=\"overflow-hidden bg-base-200 text-base-content\"><div class=\"annotate-page-root\" id=\"annotate-page-root\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<body class=\"overflow-hidden bg-base-200 text-base-content\"><div id=\"annotate-page-root\" class=\"annotate-page-root fixed top-0 left-0 box-border flex w-full flex-col overflow-hidden\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -4,98 +4,20 @@
 
 @config "../../tailwind.config.js";
 
-/* Custom styles for the annotation app */
+/*
+ * Prefer Tailwind utilities in templates. Only keep CSS that utilities cannot
+ * express cleanly: visualViewport-driven height, and beating daisy/preflight
+ * max-width on the annotate image so object-fit:contain can fill the pane.
+ */
 @layer components {
-  .image-container {
-    @apply flex justify-center items-center max-w-full;
-  }
-
-  .image-container img {
-    @apply max-w-full max-h-[70vh] object-contain;
-  }
-
-  .annotation-buttons {
-    @apply flex flex-wrap gap-2 justify-center;
-  }
-
-  .kbd-hint {
-    @apply text-xs opacity-70 ml-1;
-  }
-
-  /* Home/help shell: full window on desktop, dvh when available. */
-  .app-frame {
-    min-height: 100vh;
-    height: 100vh;
-  }
-  @supports (height: 100dvh) {
-    .app-frame {
-      min-height: 100dvh;
-      height: 100dvh;
-    }
-  }
-
-  /*
-   * Annotate: fixed to the visual viewport (height/top set in JS via --app-vvh).
-   * Three rows — nav, free image region, dock. Dock is always the bottom row.
-   */
   .annotate-page-root {
-    position: fixed;
-    top: 0;
-    left: 0;
-    box-sizing: border-box;
-    width: 100%;
+    /* height/width/top/left also set from JS (visualViewport); this is the fallback. */
     height: var(--app-vvh, 100vh);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .annotate-main {
-    flex: 1 1 0%;
-    min-height: 0;
-    min-width: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .annotate-meta {
-    flex: 0 0 auto;
-  }
-
-  /*
-   * Image region fills leftover main height. The <img> paints the FULL bitmap
-   * into this box with object-fit: contain — never cover, never crop.
-   */
-  .annotate-image-pane {
-    flex: 1 1 0%;
-    min-height: 0;
-    min-width: 0;
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-    background: oklch(var(--b1));
   }
 
   .annotate-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    /* Defeat preflight/daisy max-width:100% interactions that skew sizing. */
+    /* preflight/daisy max-width:100% fights absolute full-pane sizing */
     max-width: none;
     max-height: none;
-    object-fit: contain;
-    object-position: center center;
-  }
-
-  .annotate-dock {
-    flex: 0 0 auto;
-    width: 100%;
   }
 }

@@ -19,17 +19,19 @@ Structure + quiet craft. Not a rebrand. Steal Backstage layout primitives, not f
 Viewport-locked column:
 
 ```
-body.app-frame: height 100vh (fallback) / 100dvh when supported
+html/body: Tailwind `h-screen min-h-screen supports-[height:100dvh]:h-dvh …`
   header: shrink-0  (navbar bg-base-100 border-b border-base-300)
   main#app-main: flex-1 min-h-0  (scroll or flex; toast host lives here)
   dock?: shrink-0   (annotate only: progress + action buttons; safe-area padding)
 ```
 
-- **`.app-frame`**: `100vh` so desktop always fills the window; `100dvh` under `@supports` so mobile URL bars do not cover the dock. No `max-height` cap.
+- Annotate root: `position:fixed` + **visualViewport** geometry (JS); residual CSS only for `height: var(--app-vvh)` fallback and image `max-width: none`.
+- Prefer **Tailwind utilities in templates**; keep custom CSS minimal.
 - Dock bottom padding includes `env(safe-area-inset-bottom)`; viewport meta has `viewport-fit=cover`.
 - **No product footer.**
 - Toast host is **scoped to main** so nothing under main (the dock) is covered.
 - Surface: field `bg-base-200`, chrome `bg-base-100`, border edge, little/no heavy shadow.
+- Stylesheet URL is cache-busted: `/static/style.css?v=<contenthash>`.
 
 ## Primitives (`internal/ui/layout`)
 

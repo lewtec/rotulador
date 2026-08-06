@@ -50,7 +50,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"app-main\" class=\"annotate-main bg-base-200\"><div class=\"annotate-meta space-y-1 px-3 pt-2 sm:px-4\"><div class=\"flex min-w-0 items-center gap-2 text-xs text-base-content/50\"><nav class=\"min-w-0 flex-1 truncate\" aria-label=\"Breadcrumb\"><a class=\"link link-hover\" href=\"/\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"app-main\" class=\"flex min-h-0 min-w-0 w-full flex-1 basis-0 flex-col overflow-hidden bg-base-200\"><div class=\"shrink-0 space-y-1 px-3 pt-2 sm:px-4\"><div class=\"flex min-w-0 items-center gap-2 text-xs text-base-content/50\"><nav class=\"min-w-0 flex-1 truncate\" aria-label=\"Breadcrumb\"><a class=\"link link-hover\" href=\"/\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -251,7 +251,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><div class=\"annotate-image-pane\"><img src=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><div class=\"relative min-h-0 min-w-0 w-full flex-1 basis-0 overflow-hidden bg-base-100\"><img src=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -264,7 +264,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" alt=\"Image to annotate\" class=\"annotate-image\"><div id=\"copy-toast\" class=\"toast toast-center toast-bottom pointer-events-none absolute inset-x-0 bottom-2 z-10 hidden\"><div class=\"alert alert-success py-2 text-sm shadow\"><span id=\"copy-toast-message\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" alt=\"Image to annotate\" class=\"annotate-image absolute inset-0 m-0 size-full border-0 p-0 object-contain object-center\"><div id=\"copy-toast\" class=\"toast toast-center toast-bottom pointer-events-none absolute inset-x-0 bottom-2 z-10 hidden\"><div class=\"alert alert-success py-2 text-sm shadow\"><span id=\"copy-toast-message\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -277,7 +277,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div></div></div><script>\n\t\t\t\tdocument.addEventListener('keydown', function (e) {\n\t\t\t\t\tconst buttons = document.querySelectorAll('#annotation-controls button[data-key]');\n\t\t\t\t\tbuttons.forEach(button => {\n\t\t\t\t\t\tconst key = button.getAttribute('data-key');\n\t\t\t\t\t\tif (key && e.key.toLowerCase() === key.toLowerCase()) {\n\t\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\t\tbutton.click();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t\tfunction showToast(message) {\n\t\t\t\t\tconst toast = document.getElementById('copy-toast');\n\t\t\t\t\tconst toastMessage = document.getElementById('copy-toast-message');\n\t\t\t\t\tif (!toast || !toastMessage) return;\n\t\t\t\t\ttoastMessage.innerText = message;\n\t\t\t\t\ttoast.classList.remove('hidden');\n\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\ttoast.classList.add('hidden');\n\t\t\t\t\t}, 2000);\n\t\t\t\t}\n\t\t\t</script></main><div id=\"app-dock\" class=\"annotate-dock border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div></div></div><script>\n\t\t\t\tdocument.addEventListener('keydown', function (e) {\n\t\t\t\t\tconst buttons = document.querySelectorAll('#annotation-controls button[data-key]');\n\t\t\t\t\tbuttons.forEach(button => {\n\t\t\t\t\t\tconst key = button.getAttribute('data-key');\n\t\t\t\t\t\tif (key && e.key.toLowerCase() === key.toLowerCase()) {\n\t\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\t\tbutton.click();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t\tfunction showToast(message) {\n\t\t\t\t\tconst toast = document.getElementById('copy-toast');\n\t\t\t\t\tconst toastMessage = document.getElementById('copy-toast-message');\n\t\t\t\t\tif (!toast || !toastMessage) return;\n\t\t\t\t\ttoastMessage.innerText = message;\n\t\t\t\t\ttoast.classList.remove('hidden');\n\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\ttoast.classList.add('hidden');\n\t\t\t\t\t}, 2000);\n\t\t\t\t}\n\t\t\t</script></main><div id=\"app-dock\" class=\"w-full shrink-0 border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -328,7 +328,7 @@ func annotateDock(d AnnotateData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"annotation-buttons mt-2 flex flex-wrap gap-2\" id=\"annotation-controls\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"mt-2 flex flex-wrap justify-center gap-2\" id=\"annotation-controls\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
