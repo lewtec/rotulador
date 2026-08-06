@@ -1,11 +1,12 @@
 package layout
 
-templ Document(title string) {
+templ Document(title string, stylesheet string) {
 	<!DOCTYPE html>
-	<html lang="en" data-theme="light" class="h-full">
+	<html lang="en" data-theme="light" class="h-screen min-h-screen supports-[height:100dvh]:h-dvh supports-[height:100dvh]:min-h-dvh">
 		<head>
 			<meta charset="UTF-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			// viewport-fit=cover so env(safe-area-inset-*) works; dvh utilities when supported.
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 			if title != "" {
 				<title>{ title }</title>
 			} else {
@@ -17,7 +18,8 @@ templ Document(title string) {
 				integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
 				crossorigin="anonymous"
 			></script>
-			<link rel="stylesheet" href="/static/style.css" type="text/css"/>
+			// stylesheet must be cache-busted (?v=hash); see web.StylesheetHref.
+			<link rel="stylesheet" href={ stylesheet } type="text/css"/>
 			<script>
 				function reportError(error, context) {
 					console.error("Error detected:", context, error);

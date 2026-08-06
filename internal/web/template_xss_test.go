@@ -15,7 +15,7 @@ func TestAnnotateTemplateKeepsFilenameOutOfJSString(t *testing.T) {
 	const evil = `x');alert(1);//`
 
 	var buf bytes.Buffer
-	comp := pages.Annotate(layout.ShellProps{Title: "Annotate"}, pages.AnnotateData{
+	comp := pages.Annotate(layout.ShellProps{Title: "Annotate", Stylesheet: StylesheetHref()}, pages.AnnotateData{
 		TaskID:        "phase1",
 		TaskName:      "Phase 1",
 		ImageID:       "abc123",

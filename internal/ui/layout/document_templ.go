@@ -8,7 +8,7 @@ package layout
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func Document(title string) templ.Component {
+func Document(title string, stylesheet string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,7 +29,7 @@ func Document(title string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" data-theme=\"light\" class=\"h-full\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" data-theme=\"light\" class=\"h-screen min-h-screen supports-[height:100dvh]:h-dvh supports-[height:100dvh]:min-h-dvh\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, viewport-fit=cover\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -41,7 +41,7 @@ func Document(title string) templ.Component {
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/layout/document.templ`, Line: 10, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/layout/document.templ`, Line: 11, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -57,7 +57,20 @@ func Document(title string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<link rel=\"icon\" href=\"/favicon.svg\" type=\"image/svg+xml\"><script src=\"https://unpkg.com/htmx.org@1.9.6\" integrity=\"sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni\" crossorigin=\"anonymous\"></script><link rel=\"stylesheet\" href=\"/static/style.css\" type=\"text/css\"><script>\n\t\t\t\tfunction reportError(error, context) {\n\t\t\t\t\tconsole.error(\"Error detected:\", context, error);\n\t\t\t\t}\n\t\t\t\tfunction initTheme() {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst theme = localStorage.getItem('theme') || 'light';\n\t\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', theme);\n\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\treportError(e, \"Failed to initialize theme from localStorage\");\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tfunction toggleTheme() {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst html = document.documentElement;\n\t\t\t\t\t\tconst currentTheme = html.getAttribute('data-theme');\n\t\t\t\t\t\tconst newTheme = currentTheme === 'light' ? 'dark' : 'light';\n\t\t\t\t\t\thtml.setAttribute('data-theme', newTheme);\n\t\t\t\t\t\tlocalStorage.setItem('theme', newTheme);\n\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\treportError(e, \"Failed to toggle theme\");\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tinitTheme();\n\t\t\t</script></head>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<link rel=\"icon\" href=\"/favicon.svg\" type=\"image/svg+xml\"><script src=\"https://unpkg.com/htmx.org@1.9.6\" integrity=\"sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni\" crossorigin=\"anonymous\"></script><link rel=\"stylesheet\" href=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 templ.SafeURL
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(stylesheet)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/layout/document.templ`, Line: 22, Col: 43}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" type=\"text/css\"><script>\n\t\t\t\tfunction reportError(error, context) {\n\t\t\t\t\tconsole.error(\"Error detected:\", context, error);\n\t\t\t\t}\n\t\t\t\tfunction initTheme() {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst theme = localStorage.getItem('theme') || 'light';\n\t\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', theme);\n\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\treportError(e, \"Failed to initialize theme from localStorage\");\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tfunction toggleTheme() {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst html = document.documentElement;\n\t\t\t\t\t\tconst currentTheme = html.getAttribute('data-theme');\n\t\t\t\t\t\tconst newTheme = currentTheme === 'light' ? 'dark' : 'light';\n\t\t\t\t\t\thtml.setAttribute('data-theme', newTheme);\n\t\t\t\t\t\tlocalStorage.setItem('theme', newTheme);\n\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\treportError(e, \"Failed to toggle theme\");\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tinitTheme();\n\t\t\t</script></head>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -65,7 +78,7 @@ func Document(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

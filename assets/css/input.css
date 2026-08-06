@@ -4,21 +4,20 @@
 
 @config "../../tailwind.config.js";
 
-/* Custom styles for the annotation app */
+/*
+ * Prefer Tailwind utilities in templates. Only keep CSS that utilities cannot
+ * express cleanly: visualViewport-driven height, and beating daisy/preflight
+ * max-width on the annotate image so object-fit:contain can fill the pane.
+ */
 @layer components {
-  .image-container {
-    @apply flex justify-center items-center max-w-full;
+  .annotate-page-root {
+    /* height/width/top/left also set from JS (visualViewport); this is the fallback. */
+    height: var(--app-vvh, 100vh);
   }
 
-  .image-container img {
-    @apply max-w-full max-h-[70vh] object-contain;
-  }
-
-  .annotation-buttons {
-    @apply flex flex-wrap gap-2 justify-center;
-  }
-
-  .kbd-hint {
-    @apply text-xs opacity-70 ml-1;
+  .annotate-image {
+    /* preflight/daisy max-width:100% fights absolute full-pane sizing */
+    max-width: none;
+    max-height: none;
   }
 }
