@@ -14,20 +14,38 @@ func Render(ctx context.Context, w http.ResponseWriter, c templ.Component) error
 	return c.Render(ctx, w)
 }
 
-// ProgressUI maps PhaseProgress into the UI progress bar model.
+// ProgressUI maps PhaseProgress into a list of progress-bar segments.
 func ProgressUI(p *PhaseProgress) *components.Progress {
 	if p == nil {
 		return nil
 	}
 	return &components.Progress{
-		Completed:              p.Completed,
-		Pending:                p.Pending,
-		FilteredWrongClass:     p.FilteredWrongClass,
-		NotYetAnnotated:        p.NotYetAnnotated,
-		Total:                  p.Total,
-		CompletedPercent:       p.CompletedPercent,
-		PendingPercent:         p.PendingPercent,
-		FilteredPercent:        p.FilteredPercent,
-		NotYetAnnotatedPercent: p.NotYetAnnotatedPercent,
+		Total: p.Total,
+		Segments: []components.ProgressSegment{
+			{
+				Count:   p.Completed,
+				Percent: p.CompletedPercent,
+				Label:   "completed",
+				Class:   "bg-success text-success-content text-xs font-bold",
+			},
+			{
+				Count:   p.Pending,
+				Percent: p.PendingPercent,
+				Label:   "pending",
+				Class:   "bg-info text-info-content text-xs font-bold",
+			},
+			{
+				Count:   p.NotYetAnnotated,
+				Percent: p.NotYetAnnotatedPercent,
+				Label:   "not yet annotated in previous phase",
+				Class:   "bg-base-300 text-base-content text-xs",
+			},
+			{
+				Count:   p.FilteredWrongClass,
+				Percent: p.FilteredPercent,
+				Label:   "annotated with wrong class in previous phase",
+				Class:   "bg-error text-error-content text-xs",
+			},
+		},
 	}
 }

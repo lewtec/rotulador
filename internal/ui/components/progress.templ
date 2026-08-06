@@ -9,49 +9,18 @@ import (
 templ ProgressBar(p *Progress) {
 	if p != nil && p.Total > 0 {
 		<div class="flex w-full h-8 rounded-lg overflow-hidden shadow-sm mb-4">
-			if p.Completed > 0 {
-				<div
-					class="bg-success flex items-center justify-center text-success-content text-xs font-bold transition-all hover:opacity-90"
-					style={ fmt.Sprintf("width: %g%%", p.CompletedPercent) }
-					title={ fmt.Sprintf("%d %s (%.1f%%)", p.Completed, i18n.T(ctx, "completed"), p.CompletedPercent) }
-				>
-					if p.CompletedPercent > 5.0 {
-						{ fmt.Sprintf("%d", p.Completed) }
-					}
-				</div>
-			}
-			if p.Pending > 0 {
-				<div
-					class="bg-info flex items-center justify-center text-info-content text-xs font-bold transition-all hover:opacity-90"
-					style={ fmt.Sprintf("width: %g%%", p.PendingPercent) }
-					title={ fmt.Sprintf("%d %s (%.1f%%)", p.Pending, i18n.T(ctx, "pending"), p.PendingPercent) }
-				>
-					if p.PendingPercent > 5.0 {
-						{ fmt.Sprintf("%d", p.Pending) }
-					}
-				</div>
-			}
-			if p.NotYetAnnotated > 0 {
-				<div
-					class="bg-base-300 flex items-center justify-center text-base-content text-xs transition-all hover:opacity-90"
-					style={ fmt.Sprintf("width: %g%%", p.NotYetAnnotatedPercent) }
-					title={ fmt.Sprintf("%d %s (%.1f%%)", p.NotYetAnnotated, i18n.T(ctx, "not yet annotated in previous phase"), p.NotYetAnnotatedPercent) }
-				>
-					if p.NotYetAnnotatedPercent > 5.0 {
-						{ fmt.Sprintf("%d", p.NotYetAnnotated) }
-					}
-				</div>
-			}
-			if p.FilteredWrongClass > 0 {
-				<div
-					class="bg-error flex items-center justify-center text-error-content text-xs transition-all hover:opacity-90"
-					style={ fmt.Sprintf("width: %g%%", p.FilteredPercent) }
-					title={ fmt.Sprintf("%d %s (%.1f%%)", p.FilteredWrongClass, i18n.T(ctx, "annotated with wrong class in previous phase"), p.FilteredPercent) }
-				>
-					if p.FilteredPercent > 5.0 {
-						{ fmt.Sprintf("%d", p.FilteredWrongClass) }
-					}
-				</div>
+			for _, seg := range p.Segments {
+				if seg.Count > 0 {
+					<div
+						class={ "flex items-center justify-center text-xs transition-all hover:opacity-90 " + seg.Class }
+						style={ fmt.Sprintf("width: %g%%", seg.Percent) }
+						title={ fmt.Sprintf("%d %s (%.1f%%)", seg.Count, i18n.T(ctx, seg.Label), seg.Percent) }
+					>
+						if seg.Percent > 5.0 {
+							{ fmt.Sprintf("%d", seg.Count) }
+						}
+					</div>
+				}
 			}
 		</div>
 	} else {
