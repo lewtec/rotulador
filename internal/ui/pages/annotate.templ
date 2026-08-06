@@ -11,9 +11,8 @@ import (
 
 templ Annotate(shell layout.ShellProps, d AnnotateData) {
 	@layout.ShellColumn(shell) {
-		// Middle grid row of app-shell-stack (nav | main | dock). Fills free height.
-		<main id="app-main" class="annotate-main relative bg-base-200">
-			<div class="space-y-1 px-3 pt-2 sm:px-4">
+		<main id="app-main" class="annotate-main bg-base-200">
+			<div class="annotate-meta space-y-1 px-3 pt-2 sm:px-4">
 				<div class="flex min-w-0 items-center gap-2 text-xs text-base-content/50">
 					<nav class="min-w-0 flex-1 truncate" aria-label="Breadcrumb">
 						<a class="link link-hover" href="/">{ i18n.T(ctx, "Home") }</a>
@@ -50,7 +49,8 @@ templ Annotate(shell layout.ShellProps, d AnnotateData) {
 					</a>
 				}
 			</div>
-			<div class="annotate-image-pane bg-base-100">
+			// object-fit:contain in CSS — full bitmap, never cover/crop; scales to pane.
+			<div class="annotate-image-pane">
 				<img
 					src={ fmt.Sprintf("/asset/%s", d.ImageID) }
 					alt="Image to annotate"
@@ -85,7 +85,7 @@ templ Annotate(shell layout.ShellProps, d AnnotateData) {
 				}
 			</script>
 		</main>
-		<div id="app-dock" class="border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]">
+		<div id="app-dock" class="annotate-dock border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]">
 			@annotateDock(d)
 		</div>
 	}

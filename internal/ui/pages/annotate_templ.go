@@ -50,14 +50,14 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <main id=\"app-main\" class=\"annotate-main relative bg-base-200\"><div class=\"space-y-1 px-3 pt-2 sm:px-4\"><div class=\"flex min-w-0 items-center gap-2 text-xs text-base-content/50\"><nav class=\"min-w-0 flex-1 truncate\" aria-label=\"Breadcrumb\"><a class=\"link link-hover\" href=\"/\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"app-main\" class=\"annotate-main bg-base-200\"><div class=\"annotate-meta space-y-1 px-3 pt-2 sm:px-4\"><div class=\"flex min-w-0 items-center gap-2 text-xs text-base-content/50\"><nav class=\"min-w-0 flex-1 truncate\" aria-label=\"Breadcrumb\"><a class=\"link link-hover\" href=\"/\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(ctx, "Home"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 19, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 18, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -70,7 +70,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			var templ_7745c5c3_Var4 templ.SafeURL
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/help/%s", d.TaskID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 21, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 20, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -83,7 +83,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(d.TaskName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 21, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 20, Col: 88}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -96,7 +96,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(ctx, "Annotate"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 23, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 22, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -109,7 +109,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(d.ImageFilename)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 29, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 28, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 			if templ_7745c5c3_Err != nil {
@@ -122,7 +122,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(ctx, "Copied to clipboard!"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 30, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 29, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 			if templ_7745c5c3_Err != nil {
@@ -135,7 +135,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(d.ImageFilename)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 32, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 31, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 			if templ_7745c5c3_Err != nil {
@@ -148,7 +148,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(d.ImageFilename)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 34, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 33, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -166,7 +166,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d", d.Progress.CompletedCount, d.Progress.TotalCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 39, Col: 79}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 38, Col: 79}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -205,7 +205,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 				var templ_7745c5c3_Var14 templ.SafeURL
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/help/%s", d.TaskID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 48, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 47, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -231,7 +231,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(ctx, "Help"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 49, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/annotate.templ`, Line: 48, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -251,7 +251,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><div class=\"annotate-image-pane bg-base-100\"><img src=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><div class=\"annotate-image-pane\"><img src=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -277,7 +277,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div></div></div><script>\n\t\t\t\tdocument.addEventListener('keydown', function (e) {\n\t\t\t\t\tconst buttons = document.querySelectorAll('#annotation-controls button[data-key]');\n\t\t\t\t\tbuttons.forEach(button => {\n\t\t\t\t\t\tconst key = button.getAttribute('data-key');\n\t\t\t\t\t\tif (key && e.key.toLowerCase() === key.toLowerCase()) {\n\t\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\t\tbutton.click();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t\tfunction showToast(message) {\n\t\t\t\t\tconst toast = document.getElementById('copy-toast');\n\t\t\t\t\tconst toastMessage = document.getElementById('copy-toast-message');\n\t\t\t\t\tif (!toast || !toastMessage) return;\n\t\t\t\t\ttoastMessage.innerText = message;\n\t\t\t\t\ttoast.classList.remove('hidden');\n\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\ttoast.classList.add('hidden');\n\t\t\t\t\t}, 2000);\n\t\t\t\t}\n\t\t\t</script></main><div id=\"app-dock\" class=\"border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div></div></div><script>\n\t\t\t\tdocument.addEventListener('keydown', function (e) {\n\t\t\t\t\tconst buttons = document.querySelectorAll('#annotation-controls button[data-key]');\n\t\t\t\t\tbuttons.forEach(button => {\n\t\t\t\t\t\tconst key = button.getAttribute('data-key');\n\t\t\t\t\t\tif (key && e.key.toLowerCase() === key.toLowerCase()) {\n\t\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\t\tbutton.click();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t\tfunction showToast(message) {\n\t\t\t\t\tconst toast = document.getElementById('copy-toast');\n\t\t\t\t\tconst toastMessage = document.getElementById('copy-toast-message');\n\t\t\t\t\tif (!toast || !toastMessage) return;\n\t\t\t\t\ttoastMessage.innerText = message;\n\t\t\t\t\ttoast.classList.remove('hidden');\n\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\ttoast.classList.add('hidden');\n\t\t\t\t\t}, 2000);\n\t\t\t\t}\n\t\t\t</script></main><div id=\"app-dock\" class=\"annotate-dock border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -156,9 +156,9 @@ func Shell(p ShellProps) templ.Component {
 	})
 }
 
-// ShellColumn is the annotate frame: fixed to the visual viewport so the dock
-// stays on the bottom on mobile Chromium (Vivaldi) and the image row gets free height.
-// Page supplies main + dock as the 2nd and 3rd grid rows.
+// ShellColumn is the annotate frame. Root is position:fixed and sized from
+// visualViewport so the dock stays at the bottom of what the user actually sees
+// (mobile Chromium / Vivaldi). Children: main then dock (flex column).
 func ShellColumn(p ShellProps) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -204,7 +204,7 @@ func ShellColumn(p ShellProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div><script>\n\t\t\t\t(function () {\n\t\t\t\t\tfunction syncAppVvh() {\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tvar h = window.visualViewport\n\t\t\t\t\t\t\t\t? window.visualViewport.height\n\t\t\t\t\t\t\t\t: window.innerHeight;\n\t\t\t\t\t\t\tdocument.documentElement.style.setProperty(\"--app-vvh\", h + \"px\");\n\t\t\t\t\t\t\t// Keep the fixed root aligned when the visual viewport shifts.\n\t\t\t\t\t\t\tvar root = document.getElementById(\"annotate-page-root\");\n\t\t\t\t\t\t\tif (root && window.visualViewport) {\n\t\t\t\t\t\t\t\troot.style.top = window.visualViewport.offsetTop + \"px\";\n\t\t\t\t\t\t\t\troot.style.left = window.visualViewport.offsetLeft + \"px\";\n\t\t\t\t\t\t\t\troot.style.width = window.visualViewport.width + \"px\";\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\t\treportError(e, \"syncAppVvh\");\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\tsyncAppVvh();\n\t\t\t\t\twindow.addEventListener(\"resize\", syncAppVvh);\n\t\t\t\t\tif (window.visualViewport) {\n\t\t\t\t\t\twindow.visualViewport.addEventListener(\"resize\", syncAppVvh);\n\t\t\t\t\t\twindow.visualViewport.addEventListener(\"scroll\", syncAppVvh);\n\t\t\t\t\t}\n\t\t\t\t})();\n\t\t\t</script></body>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div><script>\n\t\t\t\t(function () {\n\t\t\t\t\tfunction syncAppVvh() {\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tvar root = document.getElementById(\"annotate-page-root\");\n\t\t\t\t\t\t\tif (!root) return;\n\t\t\t\t\t\t\tvar vv = window.visualViewport;\n\t\t\t\t\t\t\tvar h = vv ? vv.height : window.innerHeight;\n\t\t\t\t\t\t\tvar w = vv ? vv.width : window.innerWidth;\n\t\t\t\t\t\t\tvar top = vv ? vv.offsetTop : 0;\n\t\t\t\t\t\t\tvar left = vv ? vv.offsetLeft : 0;\n\t\t\t\t\t\t\t// Prefer writing geometry on the node — more reliable than CSS vars alone.\n\t\t\t\t\t\t\troot.style.height = h + \"px\";\n\t\t\t\t\t\t\troot.style.width = w + \"px\";\n\t\t\t\t\t\t\troot.style.top = top + \"px\";\n\t\t\t\t\t\t\troot.style.left = left + \"px\";\n\t\t\t\t\t\t\tdocument.documentElement.style.setProperty(\"--app-vvh\", h + \"px\");\n\t\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\t\treportError(e, \"syncAppVvh\");\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\tsyncAppVvh();\n\t\t\t\t\twindow.addEventListener(\"resize\", syncAppVvh);\n\t\t\t\t\twindow.addEventListener(\"orientationchange\", syncAppVvh);\n\t\t\t\t\tif (window.visualViewport) {\n\t\t\t\t\t\twindow.visualViewport.addEventListener(\"resize\", syncAppVvh);\n\t\t\t\t\t\twindow.visualViewport.addEventListener(\"scroll\", syncAppVvh);\n\t\t\t\t\t}\n\t\t\t\t})();\n\t\t\t</script></body>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
