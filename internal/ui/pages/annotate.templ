@@ -11,7 +11,7 @@ import (
 
 templ Annotate(shell layout.ShellProps, d AnnotateData) {
 	@layout.ShellColumn(shell) {
-		// Grid: auto meta + 1fr image row. Img is 100%×100% object-fit contain (not max-* only).
+		// Middle grid row of app-shell-stack (nav | main | dock). Fills free height.
 		<main id="app-main" class="annotate-main relative bg-base-200">
 			<div class="space-y-1 px-3 pt-2 sm:px-4">
 				<div class="flex min-w-0 items-center gap-2 text-xs text-base-content/50">
@@ -62,32 +62,32 @@ templ Annotate(shell layout.ShellProps, d AnnotateData) {
 					</div>
 				</div>
 			</div>
+			<script>
+				document.addEventListener('keydown', function (e) {
+					const buttons = document.querySelectorAll('#annotation-controls button[data-key]');
+					buttons.forEach(button => {
+						const key = button.getAttribute('data-key');
+						if (key && e.key.toLowerCase() === key.toLowerCase()) {
+							e.preventDefault();
+							button.click();
+						}
+					});
+				});
+				function showToast(message) {
+					const toast = document.getElementById('copy-toast');
+					const toastMessage = document.getElementById('copy-toast-message');
+					if (!toast || !toastMessage) return;
+					toastMessage.innerText = message;
+					toast.classList.remove('hidden');
+					setTimeout(() => {
+						toast.classList.add('hidden');
+					}, 2000);
+				}
+			</script>
 		</main>
-		<div id="app-dock" class="shrink-0 border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]">
+		<div id="app-dock" class="border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]">
 			@annotateDock(d)
 		</div>
-		<script>
-			document.addEventListener('keydown', function (e) {
-				const buttons = document.querySelectorAll('#annotation-controls button[data-key]');
-				buttons.forEach(button => {
-					const key = button.getAttribute('data-key');
-					if (key && e.key.toLowerCase() === key.toLowerCase()) {
-						e.preventDefault();
-						button.click();
-					}
-				});
-			});
-			function showToast(message) {
-				const toast = document.getElementById('copy-toast');
-				const toastMessage = document.getElementById('copy-toast-message');
-				if (!toast || !toastMessage) return;
-				toastMessage.innerText = message;
-				toast.classList.remove('hidden');
-				setTimeout(() => {
-					toast.classList.add('hidden');
-				}, 2000);
-			}
-		</script>
 	}
 }
 

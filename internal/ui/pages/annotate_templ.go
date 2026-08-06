@@ -277,7 +277,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div></div></div></main><div id=\"app-dock\" class=\"shrink-0 border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div></div></div><script>\n\t\t\t\tdocument.addEventListener('keydown', function (e) {\n\t\t\t\t\tconst buttons = document.querySelectorAll('#annotation-controls button[data-key]');\n\t\t\t\t\tbuttons.forEach(button => {\n\t\t\t\t\t\tconst key = button.getAttribute('data-key');\n\t\t\t\t\t\tif (key && e.key.toLowerCase() === key.toLowerCase()) {\n\t\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\t\tbutton.click();\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t\tfunction showToast(message) {\n\t\t\t\t\tconst toast = document.getElementById('copy-toast');\n\t\t\t\t\tconst toastMessage = document.getElementById('copy-toast-message');\n\t\t\t\t\tif (!toast || !toastMessage) return;\n\t\t\t\t\ttoastMessage.innerText = message;\n\t\t\t\t\ttoast.classList.remove('hidden');\n\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\ttoast.classList.add('hidden');\n\t\t\t\t\t}, 2000);\n\t\t\t\t}\n\t\t\t</script></main><div id=\"app-dock\" class=\"border-t border-base-300 bg-base-100 pb-[env(safe-area-inset-bottom,0px)]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -285,7 +285,7 @@ func Annotate(shell layout.ShellProps, d AnnotateData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div><script>\n\t\t\tdocument.addEventListener('keydown', function (e) {\n\t\t\t\tconst buttons = document.querySelectorAll('#annotation-controls button[data-key]');\n\t\t\t\tbuttons.forEach(button => {\n\t\t\t\t\tconst key = button.getAttribute('data-key');\n\t\t\t\t\tif (key && e.key.toLowerCase() === key.toLowerCase()) {\n\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\tbutton.click();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t});\n\t\t\tfunction showToast(message) {\n\t\t\t\tconst toast = document.getElementById('copy-toast');\n\t\t\t\tconst toastMessage = document.getElementById('copy-toast-message');\n\t\t\t\tif (!toast || !toastMessage) return;\n\t\t\t\ttoastMessage.innerText = message;\n\t\t\t\ttoast.classList.remove('hidden');\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\ttoast.classList.add('hidden');\n\t\t\t\t}, 2000);\n\t\t\t}\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

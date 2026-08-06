@@ -156,8 +156,9 @@ func Shell(p ShellProps) templ.Component {
 	})
 }
 
-// ShellColumn is header + free column body (page supplies main and optional dock siblings).
-// Annotate uses this so the dock sits outside #app-main (toasts never cover keys).
+// ShellColumn is header + free column body (page supplies main + dock).
+// Uses a 3-row grid (nav | main | dock) so the middle row always gets free height
+// on Chromium mobile — nested flex free-space often collapses there.
 func ShellColumn(p ShellProps) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -191,7 +192,7 @@ func ShellColumn(p ShellProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<body class=\"app-frame overflow-hidden bg-base-200 text-base-content\"><div class=\"flex h-full min-h-0 flex-col overflow-hidden\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<body class=\"app-frame overflow-hidden bg-base-200 text-base-content\"><div class=\"app-shell-stack\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

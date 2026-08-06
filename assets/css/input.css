@@ -35,20 +35,31 @@
   }
 
   /*
-   * Annotate layout: CSS grid is more reliable than nested flex for "fill leftover
-   * height" on Chromium mobile (Vivaldi). Image uses a real 100%×100% box with
-   * object-fit:contain so it scales up to the free space without cropping.
+   * Annotate shell: one viewport-height grid so the middle row always gets free
+   * space on Chromium mobile (Vivaldi). Nested flex free-space is unreliable there.
+   * minmax(0,1fr) is required — bare 1fr can refuse to shrink below content size.
    */
+  .app-shell-stack {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100%;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
   .annotate-main {
     display: grid;
-    grid-template-rows: auto 1fr;
-    flex: 1 1 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+    width: 100%;
     min-height: 0;
     min-width: 0;
     overflow: hidden;
   }
   .annotate-image-pane {
     position: relative;
+    height: 100%;
+    width: 100%;
     min-height: 0;
     min-width: 0;
     overflow: hidden;
@@ -56,10 +67,12 @@
   .annotate-image {
     position: absolute;
     inset: 0;
+    box-sizing: border-box;
     width: 100%;
     height: 100%;
+    margin: auto;
     object-fit: contain;
-    object-position: center;
+    object-position: center center;
   }
 }
 

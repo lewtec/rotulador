@@ -50,13 +50,13 @@ templ Shell(p ShellProps) {
 	}
 }
 
-// ShellColumn is header + free column body (page supplies main and optional dock siblings).
-// Annotate uses this so the dock sits outside #app-main (toasts never cover keys).
+// ShellColumn is header + free column body (page supplies main + dock).
+// Uses a 3-row grid (nav | main | dock) so the middle row always gets free height
+// on Chromium mobile — nested flex free-space often collapses there.
 templ ShellColumn(p ShellProps) {
 	@Document(p.Title) {
 		<body class="app-frame overflow-hidden bg-base-200 text-base-content">
-			// min-h-0 so flex children (annotate-main) can shrink and assign free height.
-			<div class="flex h-full min-h-0 flex-col overflow-hidden">
+			<div class="app-shell-stack">
 				@appNavbar()
 				{ children... }
 			</div>
