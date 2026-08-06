@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
 #
-# Binaries only (no Docker). Pattern matches BACKSTAGE / contapila.
+# Multi-platform binaries + GHCR image (fusionsolar-bot / mclone style).
 
 version: 2
 project_name: rotulador
@@ -44,6 +44,30 @@ archives:
     format_overrides:
       - goos: windows
         formats: [zip]
+
+dockers_v2:
+  - id: rotulador
+    ids:
+      - rotulador
+    dockerfile: Dockerfile
+    images:
+      - "ghcr.io/lewtec/{{ .ProjectName }}"
+    tags:
+      - "{{ .Version }}"
+      - latest
+    sbom: false
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      "org.opencontainers.image.created": "{{ .Date }}"
+      "org.opencontainers.image.name": "{{ .ProjectName }}"
+      "org.opencontainers.image.revision": "{{ .FullCommit }}"
+      "org.opencontainers.image.version": "{{ .Version }}"
+      "org.opencontainers.image.source": "{{ .GitURL }}"
+      "org.opencontainers.image.description": "Image annotation tool"
+    flags:
+      - "--provenance=false"
 
 checksum:
   name_template: checksums.txt
