@@ -21,8 +21,9 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/lewtec/rotulador/internal/db/migrations"
 	"github.com/lewtec/rotulador/internal/domain"
-	"github.com/lewtec/rotulador/internal/i18n"
 	"github.com/lewtec/rotulador/internal/repository"
+	"github.com/lewtec/rotulador/internal/ui/layout"
+	"github.com/lewtec/rotulador/internal/ui/pages"
 )
 
 // appError is a stable app-level sentinel. Prefer these (or fmt.Errorf %w
@@ -478,13 +479,6 @@ func (a *AnnotatorApp) GetTask(taskID string) *ConfigTask {
 	return nil
 }
 
-// ClassButton represents a class button with keyboard shortcut
-type ClassButton struct {
-	ID   string
-	Name string
-	Key  string
-}
-
 func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 	a.init()
 	mux := http.NewServeMux()
@@ -496,13 +490,9 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			return
 		}
 
-		data := map[string]interface{}{
-			"Title":       "Welcome to Rotulador",
-			"ProjectName": "Welcome to Rotulador",
-			"Description": a.Config.Meta.Description,
-		}
-
-		err := RenderPageWithRequest(r, w, "home.html", data)
+		err := Render(r.Context(), w, pages.Home(layout.ShellProps{Title: "Welcome to Rotulador"}, pages.HomeData{
+			Description: a.Config.Meta.Description,
+		}))
 		if err != nil {
 			ReportError(r.Context(), err, "msg", "error rendering home template")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -518,18 +508,25 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		}
 	})
 
+	// Embedded stylesheet (cacheable URL; content still from go:embed)
+	mux.HandleFunc("/static/style.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		w.Header().Set("Cache-Control", "public, max-age=31536000")
+		if _, err := w.Write([]byte(CSS())); err != nil {
+			ReportError(r.Context(), err, "msg", "error writing stylesheet response")
+		}
+	})
+
 	// Help pages
 	mux.HandleFunc("/help/", func(w http.ResponseWriter, r *http.Request) {
 		itemPath := pathParts(r.URL.Path)
 		title := "Help"
 
-		var tasks []TaskWithCount
-		var currentTask *ConfigTask
+		var helpTasks []pages.HelpTask
+		var detail *pages.HelpTask
 
 		if len(itemPath) == 1 {
-			// Only populate tasks for the timeline view (no markdown for tasks)
-			tasks = make([]TaskWithCount, 0, len(a.Config.Tasks))
-
+			helpTasks = make([]pages.HelpTask, 0, len(a.Config.Tasks))
 			for _, task := range a.Config.Tasks {
 				availableCount, err := a.CountAvailableImages(r.Context(), task.ID)
 				if err != nil {
@@ -540,7 +537,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				totalEligible, err := a.CountEligibleImages(r.Context(), task.ID)
 				if err != nil {
 					ReportError(r.Context(), err, "msg", "error counting eligible images", "task", task.ID)
-					totalEligible = availableCount // fallback to available
+					totalEligible = availableCount
 				}
 
 				completedCount := totalEligible - availableCount
@@ -548,66 +545,77 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 					completedCount = 0
 				}
 
-				// Get comprehensive phase progress stats
 				phaseProgress, err := a.GetPhaseProgressStats(r.Context(), task.ID)
 				if err != nil {
 					ReportError(r.Context(), err, "msg", "error getting phase progress", "task", task.ID)
 					phaseProgress = &PhaseProgress{}
 				}
 
-				tasks = append(tasks, TaskWithCount{
-					ConfigTask:     task,
+				helpTasks = append(helpTasks, pages.HelpTask{
+					ID:             task.ID,
+					Name:           task.Name,
+					ShortName:      task.ShortName,
 					AvailableCount: availableCount,
 					TotalCount:     totalEligible,
 					CompletedCount: completedCount,
-					PhaseProgress:  phaseProgress,
+					PhaseProgress:  ProgressUI(phaseProgress),
+					If:             task.If,
 				})
 			}
 		} else if len(itemPath) == 2 {
-			helpTask := itemPath[1]
-			task := a.GetTask(helpTask)
+			helpTaskID := itemPath[1]
+			task := a.GetTask(helpTaskID)
 			if task == nil {
 				http.NotFoundHandler().ServeHTTP(w, r)
 				return
 			}
-			currentTask = task
 
-			// Get progress stats for this specific task
-			phaseProgress, err := a.GetPhaseProgressStats(r.Context(), helpTask)
+			phaseProgress, err := a.GetPhaseProgressStats(r.Context(), helpTaskID)
 			if err != nil {
-				ReportError(r.Context(), err, "msg", "error getting phase progress", "task", helpTask)
+				ReportError(r.Context(), err, "msg", "error getting phase progress", "task", helpTaskID)
 				phaseProgress = &PhaseProgress{}
 			}
 
-			// Get available count to check if there are images to annotate
-			availableCount, err := a.CountAvailableImages(r.Context(), helpTask)
+			availableCount, err := a.CountAvailableImages(r.Context(), helpTaskID)
 			if err != nil {
-				ReportError(r.Context(), err, "msg", "error counting available images", "task", helpTask)
+				ReportError(r.Context(), err, "msg", "error counting available images", "task", helpTaskID)
 				availableCount = 0
 			}
 
-			tasks = []TaskWithCount{
-				{
-					ConfigTask:     task,
-					AvailableCount: availableCount,
-					TotalCount:     phaseProgress.Completed + phaseProgress.Pending,
-					CompletedCount: phaseProgress.Completed,
-					PhaseProgress:  phaseProgress,
-				},
+			classes := make([]pages.HelpClass, 0, len(task.Classes))
+			for classID, class := range task.Classes {
+				hc := pages.HelpClass{ID: classID}
+				if class != nil {
+					hc.Name = class.Name
+					hc.Description = class.Description
+					hc.Examples = class.Examples
+				}
+				classes = append(classes, hc)
 			}
+
+			ht := pages.HelpTask{
+				ID:             task.ID,
+				Name:           task.Name,
+				ShortName:      task.ShortName,
+				AvailableCount: availableCount,
+				TotalCount:     phaseProgress.Completed + phaseProgress.Pending,
+				CompletedCount: phaseProgress.Completed,
+				PhaseProgress:  ProgressUI(phaseProgress),
+				If:             task.If,
+				Classes:        classes,
+			}
+			helpTasks = []pages.HelpTask{ht}
+			detail = &ht
 		} else {
 			http.NotFoundHandler().ServeHTTP(w, r)
 			return
 		}
 
-		data := map[string]interface{}{
-			"Title":       title,
-			"Description": a.Config.Meta.Description,
-			"Task":        currentTask,
-			"Tasks":       tasks,
-		}
-
-		err := RenderPageWithRequest(r, w, "help.html", data)
+		err := Render(r.Context(), w, pages.Help(layout.ShellProps{Title: title}, pages.HelpData{
+			Description: a.Config.Meta.Description,
+			Detail:      detail,
+			Tasks:       helpTasks,
+		}))
 		if err != nil {
 			ReportError(r.Context(), err, "msg", "error rendering help template")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -627,10 +635,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				return
 			}
 			if step == nil {
-				data := map[string]interface{}{
-					"Title": "All annotations are done!",
-				}
-				err := RenderPageWithRequest(r, w, "complete.html", data)
+				err := Render(r.Context(), w, pages.Complete(layout.ShellProps{Title: "All annotations are done!"}))
 				if err != nil {
 					ReportError(r.Context(), err, "msg", "error rendering complete template")
 				}
@@ -709,7 +714,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		}
 		sort.Strings(classNames)
 
-		classes := []ClassButton{}
+		classes := []pages.ClassButton{}
 		keyIndex := 1
 		for _, className := range classNames {
 			classMeta := task.Classes[className]
@@ -718,38 +723,35 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				key = fmt.Sprintf("%d", keyIndex)
 				keyIndex++
 			}
-			classes = append(classes, ClassButton{
+			name := ""
+			if classMeta != nil {
+				name = classMeta.Name
+			}
+			classes = append(classes, pages.ClassButton{
 				ID:   className,
-				Name: i18n.T(classMeta.Name),
+				Name: name,
 				Key:  key,
 			})
 		}
 
-		// Get comprehensive progress information
 		phaseProgress, err := a.GetPhaseProgressStats(r.Context(), taskID)
 		if err != nil {
 			ReportError(r.Context(), err, "msg", "error getting phase progress")
-			// Fallback to empty progress
 			phaseProgress = &PhaseProgress{}
 		}
 
-		data := map[string]interface{}{
-			"Title":         "annotation",
-			"TaskID":        taskID,
-			"TaskName":      task.Name,
-			"ImageID":       imageID,
-			"ImageFilename": imageFilename,
-			"Classes":       classes,
-			"PhaseProgress": phaseProgress,
-			// Keep old Progress for backward compatibility
-			"Progress": map[string]interface{}{
-				"AvailableCount": phaseProgress.Pending,
-				"TotalCount":     phaseProgress.Completed + phaseProgress.Pending,
-				"CompletedCount": phaseProgress.Completed,
+		err = Render(r.Context(), w, pages.Annotate(layout.ShellProps{Title: "annotation"}, pages.AnnotateData{
+			TaskID:        taskID,
+			TaskName:      task.Name,
+			ImageID:       imageID,
+			ImageFilename: imageFilename,
+			Classes:       classes,
+			PhaseProgress: ProgressUI(phaseProgress),
+			Progress: &pages.AnnotateProgress{
+				CompletedCount: phaseProgress.Completed,
+				TotalCount:     phaseProgress.Completed + phaseProgress.Pending,
 			},
-		}
-
-		err = RenderPageWithRequest(r, w, "annotate.html", data)
+		}))
 		if err != nil {
 			ReportError(r.Context(), err, "msg", "error rendering annotate template")
 			w.WriteHeader(http.StatusInternalServerError)
