@@ -11,7 +11,7 @@
 - **No silent failures:** Every `catch` block, every `.catch()`, every error callback that is not an expected/recoverable condition MUST call the centralized error-reporting function.
 
 ## Code Generation
-- Prefer `mise run gen` / `go generate ./...` (CSS + sqlc). i18n extract is `mise run gen:i18n`.
+- Prefer `mise run gen` / `go generate ./...` (CSS, sqlc, goi18n via `go tool`).
 - Do not modify the database schema defined in `internal/db/migrations` or rename columns.
 
 ## Database
