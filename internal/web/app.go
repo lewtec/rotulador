@@ -490,7 +490,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			return
 		}
 
-		err := Render(r.Context(), w, pages.Home(layout.ShellProps{Title: "Welcome to Rotulador"}, pages.HomeData{
+		err := Render(r.Context(), w, pages.Home(layout.ShellProps{Title: "Welcome to Rotulador", Stylesheet: StylesheetHref()}, pages.HomeData{
 			Description: a.Config.Meta.Description,
 		}))
 		if err != nil {
@@ -508,10 +508,12 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 		}
 	})
 
-	// Embedded stylesheet (cacheable URL; content still from go:embed)
+	// Embedded stylesheet. URL is cache-busted via ?v=contenthash in StylesheetHref;
+	// long max-age is safe because the query string changes when CSS changes.
 	mux.HandleFunc("/static/style.css", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
-		w.Header().Set("Cache-Control", "public, max-age=31536000")
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		w.Header().Set("ETag", `"`+cssETag+`"`)
 		if _, err := w.Write([]byte(CSS())); err != nil {
 			ReportError(r.Context(), err, "msg", "error writing stylesheet response")
 		}
@@ -611,7 +613,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			return
 		}
 
-		err := Render(r.Context(), w, pages.Help(layout.ShellProps{Title: title}, pages.HelpData{
+		err := Render(r.Context(), w, pages.Help(layout.ShellProps{Title: title, Stylesheet: StylesheetHref()}, pages.HelpData{
 			Description: a.Config.Meta.Description,
 			Detail:      detail,
 			Tasks:       helpTasks,
@@ -635,7 +637,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 				return
 			}
 			if step == nil {
-				err := Render(r.Context(), w, pages.Complete(layout.ShellProps{Title: "All annotations are done!"}))
+				err := Render(r.Context(), w, pages.Complete(layout.ShellProps{Title: "All annotations are done!", Stylesheet: StylesheetHref()}))
 				if err != nil {
 					ReportError(r.Context(), err, "msg", "error rendering complete template")
 				}
@@ -740,7 +742,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			phaseProgress = &PhaseProgress{}
 		}
 
-		err = Render(r.Context(), w, pages.Annotate(layout.ShellProps{Title: "annotation"}, pages.AnnotateData{
+		err = Render(r.Context(), w, pages.Annotate(layout.ShellProps{Title: "annotation", Stylesheet: StylesheetHref()}, pages.AnnotateData{
 			TaskID:        taskID,
 			TaskName:      task.Name,
 			ImageID:       imageID,

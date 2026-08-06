@@ -5,6 +5,16 @@ import "github.com/a-h/templ"
 // ShellProps is chrome shared by product pages.
 type ShellProps struct {
 	Title string
+	// Stylesheet is the CSS href (include ?v= hash for cache busting). Empty uses /static/style.css.
+	Stylesheet string
+}
+
+// StylesheetHref returns the stylesheet link target.
+func (p ShellProps) StylesheetHref() string {
+	if p.Stylesheet != "" {
+		return p.Stylesheet
+	}
+	return "/static/style.css"
 }
 
 // Crumb is one breadcrumb entry.

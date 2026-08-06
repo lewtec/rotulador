@@ -35,7 +35,7 @@ templ appNavbar() {
 // Shell is the standard product frame: fixed header + scrolling main (toast host).
 // Use for home, help, complete — no bottom dock.
 templ Shell(p ShellProps) {
-	@Document(p.Title) {
+	@Document(p.Title, p.StylesheetHref()) {
 		// app-frame: 100vh desktop + 100dvh when supported (mobile URL chrome).
 		<body class="app-frame overflow-hidden bg-base-200 text-base-content">
 			<div class="flex h-full min-h-0 flex-col">
@@ -54,7 +54,7 @@ templ Shell(p ShellProps) {
 // visualViewport so the dock stays at the bottom of what the user actually sees
 // (mobile Chromium / Vivaldi). Children: main then dock (flex column).
 templ ShellColumn(p ShellProps) {
-	@Document(p.Title) {
+	@Document(p.Title, p.StylesheetHref()) {
 		<body class="overflow-hidden bg-base-200 text-base-content">
 			<div class="annotate-page-root" id="annotate-page-root">
 				@appNavbar()
