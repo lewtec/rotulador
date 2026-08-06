@@ -2,45 +2,62 @@ package layout
 
 import "github.com/lewtec/rotulador/internal/i18n"
 
+templ appNavbar() {
+	<header class="navbar z-50 h-12 min-h-12 shrink-0 border-b border-base-300 bg-base-100 px-2 sm:px-4">
+		<div class="navbar-start">
+			<a href="/" class="btn btn-ghost h-10 min-h-10 px-1.5 sm:px-2 text-base font-semibold" aria-label="Rotulador">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+				</svg>
+				Rotulador
+			</a>
+		</div>
+		<div class="navbar-end gap-0.5">
+			<ul class="menu menu-horizontal px-0 gap-0">
+				<li><a href="/" class="rounded-btn">{ i18n.T(ctx, "Home") }</a></li>
+				<li><a href="/help" class="rounded-btn">{ i18n.T(ctx, "Help") }</a></li>
+				<li><a href="/annotate" class="rounded-btn">{ i18n.T(ctx, "Annotate") }</a></li>
+			</ul>
+			<a
+				onclick="toggleTheme(); return false;"
+				href="#"
+				class="btn btn-ghost btn-square btn-sm"
+				aria-label={ i18n.T(ctx, "Toggle theme") }
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+				</svg>
+			</a>
+		</div>
+	</header>
+}
+
+// Shell is the standard product frame: fixed header + scrolling main (toast host).
+// Use for home, help, complete — no bottom dock.
 templ Shell(p ShellProps) {
 	@Document(p.Title) {
-		<body class="bg-base-100">
-			<header>
-				<nav class="bg-base-200 shadow-lg">
-					<div class="container mx-auto flex items-center justify-between px-4 py-2">
-						<div class="flex-1">
-							<a href="/" class="btn btn-ghost text-xl">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-								</svg>
-								Rotulador
-							</a>
-						</div>
-						<div class="flex-none">
-							<ul class="menu menu-horizontal px-1">
-								<li><a href="/">{ i18n.T(ctx, "Home") }</a></li>
-								<li><a href="/help">{ i18n.T(ctx, "Help") }</a></li>
-								<li><a href="/annotate">{ i18n.T(ctx, "Annotate") }</a></li>
-								<li>
-									<a onclick="toggleTheme(); return false;" href="#" aria-label={ i18n.T(ctx, "Toggle theme") }>
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-										</svg>
-									</a>
-								</li>
-							</ul>
-						</div>
+		<body class="h-screen min-h-screen overflow-hidden bg-base-200 text-base-content">
+			<div class="flex h-full min-h-0 flex-col">
+				@appNavbar()
+				<main id="app-main" class="relative min-h-0 flex-1 overflow-y-auto">
+					<div class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+						{ children... }
 					</div>
-				</nav>
-			</header>
-			<main class="container mx-auto px-4 py-8">
+				</main>
+			</div>
+		</body>
+	}
+}
+
+// ShellColumn is header + free column body (page supplies main and optional dock siblings).
+// Annotate uses this so the dock sits outside #app-main (toasts never cover keys).
+templ ShellColumn(p ShellProps) {
+	@Document(p.Title) {
+		<body class="h-screen min-h-screen overflow-hidden bg-base-200 text-base-content">
+			<div class="flex h-full min-h-0 flex-col">
+				@appNavbar()
 				{ children... }
-			</main>
-			<footer class="footer footer-center p-4 bg-base-200 text-base-content mt-8">
-				<aside>
-					<p>Rotulador - { i18n.T(ctx, "Image Annotation Tool") }</p>
-				</aside>
-			</footer>
+			</div>
 		</body>
 	}
 }

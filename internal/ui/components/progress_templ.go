@@ -36,7 +36,7 @@ func ProgressBar(p *Progress) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if p != nil && p.Total > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex w-full h-8 rounded-lg overflow-hidden shadow-sm mb-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex h-7 w-full overflow-hidden rounded-md\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
