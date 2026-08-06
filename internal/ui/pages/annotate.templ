@@ -14,13 +14,32 @@ templ Annotate(shell layout.ShellProps, d AnnotateData) {
 		<main id="app-main" class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
 			// Compact meta stays shrink-0; image pane takes every leftover pixel.
 			<div class="shrink-0 space-y-1 px-3 pt-2 sm:px-4">
-				<nav class="text-xs text-base-content/50" aria-label="Breadcrumb">
-					<a class="link link-hover" href="/">{ i18n.T(ctx, "Home") }</a>
-					<span class="text-base-content/40"> / </span>
-					<a class="link link-hover" href={ fmt.Sprintf("/help/%s", d.TaskID) }>{ d.TaskName }</a>
-					<span class="text-base-content/40"> / </span>
-					<span class="text-base-content/70">{ i18n.T(ctx, "Annotate") }</span>
-				</nav>
+				<div class="flex min-w-0 items-center gap-2 text-xs text-base-content/50">
+					<nav class="min-w-0 flex-1 truncate" aria-label="Breadcrumb">
+						<a class="link link-hover" href="/">{ i18n.T(ctx, "Home") }</a>
+						<span class="text-base-content/40"> / </span>
+						<a class="link link-hover" href={ fmt.Sprintf("/help/%s", d.TaskID) }>{ d.TaskName }</a>
+						<span class="text-base-content/40"> / </span>
+						<span class="text-base-content/70">{ i18n.T(ctx, "Annotate") }</span>
+						<span class="text-base-content/40"> / </span>
+						// Filename stays out of JS string literals: data attributes only.
+						<button
+							type="button"
+							class="font-mono max-w-[40%] truncate align-baseline text-left text-base-content/60 hover:text-base-content"
+							data-filename={ d.ImageFilename }
+							data-copied={ i18n.T(ctx, "Copied to clipboard!") }
+							onclick="navigator.clipboard.writeText(this.dataset.filename); showToast(this.dataset.copied)"
+							title={ d.ImageFilename }
+						>
+							{ d.ImageFilename }
+						</button>
+					</nav>
+					if d.Progress != nil {
+						<span class="shrink-0 tabular-nums text-base-content/60">
+							{ fmt.Sprintf("%d/%d", d.Progress.CompletedCount, d.Progress.TotalCount) }
+						</span>
+					}
+				</div>
 				@layout.PageHeader(layout.PageHeaderProps{
 					Title:      d.TaskName,
 					Compact:    true,
@@ -30,24 +49,6 @@ templ Annotate(shell layout.ShellProps, d AnnotateData) {
 						{ i18n.T(ctx, "Help") }
 					</a>
 				}
-				<div class="flex min-w-0 flex-wrap items-center gap-2 pb-1 text-xs text-base-content/60">
-					// Filename stays out of JS string literals: data attributes only.
-					<button
-						type="button"
-						class="font-mono max-w-full truncate text-left hover:text-base-content"
-						data-filename={ d.ImageFilename }
-						data-copied={ i18n.T(ctx, "Copied to clipboard!") }
-						onclick="navigator.clipboard.writeText(this.dataset.filename); showToast(this.dataset.copied)"
-						title={ d.ImageFilename }
-					>
-						{ d.ImageFilename }
-					</button>
-					if d.Progress != nil {
-						<span class="shrink-0 tabular-nums">
-							{ fmt.Sprintf("%d/%d", d.Progress.CompletedCount, d.Progress.TotalCount) }
-						</span>
-					}
-				</div>
 			</div>
 			// Absolute fill + object-contain: max-* alone does not grow into flex free space.
 			<div class="relative min-h-0 w-full flex-1 overflow-hidden bg-base-100">
