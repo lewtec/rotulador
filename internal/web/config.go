@@ -11,6 +11,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Config validation sentinels (appError). Identity detail is attached with
+// fmt.Errorf %w so callers can errors.Is.
+const (
+	ErrDuplicateTaskID  appError = "task is defined twice"
+	ErrTaskHasNoClasses appError = "task does not have any classes or a compatible type"
+	ErrNoUsers          appError = "no users specified"
+	ErrI18nMissingName  appError = "i18n item is invalid: does not provide the name attribute"
+	ErrI18nMissingValue appError = "i18n item is invalid: does not provide the value attribute"
+	ErrNullPassword     appError = "user has a null password"
+)
+
 type Config struct {
 	Meta struct {
 		Description string `yaml:"description"`
@@ -68,7 +79,7 @@ func LoadConfig(filename string) (*Config, error) {
 		taskName := task.ID
 		_, ok := _taskDict[taskName]
 		if ok {
-			return nil, fmt.Errorf("task with %s is defined twice", taskName)
+			return nil, fmt.Errorf("%w: %s", ErrDuplicateTaskID, taskName)
 		}
 		_taskDict[taskName] = ""
 		if task.Type == "" {
@@ -81,20 +92,20 @@ func LoadConfig(filename string) (*Config, error) {
 			task.Classes = getClassesFromClassType(task.Type)
 		}
 		if task.Classes == nil {
-			return nil, fmt.Errorf("task %s does not have any classes or a compatible type", taskName)
+			return nil, fmt.Errorf("%w: %s", ErrTaskHasNoClasses, taskName)
 		}
 	}
 	if len(ret.Authentication) == 0 {
-		return nil, fmt.Errorf("no users specified")
+		return nil, ErrNoUsers
 	}
 	// Load i18n strings from YAML config into default locale
 	if len(ret.I18N) > 0 {
 		for _, term := range ret.I18N {
 			if term.Name == "" {
-				return nil, fmt.Errorf("one i18n item is invalid: does not provide the name attribute")
+				return nil, ErrI18nMissingName
 			}
 			if term.Value == "" {
-				return nil, fmt.Errorf("one i18n item is invalid: does not provide the value attribute")
+				return nil, ErrI18nMissingValue
 			}
 			// Add to bundle as English messages
 			if err := i18n.AddMessage("en", term.Name, term.Value); err != nil {
@@ -105,7 +116,7 @@ func LoadConfig(filename string) (*Config, error) {
 	}
 	for user, auth := range ret.Authentication {
 		if auth.Password == "" {
-			return nil, fmt.Errorf("user %s has a null password", user)
+			return nil, fmt.Errorf("%w: %s", ErrNullPassword, user)
 		}
 		// Hash plaintext passwords. Detect existing bcrypt hashes via bcrypt.Cost
 		// rather than a "$2" prefix so values like "$2secret" still get hashed.
