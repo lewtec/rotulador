@@ -27,6 +27,17 @@ func (a *AnnotatorApp) findTaskIndex(taskID string) int {
 	return -1
 }
 
+// imageMeetsDependencies reports whether sha256 is present in every
+// required dependency hash set. An empty required map is always true.
+func imageMeetsDependencies(sha256 string, required map[string]string, hashes map[string]map[string]bool) bool {
+	for depTaskID := range required {
+		if !hashes[depTaskID][sha256] {
+			return false
+		}
+	}
+	return true
+}
+
 // getDependencyImageHashes pre-fetches image hashes for all dependencies of the given task.
 // This optimization moves queries outside the main loop.
 func (a *AnnotatorApp) getDependencyImageHashes(ctx context.Context, task *ConfigTask) (map[string]map[string]bool, error) {
