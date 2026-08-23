@@ -141,16 +141,7 @@ func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (
 
 	validCount := 0
 	for _, img := range allImages {
-		valid := true
-		// Check each dependency using pre-fetched map
-		for depTaskID := range task.If {
-			if !imageHashesByDep[depTaskID][img.SHA256] {
-				valid = false
-				break
-			}
-		}
-
-		if valid {
+		if imageMeetsDependencies(img.SHA256, task.If, imageHashesByDep) {
 			validCount++
 		}
 	}
@@ -190,24 +181,16 @@ func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) 
 
 		validCount := 0
 		for _, img := range allImages {
-			valid := true
-			// Check each dependency using pre-fetched map
-			for depTaskID := range task.If {
-				if !imageHashesByDep[depTaskID][img.SHA256] {
-					valid = false
-					break
-				}
+			if !imageMeetsDependencies(img.SHA256, task.If, imageHashesByDep) {
+				continue
 			}
-
-			if valid {
-				// Check if this image has annotation for current stage
-				hasAnnotation, err := a.annotationRepo.CheckAnnotationExists(ctx, img.SHA256, "", int64(stageIndex))
-				if err != nil {
-					return 0, err
-				}
-				if !hasAnnotation {
-					validCount++
-				}
+			// Check if this image has annotation for current stage
+			hasAnnotation, err := a.annotationRepo.CheckAnnotationExists(ctx, img.SHA256, "", int64(stageIndex))
+			if err != nil {
+				return 0, err
+			}
+			if !hasAnnotation {
+				validCount++
 			}
 		}
 		return validCount, nil
@@ -272,16 +255,7 @@ func (a *AnnotatorApp) GetPhaseProgressStats(ctx context.Context, taskID string)
 			// Get images that passed the filter (eligible)
 			eligibleHashes := make(map[string]bool)
 			for _, img := range allImages {
-				valid := true
-				// Check each dependency using pre-fetched map
-				for depTaskID := range task.If {
-					if !imageHashesByDep[depTaskID][img.SHA256] {
-						valid = false
-						break
-					}
-				}
-
-				if valid {
+				if imageMeetsDependencies(img.SHA256, task.If, imageHashesByDep) {
 					eligibleHashes[img.SHA256] = true
 				}
 			}
@@ -392,18 +366,7 @@ func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*
 			continue // Skip images that already have annotation
 		}
 
-		// Check task dependencies (If field) using pre-fetched map
-		valid := true
-		if len(task.If) > 0 {
-			for depTaskID := range task.If {
-				if !imageHashesByDep[depTaskID][img.SHA256] {
-					valid = false
-					break
-				}
-			}
-		}
-
-		if valid {
+		if imageMeetsDependencies(img.SHA256, task.If, imageHashesByDep) {
 			candidateImages = append(candidateImages, img.SHA256)
 			// Limit candidates to OffsetAdvance for performance
 			if len(candidateImages) >= a.OffsetAdvance {
