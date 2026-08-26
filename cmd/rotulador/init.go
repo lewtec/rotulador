@@ -64,11 +64,7 @@ Example:
 		if err != nil {
 			return fmt.Errorf("create database: %w", err)
 		}
-		defer func() {
-			if err := db.Close(); err != nil {
-				web.ReportError(cmd.Context(), err, "msg", "failed to close database")
-			}
-		}()
+		defer closeDatabase(cmd.Context(), db)
 
 		// Initialize database if images directory is provided
 		if imagesDir != "" {

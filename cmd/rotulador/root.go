@@ -161,11 +161,7 @@ With a set of trivial choices scale the classification of a set of images to man
 		if err != nil {
 			return fmt.Errorf("open database: %w", err)
 		}
-		defer func() {
-			if err := db.Close(); err != nil {
-				web.ReportError(cmd.Context(), err, "msg", "failed to close database")
-			}
-		}()
+		defer closeDatabase(cmd.Context(), db)
 
 		app := &web.AnnotatorApp{
 			ImagesDir: imagesDir,

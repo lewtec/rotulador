@@ -90,11 +90,7 @@ Examples:
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if err := db.Close(); err != nil {
-				web.ReportError(cmd.Context(), err, "msg", "failed to close database")
-			}
-		}()
+		defer closeDatabase(cmd.Context(), db)
 
 		tx, err := db.BeginTx(cmd.Context(), &sql.TxOptions{
 			Isolation: sql.LevelReadUncommitted,
