@@ -10,10 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang-migrate/migrate/v4"
-	migrateSqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/lewtec/rotulador/internal/db/migrations"
+	appdb "github.com/lewtec/rotulador/internal/db"
 	"github.com/lewtec/rotulador/internal/web"
 	_ "modernc.org/sqlite"
 )
@@ -27,20 +24,8 @@ func setupQueryTestDB(t *testing.T) (dbPath string, cleanup func()) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	driver, err := migrateSqlite.WithInstance(db, &migrateSqlite.Config{})
-	if err != nil {
-		t.Fatalf("driver: %v", err)
-	}
-	src, err := iofs.New(migrations.Migrations, ".")
-	if err != nil {
-		t.Fatalf("iofs: %v", err)
-	}
-	m, err := migrate.NewWithInstance("iofs", src, "sqlite", driver)
-	if err != nil {
-		t.Fatalf("migrate: %v", err)
-	}
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		t.Fatalf("up: %v", err)
+	if err := appdb.RunMigrations(db); err != nil {
+		t.Fatalf("RunMigrations: %v", err)
 	}
 
 	_, err = db.Exec(`

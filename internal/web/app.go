@@ -16,10 +16,7 @@ import (
 
 	"math/rand"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/lewtec/rotulador/internal/db/migrations"
+	appdb "github.com/lewtec/rotulador/internal/db"
 	"github.com/lewtec/rotulador/internal/domain"
 	"github.com/lewtec/rotulador/internal/repository"
 	"github.com/lewtec/rotulador/internal/ui/pages"
@@ -825,19 +822,7 @@ func (a *AnnotatorApp) PrepareDatabase(ctx context.Context) error {
 // This must be called synchronously before starting the HTTP server.
 func (a *AnnotatorApp) PrepareDatabaseMigrations(ctx context.Context) error {
 	a.init()
-	db, err := sqlite.WithInstance(a.Database, &sqlite.Config{})
-	if err != nil {
-		return err
-	}
-	migrationsFS, err := iofs.New(migrations.Migrations, ".")
-	if err != nil {
-		return err
-	}
-	m, err := migrate.NewWithInstance("iofs", migrationsFS, "sqlite", db)
-	if err != nil {
-		return err
-	}
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := appdb.RunMigrations(a.Database); err != nil {
 		return err
 	}
 	a.Logger.Info("PrepareDatabaseMigrations: migrations completed successfully")
