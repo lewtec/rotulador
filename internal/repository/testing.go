@@ -4,11 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
 	appdb "github.com/lewtec/rotulador/internal/db"
-	"github.com/lewtec/rotulador/internal/db/migrations"
 	_ "modernc.org/sqlite"
 )
 
@@ -21,23 +17,7 @@ func SetupTestDB(t *testing.T) *sql.DB {
 		t.Fatalf("failed to open test database: %v", err)
 	}
 
-	// Use golang-migrate to run migrations from embedded files
-	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
-	if err != nil {
-		t.Fatalf("failed to create sqlite driver: %v", err)
-	}
-
-	migrationsFS, err := iofs.New(migrations.Migrations, ".")
-	if err != nil {
-		t.Fatalf("failed to create iofs source: %v", err)
-	}
-
-	m, err := migrate.NewWithInstance("iofs", migrationsFS, "sqlite", driver)
-	if err != nil {
-		t.Fatalf("failed to create migrate instance: %v", err)
-	}
-
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := appdb.RunMigrations(db); err != nil {
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 

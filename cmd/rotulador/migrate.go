@@ -13,10 +13,7 @@ import (
 
 	"io/fs"
 
-	"github.com/golang-migrate/migrate/v4"
-	migrateSqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/lewtec/rotulador/internal/db/migrations"
+	appdb "github.com/lewtec/rotulador/internal/db"
 	"github.com/lewtec/rotulador/internal/web"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -113,7 +110,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 		}
 	}()
 
-	if err := runMigrations(newDB); err != nil {
+	if err := appdb.RunMigrations(newDB); err != nil {
 		return fmt.Errorf("run migrations: %w", err)
 	}
 
@@ -196,25 +193,6 @@ func validateTaskIDForLegacyTable(taskID string) error {
 
 func legacyTaskTableName(taskID string) string {
 	return "task_" + taskID
-}
-
-func runMigrations(db *sql.DB) error {
-	driver, err := migrateSqlite.WithInstance(db, &migrateSqlite.Config{})
-	if err != nil {
-		return err
-	}
-	src, err := iofs.New(migrations.Migrations, ".")
-	if err != nil {
-		return err
-	}
-	m, err := migrate.NewWithInstance("iofs", src, "sqlite", driver)
-	if err != nil {
-		return err
-	}
-	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return err
-	}
-	return nil
 }
 
 // migrateImages copies images into the current schema and returns the set of known sha256 keys.
