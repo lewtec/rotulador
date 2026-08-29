@@ -45,25 +45,12 @@ templ Help(shell layout.ShellProps, d HelpData) {
 										<div class="mb-1 flex justify-between text-xs">
 											<span class="font-medium">{ i18n.T(ctx, "Progress") }</span>
 											<span class="tabular-nums text-base-content/70">
-												{ fmt.Sprintf("%d/%d", task.CompletedCount, task.TotalCount) }
-												{ i18n.T(ctx, "eligible") }
-												if task.PhaseProgress != nil {
-													{ fmt.Sprintf(" (%d %s)", task.PhaseProgress.Total, i18n.T(ctx, "total")) }
-												}
+												@helpEligibleCount(task)
 											</span>
 										</div>
 										@components.ProgressBar(task.PhaseProgress)
 									</div>
-									if len(task.If) > 0 {
-										<div>
-											<span class="text-xs font-medium text-base-content/60">{ i18n.T(ctx, "Dependencies:") }</span>
-											<div class="mt-1 flex flex-wrap gap-1">
-												for depTask, depValue := range task.If {
-													<div class="badge badge-outline badge-sm">{ depTask }: { depValue }</div>
-												}
-											</div>
-										</div>
-									}
+									@helpDependencies(task)
 									<div class="card-actions justify-end">
 										<a href={ fmt.Sprintf("/help/%s", task.ID) } class={ layout.HeaderBtnPrimary }>{ i18n.T(ctx, "View Details") }</a>
 										if task.AvailableCount > 0 {
@@ -88,23 +75,10 @@ templ helpProgressCard(task HelpTask, showBack bool) {
 		<div class="card-body gap-3">
 			<h3 class="card-title text-base">{ i18n.T(ctx, "Progress") }</h3>
 			<div class="text-xs text-base-content/70 tabular-nums">
-				{ fmt.Sprintf("%d/%d", task.CompletedCount, task.TotalCount) }
-				{ i18n.T(ctx, "eligible") }
-				if task.PhaseProgress != nil {
-					{ fmt.Sprintf(" (%d %s)", task.PhaseProgress.Total, i18n.T(ctx, "total")) }
-				}
+				@helpEligibleCount(task)
 			</div>
 			@components.ProgressBar(task.PhaseProgress)
-			if len(task.If) > 0 {
-				<div>
-					<span class="text-xs font-medium text-base-content/60">{ i18n.T(ctx, "Dependencies:") }</span>
-					<div class="mt-1 flex flex-wrap gap-1">
-						for depTask, depValue := range task.If {
-							<div class="badge badge-outline badge-sm">{ depTask }: { depValue }</div>
-						}
-					</div>
-				</div>
-			}
+			@helpDependencies(task)
 			<div class="card-actions justify-end">
 				if showBack {
 					<a href="/help" class={ layout.HeaderBtn }>{ i18n.T(ctx, "Back to Overview") }</a>
@@ -145,5 +119,25 @@ templ helpTaskDetail(task *HelpTask) {
 				<img src={ fmt.Sprintf("/asset/%s", ex) } alt="Example"/>
 			}
 		}
+	}
+}
+
+templ helpEligibleCount(task HelpTask) {
+	{ fmt.Sprintf("%d/%d %s", task.CompletedCount, task.TotalCount, i18n.T(ctx, "eligible")) }
+	if task.PhaseProgress != nil {
+		{ fmt.Sprintf(" (%d %s)", task.PhaseProgress.Total, i18n.T(ctx, "total")) }
+	}
+}
+
+templ helpDependencies(task HelpTask) {
+	if len(task.If) > 0 {
+		<div>
+			<span class="text-xs font-medium text-base-content/60">{ i18n.T(ctx, "Dependencies:") }</span>
+			<div class="mt-1 flex flex-wrap gap-1">
+				for depTask, depValue := range task.If {
+					<div class="badge badge-outline badge-sm">{ depTask }: { depValue }</div>
+				}
+			</div>
+		</div>
 	}
 }
