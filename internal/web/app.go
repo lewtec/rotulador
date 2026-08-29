@@ -110,13 +110,10 @@ func (a *AnnotatorApp) getCachedImageList(ctx context.Context) ([]*domain.Image,
 
 // CountEligibleImages counts all images that are eligible for this task (regardless of annotation status)
 func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (int, error) {
-	// Find stage index for this task
-	stageIndex := a.findTaskIndex(taskID)
-	if stageIndex == -1 {
-		return 0, fmt.Errorf("%w: %s", ErrTaskNotFound, taskID)
+	task, _, err := a.lookupTask(taskID)
+	if err != nil {
+		return 0, err
 	}
-
-	task := a.Config.Tasks[stageIndex]
 
 	// If no dependencies, all images are eligible
 	if len(task.If) == 0 {
@@ -147,13 +144,10 @@ func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (
 }
 
 func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) (int, error) {
-	// Find stage index for this task
-	stageIndex := a.findTaskIndex(taskID)
-	if stageIndex == -1 {
-		return 0, fmt.Errorf("%w: %s", ErrTaskNotFound, taskID)
+	task, stageIndex, err := a.lookupTask(taskID)
+	if err != nil {
+		return 0, err
 	}
-
-	task := a.Config.Tasks[stageIndex]
 
 	// Count images without annotation for this stage
 	count, err := a.annotationRepo.CountImagesWithoutAnnotationForStage(ctx, int64(stageIndex))
@@ -229,12 +223,9 @@ func (a *AnnotatorApp) GetPhaseProgressStats(ctx context.Context, taskID string)
 	// Now differentiate between filtered (annotated with wrong class) and not yet annotated
 	var filteredWrongClass, notYetAnnotated int
 
-	// Find task and check if it has dependencies
-	stageIndex := a.findTaskIndex(taskID)
-
-	if stageIndex != -1 {
-		task := a.Config.Tasks[stageIndex]
-
+	// CountEligibleImages already required the task; look it up again for If.
+	task, _, err := a.lookupTask(taskID)
+	if err == nil {
 		// If task has dependencies, analyze the not-eligible images
 		if len(task.If) > 0 {
 			// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
@@ -327,13 +318,10 @@ func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*
 		return nil, nil
 	}
 
-	// Find stage index for this task
-	stageIndex := a.findTaskIndex(taskID)
-	if stageIndex == -1 {
-		return nil, fmt.Errorf("%w: %s", ErrTaskNotFound, taskID)
+	task, stageIndex, err := a.lookupTask(taskID)
+	if err != nil {
+		return nil, err
 	}
-
-	task := a.Config.Tasks[stageIndex]
 
 	// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
 	imageHashesByDep := make(map[string]map[string]bool)
@@ -415,14 +403,13 @@ type AnnotationResponse struct {
 }
 
 func (a *AnnotatorApp) SubmitAnnotation(ctx context.Context, annotation AnnotationResponse) error {
-	// Find stage index for this task
-	stageIndex := a.findTaskIndex(annotation.TaskID)
-	if stageIndex == -1 {
-		return fmt.Errorf("%w: %s", ErrTaskNotFound, annotation.TaskID)
+	_, stageIndex, err := a.lookupTask(annotation.TaskID)
+	if err != nil {
+		return err
 	}
 
 	// ImageID is already the SHA256 hash, use it directly
-	_, err := a.annotationRepo.Create(ctx, annotation.ImageID, annotation.User, stageIndex, annotation.Value)
+	_, err = a.annotationRepo.Create(ctx, annotation.ImageID, annotation.User, stageIndex, annotation.Value)
 	if err != nil {
 		return fmt.Errorf("while creating annotation: %w", err)
 	}
@@ -431,12 +418,11 @@ func (a *AnnotatorApp) SubmitAnnotation(ctx context.Context, annotation Annotati
 }
 
 func (a *AnnotatorApp) GetTask(taskID string) *ConfigTask {
-	for _, currentTask := range a.Config.Tasks {
-		if currentTask.ID == taskID {
-			return currentTask
-		}
+	task, _, err := a.lookupTask(taskID)
+	if err != nil {
+		return nil
 	}
-	return nil
+	return task
 }
 
 // buildHelpTask loads progress stats for a help list or detail view.
