@@ -90,11 +90,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	if err != nil {
 		return fmt.Errorf("open old database: %w", err)
 	}
-	defer func() {
-		if err := oldDB.Close(); err != nil {
-			web.ReportError(ctx, err, "msg", "failed to close old database")
-		}
-	}()
+	defer closeDatabase(ctx, oldDB)
 
 	if err := verifyLegacySchema(ctx, oldDB, config.Tasks, logger); err != nil {
 		return fmt.Errorf("old database schema validation failed: %w", err)
@@ -104,11 +100,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	if err != nil {
 		return fmt.Errorf("create new database: %w", err)
 	}
-	defer func() {
-		if err := newDB.Close(); err != nil {
-			web.ReportError(ctx, err, "msg", "failed to close new database")
-		}
-	}()
+	defer closeDatabase(ctx, newDB)
 
 	if err := appdb.RunMigrations(newDB); err != nil {
 		return fmt.Errorf("run migrations: %w", err)
@@ -118,11 +110,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	if err != nil {
 		return fmt.Errorf("start transaction: %w", err)
 	}
-	defer func() {
-		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
-			web.ReportError(ctx, err, "msg", "failed to rollback transaction")
-		}
-	}()
+	defer rollbackTx(ctx, tx)
 
 	logger.Info("Migrating images...")
 	knownImages, err := migrateImages(ctx, oldDB, tx)

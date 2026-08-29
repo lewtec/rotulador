@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"log/slog"
 	"testing"
@@ -16,6 +17,51 @@ type stubCloser struct {
 func (s *stubCloser) Close() error {
 	s.closed++
 	return s.err
+}
+
+type stubTx struct {
+	err       error
+	rollbacks int
+}
+
+func (s *stubTx) Rollback() error {
+	s.rollbacks++
+	return s.err
+}
+
+func TestRollbackTx(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+		tx := &stubTx{}
+		rollbackTx(t.Context(), tx)
+		if tx.rollbacks != 1 {
+			t.Fatalf("Rollback() calls = %d, want 1", tx.rollbacks)
+		}
+	})
+
+	t.Run("ignores already committed", func(t *testing.T) {
+		t.Parallel()
+		tx := &stubTx{err: sql.ErrTxDone}
+		rollbackTx(t.Context(), tx)
+		if tx.rollbacks != 1 {
+			t.Fatalf("Rollback() calls = %d, want 1", tx.rollbacks)
+		}
+	})
+
+	t.Run("reports rollback error", func(t *testing.T) {
+		t.Parallel()
+		prev := slog.Default()
+		slog.SetDefault(slog.New(slog.DiscardHandler))
+		t.Cleanup(func() { slog.SetDefault(prev) })
+
+		tx := &stubTx{err: errCloseBoom}
+		rollbackTx(t.Context(), tx)
+		if tx.rollbacks != 1 {
+			t.Fatalf("Rollback() calls = %d, want 1", tx.rollbacks)
+		}
+	})
 }
 
 func TestCloseDatabase(t *testing.T) {
