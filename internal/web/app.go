@@ -121,26 +121,11 @@ func (a *AnnotatorApp) CountEligibleImages(ctx context.Context, taskID string) (
 		return int(count), err
 	}
 
-	// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
-	imageHashesByDep, err := a.getDependencyImageHashes(ctx, task)
+	allImages, imageHashesByDep, err := a.listImagesForTask(ctx, task)
 	if err != nil {
 		return 0, err
 	}
-
-	// Get all images and filter by dependencies (using cache)
-	allImages, err := a.getCachedImageList(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("while listing images: %w", err)
-	}
-
-	validCount := 0
-	for _, img := range allImages {
-		if imageMeetsDependencies(img.SHA256, task.If, imageHashesByDep) {
-			validCount++
-		}
-	}
-
-	return validCount, nil
+	return len(imagesMeetingDependencies(allImages, task.If, imageHashesByDep)), nil
 }
 
 func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) (int, error) {
@@ -158,24 +143,13 @@ func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) 
 	// Handle task dependencies (If field)
 	// If there are dependencies, we need to filter images that meet the criteria
 	if len(task.If) > 0 {
-		// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
-		imageHashesByDep, err := a.getDependencyImageHashes(ctx, task)
+		allImages, imageHashesByDep, err := a.listImagesForTask(ctx, task)
 		if err != nil {
 			return 0, err
 		}
 
-		// Get all candidate images (using cache)
-		allImages, err := a.getCachedImageList(ctx)
-		if err != nil {
-			return 0, fmt.Errorf("while listing images: %w", err)
-		}
-
 		validCount := 0
-		for _, img := range allImages {
-			if !imageMeetsDependencies(img.SHA256, task.If, imageHashesByDep) {
-				continue
-			}
-			// Check if this image has annotation for current stage
+		for _, img := range imagesMeetingDependencies(allImages, task.If, imageHashesByDep) {
 			hasAnnotation, err := a.annotationRepo.CheckAnnotationExists(ctx, img.SHA256, "", int64(stageIndex))
 			if err != nil {
 				return 0, err
@@ -228,24 +202,15 @@ func (a *AnnotatorApp) GetPhaseProgressStats(ctx context.Context, taskID string)
 	if err == nil {
 		// If task has dependencies, analyze the not-eligible images
 		if len(task.If) > 0 {
-			// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
-			imageHashesByDep, err := a.getDependencyImageHashes(ctx, task)
+			allImages, imageHashesByDep, err := a.listImagesForTask(ctx, task)
 			if err != nil {
 				return nil, err
 			}
 
-			// Get all images (using cache)
-			allImages, err := a.getCachedImageList(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("while listing images: %w", err)
-			}
-
-			// Get images that passed the filter (eligible)
-			eligibleHashes := make(map[string]bool)
-			for _, img := range allImages {
-				if imageMeetsDependencies(img.SHA256, task.If, imageHashesByDep) {
-					eligibleHashes[img.SHA256] = true
-				}
+			eligible := imagesMeetingDependencies(allImages, task.If, imageHashesByDep)
+			eligibleHashes := make(map[string]bool, len(eligible))
+			for _, img := range eligible {
+				eligibleHashes[img.SHA256] = true
 			}
 
 			// Check not-eligible images to see if they were annotated in dependency phase
@@ -323,40 +288,24 @@ func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*
 		return nil, err
 	}
 
-	// Pre-fetch all dependency data before looping (optimization: move queries outside loop)
-	imageHashesByDep := make(map[string]map[string]bool)
-	if len(task.If) > 0 {
-		var err error
-		imageHashesByDep, err = a.getDependencyImageHashes(ctx, task)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Get images without annotation for this stage (using cache)
-	allImages, err := a.getCachedImageList(ctx)
+	allImages, imageHashesByDep, err := a.listImagesForTask(ctx, task)
 	if err != nil {
-		return nil, fmt.Errorf("while listing images: %w", err)
+		return nil, err
 	}
 
 	// Filter images based on dependencies and annotation status
 	var candidateImages []string
-	for _, img := range allImages {
-		// Check if image already has annotation for this stage
+	for _, img := range imagesMeetingDependencies(allImages, task.If, imageHashesByDep) {
 		hasAnnotation, err := a.annotationRepo.CheckAnnotationExists(ctx, img.SHA256, "", int64(stageIndex))
 		if err != nil {
 			return nil, err
 		}
 		if hasAnnotation {
-			continue // Skip images that already have annotation
+			continue
 		}
-
-		if imageMeetsDependencies(img.SHA256, task.If, imageHashesByDep) {
-			candidateImages = append(candidateImages, img.SHA256)
-			// Limit candidates to OffsetAdvance for performance
-			if len(candidateImages) >= a.OffsetAdvance {
-				break
-			}
+		candidateImages = append(candidateImages, img.SHA256)
+		if len(candidateImages) >= a.OffsetAdvance {
+			break
 		}
 	}
 

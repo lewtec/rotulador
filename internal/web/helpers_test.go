@@ -1,6 +1,10 @@
 package web
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/lewtec/rotulador/internal/domain"
+)
 
 func TestImageMeetsDependencies(t *testing.T) {
 	t.Parallel()
@@ -34,4 +38,49 @@ func TestImageMeetsDependencies(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestImagesMeetingDependencies(t *testing.T) {
+	t.Parallel()
+
+	aaa := &domain.Image{SHA256: "aaa"}
+	bbb := &domain.Image{SHA256: "bbb"}
+	ccc := &domain.Image{SHA256: "ccc"}
+	images := []*domain.Image{aaa, bbb, ccc}
+	hashes := map[string]map[string]bool{
+		"quality": {"aaa": true, "ccc": true},
+		"person":  {"aaa": true, "bbb": true},
+	}
+
+	t.Run("no dependencies returns input", func(t *testing.T) {
+		t.Parallel()
+		got := imagesMeetingDependencies(images, nil, hashes)
+		if len(got) != 3 || got[0] != aaa || got[2] != ccc {
+			t.Fatalf("got %#v, want original slice", got)
+		}
+	})
+
+	t.Run("empty dependencies returns input", func(t *testing.T) {
+		t.Parallel()
+		got := imagesMeetingDependencies(images, map[string]string{}, hashes)
+		if len(got) != 3 {
+			t.Fatalf("got %d images, want 3", len(got))
+		}
+	})
+
+	t.Run("filters and keeps order", func(t *testing.T) {
+		t.Parallel()
+		got := imagesMeetingDependencies(images, map[string]string{"quality": "good"}, hashes)
+		if len(got) != 2 || got[0] != aaa || got[1] != ccc {
+			t.Fatalf("got %#v, want [aaa ccc]", got)
+		}
+	})
+
+	t.Run("requires every dependency", func(t *testing.T) {
+		t.Parallel()
+		got := imagesMeetingDependencies(images, map[string]string{"quality": "good", "person": "true"}, hashes)
+		if len(got) != 1 || got[0] != aaa {
+			t.Fatalf("got %#v, want [aaa]", got)
+		}
+	})
 }
