@@ -17,10 +17,12 @@ type ImageRepository interface {
 	// Create creates a new image record
 	Create(ctx context.Context, sha256, filename string) (*Image, error)
 
-	// GetBySHA256 retrieves an image by its SHA256 hash
+	// GetBySHA256 retrieves an image by its SHA256 hash.
+	// Missing rows return an error that errors.Is matches sql.ErrNoRows.
 	GetBySHA256(ctx context.Context, sha256 string) (*Image, error)
 
-	// GetByFilename retrieves an image by its filename
+	// GetByFilename retrieves an image by its filename.
+	// Missing rows return an error that errors.Is matches sql.ErrNoRows.
 	GetByFilename(ctx context.Context, filename string) (*Image, error)
 
 	// List retrieves all images
