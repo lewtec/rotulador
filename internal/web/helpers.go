@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/lewtec/rotulador/internal/domain"
 )
 
 func pathParts(path string) []string {
@@ -45,6 +47,39 @@ func imageMeetsDependencies(sha256 string, required map[string]string, hashes ma
 		}
 	}
 	return true
+}
+
+// listImagesForTask returns the cached image list and, when the task has
+// dependencies, the pre-fetched hash sets used by imageMeetsDependencies.
+func (a *AnnotatorApp) listImagesForTask(ctx context.Context, task *ConfigTask) ([]*domain.Image, map[string]map[string]bool, error) {
+	var hashes map[string]map[string]bool
+	if len(task.If) > 0 {
+		var err error
+		hashes, err = a.getDependencyImageHashes(ctx, task)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	images, err := a.getCachedImageList(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("while listing images: %w", err)
+	}
+	return images, hashes, nil
+}
+
+// imagesMeetingDependencies keeps images present in every required dependency set.
+// An empty required map returns images unchanged.
+func imagesMeetingDependencies(images []*domain.Image, required map[string]string, hashes map[string]map[string]bool) []*domain.Image {
+	if len(required) == 0 {
+		return images
+	}
+	out := make([]*domain.Image, 0, len(images))
+	for _, img := range images {
+		if imageMeetsDependencies(img.SHA256, required, hashes) {
+			out = append(out, img)
+		}
+	}
+	return out
 }
 
 // getDependencyImageHashes pre-fetches image hashes for all dependencies of the given task.
