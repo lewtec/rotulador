@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -98,11 +97,7 @@ Examples:
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
-				web.ReportError(cmd.Context(), err, "msg", "failed to rollback transaction")
-			}
-		}()
+		defer rollbackTx(cmd.Context(), tx)
 
 		// No stage index provided - list all stages
 		if len(args) < 2 {
