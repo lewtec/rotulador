@@ -82,6 +82,38 @@ func imagesMeetingDependencies(images []*domain.Image, required map[string]strin
 	return out
 }
 
+// pendingImages keeps images for which exists is false.
+// limit <= 0 means no cap.
+func pendingImages(images []*domain.Image, exists func(sha256 string) (bool, error), limit int) ([]*domain.Image, error) {
+	var out []*domain.Image
+	for _, img := range images {
+		has, err := exists(img.SHA256)
+		if err != nil {
+			return nil, err
+		}
+		if has {
+			continue
+		}
+		out = append(out, img)
+		if limit > 0 && len(out) >= limit {
+			break
+		}
+	}
+	return out, nil
+}
+
+// pendingImagesForTask returns images that meet task.If and have no annotation
+// at stageIndex. limit <= 0 means no cap.
+func (a *AnnotatorApp) pendingImagesForTask(ctx context.Context, task *ConfigTask, stageIndex int, limit int) ([]*domain.Image, error) {
+	allImages, hashes, err := a.listImagesForTask(ctx, task)
+	if err != nil {
+		return nil, err
+	}
+	return pendingImages(imagesMeetingDependencies(allImages, task.If, hashes), func(sha256 string) (bool, error) {
+		return a.annotationRepo.CheckAnnotationExists(ctx, sha256, "", int64(stageIndex))
+	}, limit)
+}
+
 // getDependencyImageHashes pre-fetches image hashes for all dependencies of the given task.
 // This optimization moves queries outside the main loop.
 func (a *AnnotatorApp) getDependencyImageHashes(ctx context.Context, task *ConfigTask) (map[string]map[string]bool, error) {

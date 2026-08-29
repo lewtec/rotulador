@@ -134,33 +134,18 @@ func (a *AnnotatorApp) CountAvailableImages(ctx context.Context, taskID string) 
 		return 0, err
 	}
 
-	// Count images without annotation for this stage
+	if len(task.If) > 0 {
+		pending, err := a.pendingImagesForTask(ctx, task, stageIndex, 0)
+		if err != nil {
+			return 0, err
+		}
+		return len(pending), nil
+	}
+
 	count, err := a.annotationRepo.CountImagesWithoutAnnotationForStage(ctx, int64(stageIndex))
 	if err != nil {
 		return 0, fmt.Errorf("while counting available images: %w", err)
 	}
-
-	// Handle task dependencies (If field)
-	// If there are dependencies, we need to filter images that meet the criteria
-	if len(task.If) > 0 {
-		allImages, imageHashesByDep, err := a.listImagesForTask(ctx, task)
-		if err != nil {
-			return 0, err
-		}
-
-		validCount := 0
-		for _, img := range imagesMeetingDependencies(allImages, task.If, imageHashesByDep) {
-			hasAnnotation, err := a.annotationRepo.CheckAnnotationExists(ctx, img.SHA256, "", int64(stageIndex))
-			if err != nil {
-				return 0, err
-			}
-			if !hasAnnotation {
-				validCount++
-			}
-		}
-		return validCount, nil
-	}
-
 	return int(count), nil
 }
 
@@ -288,45 +273,19 @@ func (a *AnnotatorApp) NextAnnotationStep(ctx context.Context, taskID string) (*
 		return nil, err
 	}
 
-	allImages, imageHashesByDep, err := a.listImagesForTask(ctx, task)
+	candidates, err := a.pendingImagesForTask(ctx, task, stageIndex, a.OffsetAdvance)
 	if err != nil {
 		return nil, err
 	}
-
-	// Filter images based on dependencies and annotation status
-	var candidateImages []string
-	for _, img := range imagesMeetingDependencies(allImages, task.If, imageHashesByDep) {
-		hasAnnotation, err := a.annotationRepo.CheckAnnotationExists(ctx, img.SHA256, "", int64(stageIndex))
-		if err != nil {
-			return nil, err
-		}
-		if hasAnnotation {
-			continue
-		}
-		candidateImages = append(candidateImages, img.SHA256)
-		if len(candidateImages) >= a.OffsetAdvance {
-			break
-		}
-	}
-
-	// No images available
-	if len(candidateImages) == 0 {
+	if len(candidates) == 0 {
 		return nil, nil
 	}
 
-	// Randomly select one image SHA256
-	selectedSHA256 := candidateImages[rand.Intn(len(candidateImages))]
-
-	// Get image details
-	selectedImage, err := a.imageRepo.GetBySHA256(ctx, selectedSHA256)
-	if err != nil {
-		return nil, fmt.Errorf("while getting image details: %w", err)
-	}
-
+	selected := candidates[rand.Intn(len(candidates))]
 	return &AnnotationStep{
 		TaskID:    taskID,
-		ImageID:   selectedSHA256,
-		ImageName: selectedImage.Filename,
+		ImageID:   selected.SHA256,
+		ImageName: selected.Filename,
 	}, nil
 }
 
