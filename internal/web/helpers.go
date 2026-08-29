@@ -27,6 +27,15 @@ func (a *AnnotatorApp) findTaskIndex(taskID string) int {
 	return -1
 }
 
+// lookupTask returns the task and its stage index, or ErrTaskNotFound.
+func (a *AnnotatorApp) lookupTask(taskID string) (*ConfigTask, int, error) {
+	i := a.findTaskIndex(taskID)
+	if i == -1 {
+		return nil, -1, fmt.Errorf("%w: %s", ErrTaskNotFound, taskID)
+	}
+	return a.Config.Tasks[i], i, nil
+}
+
 // imageMeetsDependencies reports whether sha256 is present in every
 // required dependency hash set. An empty required map is always true.
 func imageMeetsDependencies(sha256 string, required map[string]string, hashes map[string]map[string]bool) bool {

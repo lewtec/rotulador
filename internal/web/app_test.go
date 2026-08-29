@@ -30,6 +30,31 @@ func TestErrTaskNotFoundSentinel(t *testing.T) {
 	if !errors.Is(err, ErrTaskNotFound) {
 		t.Fatalf("SubmitAnnotation: got %v, want ErrTaskNotFound", err)
 	}
+
+	if got := a.GetTask("missing-task"); got != nil {
+		t.Fatalf("GetTask(missing): got %#v, want nil", got)
+	}
+
+	_, _, err = a.lookupTask("missing-task")
+	if !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("lookupTask: got %v, want ErrTaskNotFound", err)
+	}
+}
+
+func TestLookupTaskFindsConfiguredTask(t *testing.T) {
+	task := &ConfigTask{ID: "quality"}
+	a := &AnnotatorApp{Config: &Config{Tasks: []*ConfigTask{task}}}
+
+	got, idx, err := a.lookupTask("quality")
+	if err != nil {
+		t.Fatalf("lookupTask: %v", err)
+	}
+	if idx != 0 || got != task {
+		t.Fatalf("lookupTask: got task=%#v idx=%d, want task=%#v idx=0", got, idx, task)
+	}
+	if a.GetTask("quality") != task {
+		t.Fatalf("GetTask: got %#v, want %#v", a.GetTask("quality"), task)
+	}
 }
 
 func TestSecureJoinPathTraversalSentinel(t *testing.T) {
