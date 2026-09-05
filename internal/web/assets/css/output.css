@@ -2361,6 +2361,8 @@
     --join-se: 0;
     --join-es: 0;
     --join-ee: 0;
+    --join-ml: 0;
+    --join-mt: 0;
     --join-v: 0;
     --join-h: 1;
     @scope (&) {
@@ -2389,6 +2391,10 @@
         --join-se: var(--radius-field);
         --join-es: var(--radius-field);
         --join-ee: var(--radius-field);
+      }
+      :where(:scope > :not(:first-child)) {
+        --join-ml: calc(var(--border, 1px) * -1 * var(--join-h));
+        --join-mt: calc(var(--border, 1px) * -1 * var(--join-v));
       }
     }
   }
@@ -2424,6 +2430,7 @@
   }
   @layer daisyui.l1.l2.l3 {
     .breadcrumbs {
+      margin-inline-start: calc(0.25rem * -1);
       max-width: 100%;
       overflow-x: auto;
       padding-block: calc(0.25rem * 2);
@@ -2432,6 +2439,7 @@
       display: flex;
       min-height: min-content;
       align-items: center;
+      padding-inline-start: 0.25rem;
       white-space: nowrap;
     }
     .breadcrumbs > menu  > li {
@@ -2481,6 +2489,7 @@
       display: flex;
       min-height: min-content;
       align-items: center;
+      padding-inline-start: 0.25rem;
       white-space: nowrap;
     }
     .breadcrumbs > ul  > li {
@@ -2530,6 +2539,7 @@
       display: flex;
       min-height: min-content;
       align-items: center;
+      padding-inline-start: 0.25rem;
       white-space: nowrap;
     }
     .breadcrumbs > ol  > li {
