@@ -1,8 +1,10 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark;
+}
 
-@config "../../tailwind.config.js";
+@source ".";
 
 /*
  * Prefer Tailwind utilities in templates. Only keep CSS that utilities cannot

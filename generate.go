@@ -2,8 +2,7 @@
 // Working directory for these is the module root (this directory).
 package tools
 
-//go:generate npm install
-//go:generate npm run build:css
+//go:generate go tool tailwind -i internal/ui/input.css -o internal/web/assets/css/output.css
 //go:generate go tool sqlc generate
 //go:generate go tool templ generate
 //go:generate go tool goi18n extract -format json -outdir .
