@@ -136,7 +136,7 @@ func migrateLegacyDatabase(ctx context.Context, oldDBPath, newDBPath, configPath
 	return nil
 }
 
-func verifyLegacySchema(ctx context.Context, db *sql.DB, tasks []ConfigTask, logger *slog.Logger) error {
+func verifyLegacySchema(ctx context.Context, db *sql.DB, tasks []*web.ConfigTask, logger *slog.Logger) error {
 	var count int
 	err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='images'").Scan(&count)
 	if err != nil || count == 0 {
@@ -149,6 +149,9 @@ func verifyLegacySchema(ctx context.Context, db *sql.DB, tasks []ConfigTask, log
 	}
 
 	for _, task := range tasks {
+		if task == nil {
+			return validateTaskIDForLegacyTable("")
+		}
 		if err := validateTaskIDForLegacyTable(task.ID); err != nil {
 			return err
 		}
@@ -260,27 +263,15 @@ func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, t
 	return annotationCount, rows.Err()
 }
 
-// Minimal config structure for migration
-type ConfigTask struct {
-	ID   string `yaml:"id"`
-	Name string `yaml:"name"`
-}
-
-type ConfigMeta struct {
-	Description string `yaml:"description"`
-}
-
-type Config struct {
-	Meta  ConfigMeta   `yaml:"meta"`
-	Tasks []ConfigTask `yaml:"tasks"`
-}
-
-func loadConfigForMigration(path string) (*Config, error) {
+// loadConfigForMigration unmarshals task ids from YAML using web.Config.
+// It does not run LoadConfig validation (auth, password hashing) — migrate
+// only needs task IDs for legacy table names.
+func loadConfigForMigration(path string) (*web.Config, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	var config Config
+	var config web.Config
 	if err := yaml.Unmarshal(content, &config); err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}

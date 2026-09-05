@@ -13,6 +13,36 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+func TestLoadConfigForMigration_ReadsTaskIDsWithoutAuth(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	if err := os.WriteFile(path, []byte(`
+meta:
+  description: test
+tasks:
+  - id: quality
+    name: Quality
+  - id: has_person
+    name: Person
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := loadConfigForMigration(path)
+	if err != nil {
+		t.Fatalf("loadConfigForMigration: %v", err)
+	}
+	if len(cfg.Tasks) != 2 {
+		t.Fatalf("tasks = %d, want 2", len(cfg.Tasks))
+	}
+	if cfg.Tasks[0] == nil || cfg.Tasks[0].ID != "quality" {
+		t.Fatalf("task 0 = %+v, want id quality", cfg.Tasks[0])
+	}
+	if cfg.Tasks[1] == nil || cfg.Tasks[1].ID != "has_person" {
+		t.Fatalf("task 1 = %+v, want id has_person", cfg.Tasks[1])
+	}
+}
+
 func TestValidateTaskIDForLegacyTable(t *testing.T) {
 	valid := []string{"quality", "has_carro", "task1", "A", "a_b_c", "Stage0"}
 	for _, id := range valid {
