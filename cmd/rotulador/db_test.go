@@ -64,6 +64,32 @@ func TestRollbackTx(t *testing.T) {
 	})
 }
 
+func TestCloseAndReport(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+		c := &stubCloser{}
+		closeAndReport(t.Context(), c, "failed to close rows")
+		if c.closed != 1 {
+			t.Fatalf("Close() calls = %d, want 1", c.closed)
+		}
+	})
+
+	t.Run("reports close error", func(t *testing.T) {
+		t.Parallel()
+		prev := slog.Default()
+		slog.SetDefault(slog.New(slog.DiscardHandler))
+		t.Cleanup(func() { slog.SetDefault(prev) })
+
+		c := &stubCloser{err: errCloseBoom}
+		closeAndReport(t.Context(), c, "failed to close statement")
+		if c.closed != 1 {
+			t.Fatalf("Close() calls = %d, want 1", c.closed)
+		}
+	})
+}
+
 func TestCloseDatabase(t *testing.T) {
 	t.Parallel()
 
