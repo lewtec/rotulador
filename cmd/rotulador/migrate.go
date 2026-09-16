@@ -192,11 +192,7 @@ func migrateImages(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx) (map[strin
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			web.ReportError(ctx, err, "msg", "failed to close rows")
-		}
-	}()
+	defer closeAndReport(ctx, rows, "failed to close rows")
 
 	known := make(map[string]struct{})
 	for rows.Next() {
@@ -233,11 +229,7 @@ func migrateTaskAnnotations(ctx context.Context, oldDB *sql.DB, newTx *sql.Tx, t
 	if err != nil {
 		return 0, err
 	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			web.ReportError(ctx, err, "msg", "failed to close rows")
-		}
-	}()
+	defer closeAndReport(ctx, rows, "failed to close rows")
 
 	annotationCount := 0
 	for rows.Next() {
