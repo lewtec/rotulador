@@ -65,49 +65,50 @@ With a set of trivial choices scale the classification of a set of images to man
 
 				// Create only on ErrNotExist. Other Stat failures (e.g. permission
 				// denied) must not be treated as "already exists".
-				if _, err := os.Stat(configFile); err != nil {
-					if !errors.Is(err, fs.ErrNotExist) {
-						return fmt.Errorf("stat config file: %w", err)
-					}
-					logger.Info("Creating default config", "configFile", configFile)
-					if err := createSampleConfig(configFile, arg); err != nil {
-						return fmt.Errorf("create config: %w", err)
-					}
-					logger.Info("✓ Config file created.")
-				} else {
-					logger.Info("✓ Config file already exists.", "configFile", configFile)
+				if err := ensureAbsent(logger, absentPath{
+					path:      configFile,
+					key:       "configFile",
+					statErr:   "stat config file",
+					createErr: "create config",
+					creating:  "Creating default config",
+					created:   "✓ Config file created.",
+					exists:    "✓ Config file already exists.",
+					create:    func() error { return createSampleConfig(configFile, arg) },
+				}); err != nil {
+					return err
 				}
-
-				// Create empty database file
-				if _, err := os.Stat(databaseFile); err != nil {
-					if !errors.Is(err, fs.ErrNotExist) {
-						return fmt.Errorf("stat database file: %w", err)
-					}
-					logger.Info("Creating empty database", "databaseFile", databaseFile)
-					file, err := os.Create(databaseFile)
-					if err != nil {
-						return fmt.Errorf("create database file: %w", err)
-					}
-					if err := file.Close(); err != nil {
-						web.ReportError(cmd.Context(), err, "msg", "failed to close database file", "path", databaseFile)
-					}
-					logger.Info("✓ Database file created.")
-				} else {
-					logger.Info("✓ Database file already exists.", "databaseFile", databaseFile)
+				if err := ensureAbsent(logger, absentPath{
+					path:      databaseFile,
+					key:       "databaseFile",
+					statErr:   "stat database file",
+					createErr: "create database file",
+					creating:  "Creating empty database",
+					created:   "✓ Database file created.",
+					exists:    "✓ Database file already exists.",
+					create: func() error {
+						file, err := os.Create(databaseFile)
+						if err != nil {
+							return err
+						}
+						if err := file.Close(); err != nil {
+							web.ReportError(cmd.Context(), err, "msg", "failed to close database file", "path", databaseFile)
+						}
+						return nil
+					},
+				}); err != nil {
+					return err
 				}
-
-				// Create images directory
-				if _, err := os.Stat(imagesDir); err != nil {
-					if !errors.Is(err, fs.ErrNotExist) {
-						return fmt.Errorf("stat images directory: %w", err)
-					}
-					logger.Info("Creating images directory", "imagesDir", imagesDir)
-					if err := os.MkdirAll(imagesDir, 0755); err != nil {
-						return fmt.Errorf("create images directory: %w", err)
-					}
-					logger.Info("✓ Images directory created.")
-				} else {
-					logger.Info("✓ Images directory already exists.", "imagesDir", imagesDir)
+				if err := ensureAbsent(logger, absentPath{
+					path:      imagesDir,
+					key:       "imagesDir",
+					statErr:   "stat images directory",
+					createErr: "create images directory",
+					creating:  "Creating images directory",
+					created:   "✓ Images directory created.",
+					exists:    "✓ Images directory already exists.",
+					create:    func() error { return os.MkdirAll(imagesDir, 0755) },
+				}); err != nil {
+					return err
 				}
 
 				logger.Info("You can now run 'rotulador' to start the server.", "arg", arg)
@@ -255,6 +256,35 @@ func serveHTTP(ctx context.Context, server *http.Server) error {
 		}
 		return nil
 	}
+}
+
+// absentPath is one project path created when missing.
+// statErr and createErr are the prefixes wrapped around Stat and create errors.
+type absentPath struct {
+	path      string
+	key       string
+	statErr   string
+	createErr string
+	creating  string
+	created   string
+	exists    string
+	create    func() error
+}
+
+func ensureAbsent(logger *slog.Logger, p absentPath) error {
+	if _, err := os.Stat(p.path); err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("%s: %w", p.statErr, err)
+		}
+		logger.Info(p.creating, p.key, p.path)
+		if err := p.create(); err != nil {
+			return fmt.Errorf("%s: %w", p.createErr, err)
+		}
+		logger.Info(p.created)
+		return nil
+	}
+	logger.Info(p.exists, p.key, p.path)
+	return nil
 }
 
 func main() {

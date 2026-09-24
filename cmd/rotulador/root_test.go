@@ -3,7 +3,10 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
+	"io/fs"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -11,8 +14,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"errors"
-	"io/fs"
 )
 
 // executeCommand runs a cobra command and captures stdout plus process stderr
@@ -46,6 +47,36 @@ func executeCommand(t *testing.T, args ...string) (string, string, error) {
 	errOut.Write(stderrBytes)
 
 	return out.String(), errOut.String(), cmdErr
+}
+
+func TestEnsureAbsentRejectsNonMissingStatError(t *testing.T) {
+	dir := t.TempDir()
+	blocker := filepath.Join(dir, "not-a-dir")
+	if err := os.WriteFile(blocker, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&logs, nil))
+	err := ensureAbsent(logger, absentPath{
+		path:      filepath.Join(blocker, "config.yaml"),
+		key:       "configFile",
+		statErr:   "stat config file",
+		createErr: "create config",
+		creating:  "Creating default config",
+		created:   "✓ Config file created.",
+		exists:    "✓ Config file already exists.",
+		create: func() error {
+			t.Fatal("create must not run when Stat fails")
+			return nil
+		},
+	})
+	if err == nil || !strings.HasPrefix(err.Error(), "stat config file:") || errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("ensureAbsent err = %v", err)
+	}
+	if logs.Len() != 0 {
+		t.Fatalf("ensureAbsent logged %q", logs.String())
+	}
 }
 
 func TestRootCmd_SingleArgument(t *testing.T) {
