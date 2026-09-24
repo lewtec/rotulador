@@ -19,9 +19,7 @@ func GetDatabase(filename string) (*sql.DB, error) {
 
 	// Force a real connection so PRAGMAs apply and bad paths fail early.
 	if err := conn.Ping(); err != nil {
-		if closeErr := conn.Close(); closeErr != nil {
-			ReportError(context.Background(), closeErr, "msg", "failed to close database after ping failure")
-		}
+		reportClose(context.Background(), conn, "msg", "failed to close database after ping failure")
 		return nil, fmt.Errorf("sqlite open/ping: %w", err)
 	}
 

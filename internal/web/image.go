@@ -20,11 +20,7 @@ func DecodeImage(path string) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			ReportError(context.Background(), err, "msg", "failed to close image file", "path", path)
-		}
-	}()
+	defer reportClose(context.Background(), f, "msg", "failed to close image file", "path", path)
 	m, _, err := image.Decode(f)
 	if err != nil {
 		return nil, err
@@ -42,9 +38,7 @@ func IngestImage(img image.Image, outputDir string) error {
 	hasher := sha256.New()
 	w := io.MultiWriter(f, hasher)
 	if err := png.Encode(w, img); err != nil {
-		if closeErr := f.Close(); closeErr != nil {
-			ReportError(context.Background(), closeErr, "msg", "failed to close temp image after encode error", "path", tempFile)
-		}
+		reportClose(context.Background(), f, "msg", "failed to close temp image after encode error", "path", tempFile)
 		if removeErr := os.Remove(tempFile); removeErr != nil {
 			ReportError(context.Background(), removeErr, "msg", "failed to remove temp file after encode error", "path", tempFile)
 		}

@@ -61,11 +61,7 @@ func LoadConfig(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			ReportError(context.Background(), err, "msg", "failed to close config file")
-		}
-	}()
+	defer reportClose(context.Background(), f, "msg", "failed to close config file")
 	data, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
