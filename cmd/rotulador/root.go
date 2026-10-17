@@ -245,8 +245,11 @@ func serveHTTP(ctx context.Context, server *http.Server) error {
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			web.ReportError(shutdownCtx, err, "msg", "HTTP server shutdown failed")
-			// Drain ListenAndServe so we do not leak the goroutine on return.
-			<-errCh
+			// Drain ListenAndServe so the goroutine exits. ErrServerClosed is
+			// the expected result once Shutdown closes the listener.
+			if serveErr := <-errCh; serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
+				web.ReportError(shutdownCtx, serveErr, "msg", "HTTP server listen failed during shutdown")
+			}
 			return fmt.Errorf("http server shutdown: %w", err)
 		}
 		err := <-errCh
