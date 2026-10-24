@@ -2,7 +2,7 @@
 # Binary is built by GoReleaser and copied from the build context as
 #   $TARGETPLATFORM/rotulador
 
-FROM alpine:3.23@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62
+FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
 
 RUN apk add --no-cache ca-certificates iptables iproute2 ip6tables
 
