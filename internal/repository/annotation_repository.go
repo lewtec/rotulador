@@ -3,10 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
 
-	"github.com/lewtec/rotulador/internal/domain"
 	"github.com/lewtec/rotulador/internal/db/sqlc"
+	"github.com/lewtec/rotulador/internal/domain"
 )
 
 // AnnotationRepository implements domain.AnnotationRepository using SQLC
@@ -30,53 +29,29 @@ func NewAnnotationRepositoryWithTx(tx *sql.Tx) *AnnotationRepository {
 
 // Create creates or updates an annotation (upsert)
 func (r *AnnotationRepository) Create(ctx context.Context, imageSHA256 string, username string, stageIndex int, optionValue string) (*domain.Annotation, error) {
-	params := sqlc.CreateAnnotationParams{
+	ann, err := r.queries.CreateAnnotation(ctx, sqlc.CreateAnnotationParams{
 		ImageSha256: imageSHA256,
 		Username:    username,
 		StageIndex:  int64(stageIndex),
 		OptionValue: optionValue,
-	}
-
-	ann, err := r.queries.CreateAnnotation(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-
-	return toDomainAnnotation(ann), nil
+	})
+	return convertRow(ann, err, toDomainAnnotation)
 }
 
 // Get retrieves a specific annotation
 func (r *AnnotationRepository) Get(ctx context.Context, imageSHA256 string, username string, stageIndex int) (*domain.Annotation, error) {
-	params := sqlc.GetAnnotationParams{
+	ann, err := r.queries.GetAnnotation(ctx, sqlc.GetAnnotationParams{
 		ImageSha256: imageSHA256,
 		Username:    username,
 		StageIndex:  int64(stageIndex),
-	}
-
-	ann, err := r.queries.GetAnnotation(ctx, params)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return toDomainAnnotation(ann), nil
+	})
+	return convertMissingRow(ann, err, toDomainAnnotation)
 }
 
 // GetForImage retrieves all annotations for a specific image
 func (r *AnnotationRepository) GetForImage(ctx context.Context, imageSHA256 string) ([]*domain.Annotation, error) {
 	anns, err := r.queries.GetAnnotationsForImage(ctx, imageSHA256)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*domain.Annotation, len(anns))
-	for i, ann := range anns {
-		result[i] = toDomainAnnotation(ann)
-	}
-
-	return result, nil
+	return convertRows(anns, err, toDomainAnnotation)
 }
 
 // GetByUser retrieves annotations by a specific user (paginated)
@@ -88,29 +63,7 @@ func (r *AnnotationRepository) GetByUser(ctx context.Context, username string, l
 	}
 
 	rows, err := r.queries.GetAnnotationsByUser(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*domain.AnnotationWithImage, len(rows))
-	for i, row := range rows {
-		ann := domain.AnnotationWithImage{
-			Annotation: domain.Annotation{
-				ID:          row.ID,
-				ImageSHA256: row.ImageSha256,
-				Username:    row.Username,
-				StageIndex:  int(row.StageIndex),
-				OptionValue: row.OptionValue,
-			},
-			ImageFilename: row.Filename,
-		}
-		if row.AnnotatedAt != nil {
-			ann.AnnotatedAt = *row.AnnotatedAt
-		}
-		result[i] = &ann
-	}
-
-	return result, nil
+	return convertRows(rows, err, toDomainAnnotationWithImage)
 }
 
 // GetByImageAndUser retrieves all annotations for an image by a specific user
@@ -121,16 +74,7 @@ func (r *AnnotationRepository) GetByImageAndUser(ctx context.Context, imageSHA25
 	}
 
 	anns, err := r.queries.GetAnnotationsByImageAndUser(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*domain.Annotation, len(anns))
-	for i, ann := range anns {
-		result[i] = toDomainAnnotation(ann)
-	}
-
-	return result, nil
+	return convertRows(anns, err, toDomainAnnotation)
 }
 
 // CountByUser returns the total number of annotations by a user
@@ -147,16 +91,7 @@ func (r *AnnotationRepository) ListPendingImagesForUserAndStage(ctx context.Cont
 	}
 
 	images, err := r.queries.ListPendingImagesForUserAndStage(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*domain.Image, len(images))
-	for i, img := range images {
-		result[i] = toDomainImage(img)
-	}
-
-	return result, nil
+	return convertRows(images, err, toDomainImage)
 }
 
 // Exists checks if an annotation exists
@@ -197,6 +132,21 @@ func (r *AnnotationRepository) GetStats(ctx context.Context) (*domain.Annotation
 		TotalAnnotations: stats.TotalAnnotations,
 		TotalUsers:       stats.TotalUsers,
 	}, nil
+}
+
+func toDomainAnnotationWithImage(row sqlc.GetAnnotationsByUserRow) *domain.AnnotationWithImage {
+	ann := toDomainAnnotation(sqlc.Annotation{
+		ID:          row.ID,
+		ImageSha256: row.ImageSha256,
+		Username:    row.Username,
+		StageIndex:  row.StageIndex,
+		OptionValue: row.OptionValue,
+		AnnotatedAt: row.AnnotatedAt,
+	})
+	return &domain.AnnotationWithImage{
+		Annotation:    *ann,
+		ImageFilename: row.Filename,
+	}
 }
 
 // toDomainAnnotation converts a sqlc.Annotation to domain.Annotation
