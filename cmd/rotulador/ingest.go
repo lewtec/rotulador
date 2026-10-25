@@ -35,7 +35,9 @@ var ingestCmd = &cobra.Command{
 				return fmt.Errorf("on %dth argument: must be a directory", i+1)
 			}
 		}
-		return os.MkdirAll(output, 0777)
+		// Match root images-dir bootstrap (0o755): never create a world-writable
+		// output tree for ingested images.
+		return os.MkdirAll(output, 0o755)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger, err := getLogger(cmd)
