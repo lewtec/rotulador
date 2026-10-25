@@ -18,21 +18,13 @@ func PrintQuery(ctx context.Context, db *sql.Tx, query string, args ...any) erro
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := stmt.Close(); err != nil {
-			web.ReportError(ctx, err, "msg", "failed to close statement")
-		}
-	}()
+	defer closeAndReport(ctx, stmt, "failed to close statement")
 
 	result, err := stmt.QueryContext(ctx, args...)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := result.Close(); err != nil {
-			web.ReportError(ctx, err, "msg", "failed to close rows")
-		}
-	}()
+	defer closeAndReport(ctx, result, "failed to close rows")
 
 	columns, err := result.Columns()
 	if err != nil {

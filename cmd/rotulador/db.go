@@ -8,10 +8,14 @@ import (
 	"github.com/lewtec/rotulador/internal/web"
 )
 
-func closeDatabase(ctx context.Context, db interface{ Close() error }) {
-	if err := db.Close(); err != nil {
-		web.ReportError(ctx, err, "msg", "failed to close database")
+func closeAndReport(ctx context.Context, c interface{ Close() error }, msg string) {
+	if err := c.Close(); err != nil {
+		web.ReportError(ctx, err, "msg", msg)
 	}
+}
+
+func closeDatabase(ctx context.Context, db interface{ Close() error }) {
+	closeAndReport(ctx, db, "failed to close database")
 }
 
 func rollbackTx(ctx context.Context, tx interface{ Rollback() error }) {
