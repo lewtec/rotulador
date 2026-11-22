@@ -36,11 +36,7 @@ func HashFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer func() {
-		if closeErr := f.Close(); closeErr != nil {
-			ReportError(context.Background(), closeErr, "msg", "failed to close file after hashing", "path", path)
-		}
-	}()
+	defer reportClose(context.Background(), f, "msg", "failed to close file after hashing", "path", path)
 
 	hasher := sha256.New()
 	if _, err = io.Copy(hasher, f); err != nil {

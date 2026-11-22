@@ -651,11 +651,7 @@ func (a *AnnotatorApp) GetHTTPHandler() http.Handler {
 			ReportError(r.Context(), err, "msg", "error: http: while serving image asset")
 			return
 		}
-		defer func() {
-			if err := f.Close(); err != nil {
-				ReportError(r.Context(), err, "msg", "failed to close asset file")
-			}
-		}()
+		defer reportClose(r.Context(), f, "msg", "failed to close asset file")
 		if _, err := io.Copy(w, f); err != nil {
 			ReportError(r.Context(), err, "msg", "error: http: while copying image asset")
 		}
