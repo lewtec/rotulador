@@ -3,10 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
 
-	"github.com/lewtec/rotulador/internal/domain"
 	"github.com/lewtec/rotulador/internal/db/sqlc"
+	"github.com/lewtec/rotulador/internal/domain"
 )
 
 // ImageRepository implements domain.ImageRepository using SQLC
@@ -30,58 +29,29 @@ func NewImageRepositoryWithTx(tx *sql.Tx) *ImageRepository {
 
 // Create creates a new image record
 func (r *ImageRepository) Create(ctx context.Context, sha256, filename string) (*domain.Image, error) {
-	params := sqlc.CreateImageParams{
+	img, err := r.queries.CreateImage(ctx, sqlc.CreateImageParams{
 		Sha256:   sha256,
 		Filename: filename,
-	}
-
-	img, err := r.queries.CreateImage(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-
-	return toDomainImage(img), nil
+	})
+	return convertRow(img, err, toDomainImage)
 }
 
 // GetBySHA256 retrieves an image by its SHA256 hash
 func (r *ImageRepository) GetBySHA256(ctx context.Context, sha256 string) (*domain.Image, error) {
 	img, err := r.queries.GetImage(ctx, sha256)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return toDomainImage(img), nil
+	return convertMissingRow(img, err, toDomainImage)
 }
 
 // GetByFilename retrieves an image by its filename
 func (r *ImageRepository) GetByFilename(ctx context.Context, filename string) (*domain.Image, error) {
 	img, err := r.queries.GetImageByFilename(ctx, filename)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return toDomainImage(img), nil
+	return convertMissingRow(img, err, toDomainImage)
 }
 
 // List retrieves all images
 func (r *ImageRepository) List(ctx context.Context) ([]*domain.Image, error) {
 	images, err := r.queries.ListImages(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*domain.Image, len(images))
-	for i, img := range images {
-		result[i] = toDomainImage(img)
-	}
-
-	return result, nil
+	return convertRows(images, err, toDomainImage)
 }
 
 // Count returns the total number of images
