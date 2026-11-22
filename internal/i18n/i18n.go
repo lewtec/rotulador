@@ -95,23 +95,24 @@ func FromRequest(r *http.Request) *goi18n.Localizer {
 	return goi18n.NewLocalizer(bundle, langs...)
 }
 
-// T translates messageID using the localizer on ctx.
-func T(ctx context.Context, messageID string) string {
-	msg, err := Get(ctx).Localize(&goi18n.LocalizeConfig{MessageID: messageID})
+// localize renders cfg. On failure it returns cfg.MessageID, matching T and TData.
+func localize(ctx context.Context, cfg *goi18n.LocalizeConfig) string {
+	msg, err := Get(ctx).Localize(cfg)
 	if err != nil {
-		return messageID
+		return cfg.MessageID
 	}
 	return msg
 }
 
+// T translates messageID using the localizer on ctx.
+func T(ctx context.Context, messageID string) string {
+	return localize(ctx, &goi18n.LocalizeConfig{MessageID: messageID})
+}
+
 // TData translates messageID with template data using the localizer on ctx.
-func TData(ctx context.Context, messageID string, data map[string]interface{}) string {
-	msg, err := Get(ctx).Localize(&goi18n.LocalizeConfig{
+func TData(ctx context.Context, messageID string, data map[string]any) string {
+	return localize(ctx, &goi18n.LocalizeConfig{
 		MessageID:    messageID,
 		TemplateData: data,
 	})
-	if err != nil {
-		return messageID
-	}
-	return msg
 }
